@@ -20,10 +20,10 @@ import lombok.RequiredArgsConstructor;
 public class ProductCategoryService {
 
     // 分類狀態：1 代表啟用
-    private static final Integer ACTIVE = 1;
+    private static final Byte ACTIVE = 1;
 
     // 分類狀態：0 代表停用
-    private static final Integer INACTIVE = 0;
+    private static final Byte INACTIVE = 0;
 
     private final ProductCategoryRepository categoryRepository;
 

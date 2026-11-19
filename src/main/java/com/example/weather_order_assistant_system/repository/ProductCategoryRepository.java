@@ -14,7 +14,7 @@ import com.example.weather_order_assistant_system.entity.ProductCategory;
 public interface ProductCategoryRepository extends JpaRepository<ProductCategory, Long> {
 
     // 查詢所有尚未刪除且符合指定狀態的分類
-    List<ProductCategory> findByStatusAndDeletedAtIsNullOrderByIdAsc(Integer status);
+    List<ProductCategory> findByStatusAndDeletedAtIsNullOrderByIdAsc(Byte status);
 
     // 根據 ID 查詢尚未刪除的分類
     Optional<ProductCategory> findByIdAndDeletedAtIsNull(Long id);

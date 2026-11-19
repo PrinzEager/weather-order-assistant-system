@@ -24,7 +24,7 @@ public class ProductCategoryResponse {
     private String parentName;
 
     // 分類狀態：1 = 啟用、0 = 停用
-    private Integer status;
+    private Byte status;
 
     // 建立時間
     private LocalDateTime createdAt;
@@ -38,7 +38,7 @@ public class ProductCategoryResponse {
             String name,
             Long parentId,
             String parentName,
-            Integer status,
+            Byte status,
             LocalDateTime createdAt,
             LocalDateTime updatedAt) {
 

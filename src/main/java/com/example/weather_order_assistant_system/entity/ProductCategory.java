@@ -41,7 +41,7 @@ public class ProductCategory {
 
     // 分類狀態：1 = 啟用、0 = 停用
     @Column(nullable = false)
-    private Integer status = 1;
+    private Byte status = 1;
 
     // 建立時間
     @Column(name = "created_at", nullable = false)
