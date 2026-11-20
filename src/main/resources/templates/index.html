@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="zh-Hant" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Weather Order Assistant System｜天氣訂貨輔助系統</title>
+
+    <!--
+        Thymeleaf 會解析靜態資源路徑。
+        CSS 與 JavaScript 將在後續步驟逐檔建立。
+    -->
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <!-- 使用 ES Modules 載入前端系統 -->
+    <!-- app.js 會自動 import 其他功能模組 -->
+    <script type="module" th:src="@{/js/app.js}"></script>
+</head>
+
+<body>
+
+    <!-- =====================================================
+         一、系統側邊導覽列
+         後續由 JavaScript 控制不同功能頁面的切換
+         ===================================================== -->
+    <aside class="sidebar">
+
+        <div class="sidebar-brand">
+            <h1>Weather Order</h1>
+            <p>天氣訂貨輔助系統</p>
+        </div>
+
+        <nav class="sidebar-nav" aria-label="主要功能導覽">
+
+            <button type="button" class="nav-item active"
+                    data-page="dashboard">
+                系統儀表板
+            </button>
+
+            <button type="button" class="nav-item"
+                    data-page="weather">
+                三天天氣預報
+            </button>
+
+            <button type="button" class="nav-item"
+                    data-page="recommendations">
+                天氣訂貨建議
+            </button>
+
+            <button type="button" class="nav-item"
+                    data-page="categories">
+                商品分類管理
+            </button>
+
+            <button type="button" class="nav-item"
+                    data-page="products">
+                商品管理
+            </button>
+
+            <button type="button" class="nav-item"
+                    data-page="suppliers">
+                供應商管理
+            </button>
+
+            <button type="button" class="nav-item"
+                    data-page="sales">
+                銷售紀錄
+            </button>
+
+            <button type="button" class="nav-item"
+                    data-page="orders">
+                採購訂貨單
+            </button>
+
+        </nav>
+
+        <div class="sidebar-footer">
+            <small>Weather Order Assistant System</small>
+        </div>
+
+    </aside>
+
+    <!-- =====================================================
+         二、主內容區域
+         ===================================================== -->
+    <main class="main-content">
+
+        <!-- 頂部資訊列 -->
+        <header class="topbar">
+
+            <div class="topbar-title">
+                <h2 id="page-title">系統儀表板</h2>
+                <p id="page-description">
+                    查看系統資訊及快速進入主要功能
+                </p>
+            </div>
+
+            <div class="topbar-status">
+                <span class="status-dot"></span>
+                <span>Weather Order Demo</span>
+            </div>
+
+        </header>
+
+        <!-- 全站通知訊息 -->
+        <div id="global-message"
+             class="global-message"
+             role="status"
+             aria-live="polite"
+             hidden>
+        </div>
+
+        <!-- =================================================
+             1. 系統儀表板
+             ================================================= -->
+        <section id="page-dashboard" class="page-section">
+
+            <div class="section-heading">
+                <h3>系統總覽</h3>
+                <p>整合商品、銷售、庫存、天氣及訂貨資訊。</p>
+            </div>
+
+            <div class="dashboard-stats">
+
+                <article class="stat-card">
+                    <h4>商品總數</h4>
+                    <strong id="stat-products">--</strong>
+                    <p>商品資料概覽</p>
+                </article>
+
+                <article class="stat-card">
+                    <h4>供應商總數</h4>
+                    <strong id="stat-suppliers">--</strong>
+                    <p>供應商資料概覽</p>
+                </article>
+
+                <article class="stat-card">
+                    <h4>需要補貨商品</h4>
+                    <strong id="stat-reorder">--</strong>
+                    <p>依天氣訂貨建議計算</p>
+                </article>
+
+                <article class="stat-card">
+                    <h4>待處理訂貨單</h4>
+                    <strong id="stat-orders">--</strong>
+                    <p>待後端資料載入</p>
+                </article>
+
+            </div>
+
+            <div class="dashboard-panels">
+
+                <article class="panel">
+                    <h4>天氣資訊</h4>
+                    <p>
+                        查看未來三天的天氣、溫度及降雨機率，
+                        作為訂貨需求評估的輔助資訊。
+                    </p>
+
+                    <button type="button"
+                            class="primary-button"
+                            data-go-page="weather">
+                        查看天氣預報
+                    </button>
+                </article>
+
+                <article class="panel">
+                    <h4>天氣訂貨建議</h4>
+                    <p>
+                        整合歷史銷售、目前庫存、安全庫存、
+                        未到貨數量與天氣倍率。
+                    </p>
+
+                    <button type="button"
+                            class="primary-button"
+                            data-go-page="recommendations">
+                        查看訂貨建議
+                    </button>
+                </article>
+
+            </div>
+
+        </section>
+
+        <!-- =================================================
+             2. 三天天氣預報
+             ================================================= -->
+        <section id="page-weather" class="page-section" hidden>
+
+            <div class="section-heading">
+                <h3>未來三天天氣預報</h3>
+                <p>資料來源：中央氣象署公開氣象資料。</p>
+            </div>
+
+            <div class="panel">
+
+                <form id="weather-search-form" class="filter-form">
+
+                    <div class="form-group">
+                        <label for="weather-city">縣市</label>
+                        <select id="weather-city" name="city">
+                            <option value="高雄市">高雄市</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="weather-district">鄉鎮市區</label>
+                        <input type="text"
+                               id="weather-district"
+                               name="district"
+                               value="路竹區"
+                               required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="weather-start-date">起始日期</label>
+                        <input type="date"
+                               id="weather-start-date"
+                               name="startDate"
+                               required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="weather-end-date">結束日期</label>
+                        <input type="date"
+                               id="weather-end-date"
+                               name="endDate"
+                               required>
+                    </div>
+
+                    <button type="submit" class="primary-button">
+                        查詢天氣
+                    </button>
+
+                </form>
+
+            </div>
+
+            <!-- 天氣摘要 -->
+            <div id="weather-summary" class="weather-summary"></div>
+
+            <!-- 未來三天每日天氣卡片 -->
+            <div id="weather-daily-cards"
+                 class="weather-daily-cards">
+            </div>
+
+            <!-- 溫度及降雨機率圖表 -->
+            <div class="chart-grid">
+
+                <article class="panel">
+                    <h4>溫度變化</h4>
+                    <div id="temperature-chart"
+                         class="chart-container">
+                        <p class="empty-state">尚未載入溫度資料</p>
+                    </div>
+                </article>
+
+                <article class="panel">
+                    <h4>降雨機率</h4>
+                    <div id="precipitation-chart"
+                         class="chart-container">
+                        <p class="empty-state">尚未載入降雨資料</p>
+                    </div>
+                </article>
+
+            </div>
+
+            <div id="weather-warning"
+                 class="warning-message"
+                 role="status"
+                 aria-live="polite"
+                 hidden>
+            </div>
+
+        </section>
+
+        <!-- =================================================
+             3. 天氣訂貨建議
+             ================================================= -->
+        <section id="page-recommendations"
+                 class="page-section"
+                 hidden>
+
+            <div class="section-heading">
+                <h3>天氣訂貨建議</h3>
+                <p>
+                    使用歷史銷售與天氣倍率計算建議訂貨量，
+                    最終數量由使用者確認。
+                </p>
+            </div>
+
+            <div class="panel">
+
+                <form id="recommendation-search-form"
+                      class="filter-form">
+
+                    <div class="form-group">
+                        <label for="recommendation-city">縣市</label>
+                        <select id="recommendation-city" name="city">
+                            <option value="高雄市">高雄市</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="recommendation-district">
+                            鄉鎮市區
+                        </label>
+                        <input type="text"
+                               id="recommendation-district"
+                               name="district"
+                               value="路竹區"
+                               required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="recommendation-start-date">
+                            起始日期
+                        </label>
+                        <input type="date"
+                               id="recommendation-start-date"
+                               name="startDate"
+                               required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="recommendation-end-date">
+                            結束日期
+                        </label>
+                        <input type="date"
+                               id="recommendation-end-date"
+                               name="endDate"
+                               required>
+                    </div>
+
+                    <button type="submit" class="primary-button">
+                        產生訂貨建議
+                    </button>
+
+                </form>
+
+            </div>
+
+            <div id="recommendation-summary"
+                 class="recommendation-summary">
+            </div>
+
+            <div class="panel table-panel">
+
+                <h4>商品訂貨建議清單</h4>
+
+                <div class="table-responsive">
+                    <table class="data-table">
+
+                        <thead>
+                            <tr>
+                                <th>選擇</th>
+                                <th>商品</th>
+                                <th>目前庫存</th>
+                                <th>歷史銷售</th>
+                                <th>天氣倍率</th>
+                                <th>建議訂貨量</th>
+                                <th>實際訂貨量</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="recommendation-table-body">
+                            <tr>
+                                <td colspan="7" class="empty-state">
+                                    尚未產生訂貨建議
+                                </td>
+                            </tr>
+                        </tbody>
+
+                    </table>
+                </div>
+
+            </div>
+
+            <div class="action-bar">
+                <button type="button"
+                        id="create-order-from-recommendation"
+                        class="primary-button"
+                        disabled>
+                    選擇商品建立採購草稿
+                </button>
+            </div>
+
+            <div class="panel">
+                <h4>訂貨建議計算依據</h4>
+                <p>
+                    調整後需求 = ceil（歷史銷售量 × 天氣倍率）
+                </p>
+                <p>
+                    建議訂貨量 = max（0，調整後需求 +
+                    安全庫存 − 目前庫存 − 未到貨數量）
+                </p>
+            </div>
+
+        </section>
+
+        <!-- =================================================
+             4. 商品分類管理
+             ================================================= -->
+        <section id="page-categories"
+                 class="page-section"
+                 hidden>
+
+            <div class="section-heading">
+                <h3>商品分類管理</h3>
+                <p>管理第一層與第二層商品分類。</p>
+            </div>
+
+            <div class="panel">
+
+                <div class="panel-toolbar">
+                    <h4>商品分類清單</h4>
+
+                    <button type="button"
+                            id="add-category-button"
+                            class="primary-button"
+                            disabled>
+                        新增分類
+                    </button>
+                </div>
+
+                <div id="category-list" class="list-container">
+                    <p class="empty-state">尚未載入商品分類</p>
+                </div>
+
+            </div>
+
+            <!-- =================================================
+                商品分類新增／編輯共用表單
+
+                1. 新增分類時：
+                    category-id 為空
+                    POST /api/product-categories
+
+                2. 修改分類時：
+                    category-id 存放既有分類 ID
+                    PUT /api/product-categories/{id}
+
+                3. 第一層分類：
+                    parentId = null
+
+                4. 第二層分類：
+                    parentId = 指定第一層分類 ID
+
+                此階段只建立 HTML。
+                下一步再透過 app.js 控制表單與 AJAX。
+                ================================================= -->
+
+            <div id="category-form-panel" class="panel" hidden>
+
+                <div class="panel-toolbar">
+                    <h4 id="category-form-title">新增商品分類</h4>
+
+                    <button type="button"
+                            id="category-form-close"
+                            class="secondary-button">
+                        關閉
+                    </button>
+                </div>
+
+                <form id="category-form">
+
+                    <!--
+                        隱藏欄位：
+                        新增分類時為空值。
+                        修改分類時存放既有分類 ID。
+                    -->
+                    <input type="hidden"
+                        id="category-id"
+                        name="id">
+
+                    <!-- 商品分類名稱 -->
+                    <div class="form-group">
+
+                        <label for="category-name">
+                            分類名稱
+                        </label>
+
+                        <input type="text"
+                            id="category-name"
+                            name="name"
+                            maxlength="100"
+                            placeholder="請輸入商品分類名稱"
+                            required>
+
+                        <small>
+                            分類名稱不可為空，最多 100 個字元。
+                        </small>
+
+                    </div>
+
+                    <!-- 分類層級 -->
+                    <div class="form-group">
+
+                        <label for="category-level">
+                            分類層級
+                        </label>
+
+                        <select id="category-level"
+                                name="level"
+                                required>
+
+                            <option value="1">
+                                第一層分類
+                            </option>
+
+                            <option value="2">
+                                第二層分類
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                    <!--
+                        上層分類：
+                        選擇第一層時隱藏此區塊。
+                        選擇第二層時顯示。
+
+                        下拉選項將由 AJAX 取得真實分類資料，
+                        不使用寫死的分類 ID。
+                    -->
+                    <div id="category-parent-group"
+                        class="form-group"
+                        hidden>
+
+                        <label for="category-parent-id">
+                            上層分類
+                        </label>
+
+                        <select id="category-parent-id"
+                                name="parentId">
+
+                            <option value="">
+                                請選擇第一層分類
+                            </option>
+
+                        </select>
+
+                        <small>
+                            第二層分類只能隸屬於第一層分類，
+                            不允許建立第三層分類。
+                        </small>
+
+                    </div>
+
+                    <!-- 表單操作 -->
+                    <div class="action-bar"
+                        style="margin-top: 24px;">
+
+                        <button type="button"
+                                id="category-form-cancel"
+                                class="secondary-button">
+                            取消
+                        </button>
+
+                        <button type="submit"
+                                id="category-form-submit"
+                                class="primary-button">
+                            儲存分類
+                        </button>
+
+                    </div>
+
+                </form>
+
+            </div>
+
+        </section>
+
+        <!-- =================================================
+             5. 商品管理
+             ================================================= -->
+        <section id="page-products"
+                 class="page-section"
+                 hidden>
+
+            <div class="section-heading">
+                <h3>商品管理</h3>
+                <p>管理商品資訊、售價、庫存及狀態。</p>
+            </div>
+
+            <div class="panel">
+
+                <div class="panel-toolbar">
+                    <h4>商品清單</h4>
+
+                    <button type="button"
+                            id="add-product-button"
+                            class="primary-button"
+                            disabled>
+                        新增商品
+                    </button>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="data-table">
+
+                        <thead>
+                            <tr>
+                                <th>商品代碼</th>
+                                <th>商品名稱</th>
+                                <th>分類</th>
+                                <th>售價</th>
+                                <th>目前庫存</th>
+                                <th>安全庫存</th>
+                                <th>狀態</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="product-table-body">
+                            <tr>
+                                <td colspan="8" class="empty-state">
+                                    尚未載入商品資料
+                                </td>
+                            </tr>
+                        </tbody>
+
+                    </table>
+                </div>
+
+            </div>
+            
+            <!-- =================================================
+                Product 商品新增／編輯共用表單
+
+                新增商品：
+                POST /api/products
+
+                修改商品：
+                PUT /api/products/{id}
+
+                注意：
+                1. 商品只能選擇有效的第二層分類。
+                2. 不傳送 status，因為 ProductRequest 沒有此欄位。
+                3. 分類選項由現有 ProductCategory API 動態載入。
+                4. 本次只建立 HTML，下一步才串接 AJAX。
+                ================================================= -->
+
+            <div id="product-form-panel" class="panel" hidden>
+
+                <div class="panel-toolbar">
+                    <h4 id="product-form-title">新增商品</h4>
+
+                    <button type="button"
+                            id="product-form-close"
+                            class="secondary-button">
+                        關閉
+                    </button>
+                </div>
+
+                <form id="product-form">
+
+                    <!-- 商品 ID：新增時為空，修改時存放商品 ID -->
+                    <input type="hidden"
+                        id="product-id"
+                        name="id">
+
+                    <!-- =================================================
+                        商品所屬分類
+                        只能選擇啟用中的第二層分類
+                        ================================================= -->
+                    <div class="form-group">
+
+                        <label for="product-category-id">
+                            商品分類 *
+                        </label>
+
+                        <select id="product-category-id"
+                                name="categoryId"
+                                required>
+
+                            <option value="">
+                                請選擇第二層商品分類
+                            </option>
+
+                        </select>
+
+                        <small>
+                            商品只能歸屬於第二層分類，
+                            不可直接選擇第一層分類。
+                        </small>
+
+                    </div>
+
+                    <!-- =================================================
+                        商品代碼 SKU
+                        ================================================= -->
+                    <div class="form-group">
+
+                        <label for="product-sku">
+                            商品代碼（SKU）*
+                        </label>
+
+                        <input type="text"
+                            id="product-sku"
+                            name="sku"
+                            maxlength="50"
+                            placeholder="例如：TEA008"
+                            required>
+
+                        <small>
+                            商品代碼不可為空，最多 50 個字元。
+                        </small>
+
+                    </div>
+
+                    <!-- =================================================
+                        商品名稱
+                        ================================================= -->
+                    <div class="form-group">
+
+                        <label for="product-name">
+                            商品名稱 *
+                        </label>
+
+                        <input type="text"
+                            id="product-name"
+                            name="name"
+                            maxlength="100"
+                            placeholder="例如：Demo 烏龍茶"
+                            required>
+
+                    </div>
+
+                    <!-- =================================================
+                        商品售價
+                        ================================================= -->
+                    <div class="form-group">
+
+                        <label for="product-price">
+                            商品售價 *
+                        </label>
+
+                        <input type="number"
+                            id="product-price"
+                            name="price"
+                            min="0"
+                            step="0.01"
+                            placeholder="例如：30.00"
+                            required>
+
+                        <small>
+                            售價不可小於 0，金額精度由後端再次驗證。
+                        </small>
+
+                    </div>
+
+                    <!-- =================================================
+                        商品單位
+                        ================================================= -->
+                    <div class="form-group">
+
+                        <label for="product-unit">
+                            商品單位
+                        </label>
+
+                        <input type="text"
+                            id="product-unit"
+                            name="unit"
+                            maxlength="20"
+                            placeholder="例如：瓶、包、個">
+
+                        <small>
+                            不填寫時，後端預設為「個」。
+                        </small>
+
+                    </div>
+
+                    <!-- =================================================
+                        目前庫存
+                        ================================================= -->
+                    <div class="form-group">
+
+                        <label for="product-current-stock">
+                            目前庫存
+                        </label>
+
+                        <input type="number"
+                            id="product-current-stock"
+                            name="currentStock"
+                            min="0"
+                            step="1"
+                            value="0">
+
+                        <small>
+                            庫存不可小於 0。
+                        </small>
+
+                    </div>
+
+                    <!-- =================================================
+                        安全庫存
+                        ================================================= -->
+                    <div class="form-group">
+
+                        <label for="product-safety-stock">
+                            安全庫存
+                        </label>
+
+                        <input type="number"
+                            id="product-safety-stock"
+                            name="safetyStock"
+                            min="0"
+                            step="1"
+                            value="0">
+
+                        <small>
+                            安全庫存是計算天氣訂貨建議的重要依據。
+                        </small>
+
+                    </div>
+
+                    <!-- =================================================
+                        表單操作按鈕
+                        ================================================= -->
+                    <div class="action-bar"
+                        style="margin-top: 24px;">
+
+                        <button type="button"
+                                id="product-form-cancel"
+                                class="secondary-button">
+                            取消
+                        </button>
+
+                        <button type="submit"
+                                id="product-form-submit"
+                                class="primary-button">
+                            儲存商品
+                        </button>
+
+                    </div>
+
+                </form>
+
+            </div>
+
+        </section>
+
+        <!-- =================================================
+             6. 供應商管理
+             ================================================= -->
+        <section id="page-suppliers"
+                 class="page-section"
+                 hidden>
+
+            <div class="section-heading">
+                <h3>供應商管理</h3>
+                <p>管理目前合作中的供應商。</p>
+            </div>
+
+            <div class="panel">
+
+                <div class="panel-toolbar">
+                    <h4>供應商清單</h4>
+
+                    <button type="button"
+                            id="add-supplier-button"
+                            class="primary-button"
+                            disabled>
+                        新增供應商
+                    </button>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="data-table">
+
+                        <thead>
+                            <tr>
+                                <th>供應商名稱</th>
+                                <th>聯絡人</th>
+                                <th>電話</th>
+                                <th>電子郵件</th>
+                                <th>狀態</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="supplier-table-body">
+                            <tr>
+                                <td colspan="6" class="empty-state">
+                                    尚未載入供應商資料
+                                </td>
+                            </tr>
+                        </tbody>
+
+                    </table>
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- =================================================
+             7. 銷售紀錄
+             ================================================= -->
+        <section id="page-sales"
+                 class="page-section"
+                 hidden>
+
+            <div class="section-heading">
+                <h3>銷售紀錄</h3>
+                <p>查詢商品歷史銷售資料。</p>
+            </div>
+
+            <div class="panel">
+
+                <div class="panel-toolbar">
+                    <h4>銷售紀錄清單</h4>
+
+                    <button type="button"
+                            id="add-sale-button"
+                            class="primary-button"
+                            disabled>
+                        新增銷售紀錄
+                    </button>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="data-table">
+
+                        <thead>
+                            <tr>
+                                <th>銷售編號</th>
+                                <th>商品</th>
+                                <th>銷售數量</th>
+                                <th>單價</th>
+                                <th>銷售總額</th>
+                                <th>銷售時間</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="sales-table-body">
+                            <tr>
+                                <td colspan="7" class="empty-state">
+                                    尚未載入銷售資料
+                                </td>
+                            </tr>
+                        </tbody>
+
+                    </table>
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- =================================================
+             8. 採購訂貨單
+             ================================================= -->
+        <section id="page-orders"
+                 class="page-section"
+                 hidden>
+
+            <div class="section-heading">
+                <h3>採購訂貨單</h3>
+                <p>管理採購草稿、送出、收貨及取消狀態。</p>
+            </div>
+
+            <div class="panel">
+
+                <div class="panel-toolbar">
+                    <h4>採購訂貨單清單</h4>
+
+                    <button type="button"
+                            id="add-order-button"
+                            class="primary-button"
+                            disabled>
+                        建立採購單
+                    </button>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="data-table">
+
+                        <thead>
+                            <tr>
+                                <th>訂貨單編號</th>
+                                <th>供應商</th>
+                                <th>訂貨日期</th>
+                                <th>預計到貨日期</th>
+                                <th>總金額</th>
+                                <th>訂貨狀態</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="order-table-body">
+                            <tr>
+                                <td colspan="7" class="empty-state">
+                                    尚未載入訂貨單
+                                </td>
+                            </tr>
+                        </tbody>
+
+                    </table>
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+</body>
+</html>

@@ -72,6 +72,13 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-restclient</artifactId>
 		</dependency>
+		<!-- Thymeleaf 模板引擎：負責渲染前端 HTML 頁面 -->
+		<!-- 前端首頁將放在 src/main/resources/templates/index.html -->
+		<!-- 透過 Spring MVC Controller 回傳 index 視圖 -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-thymeleaf</artifactId>
+		</dependency>
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
