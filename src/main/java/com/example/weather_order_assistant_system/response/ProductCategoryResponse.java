@@ -11,20 +11,27 @@ import lombok.Setter;
 @NoArgsConstructor
 public class ProductCategoryResponse {
 
-    // 分類 ID
+    // 商品分類編號
     private Long id;
 
-    // 分類名稱
+    // 商品分類名稱
     private String name;
 
-    // 上層分類 ID，第一層分類為 null
+    // 上層分類編號
+    // 第一層分類：null
+    // 第二層分類：對應第一層分類 ID
     private Long parentId;
 
-    // 上層分類名稱，第一層分類為 null
+    // 上層分類名稱
+    // 第一層分類：null
+    // 第二層分類：對應第一層分類名稱
     private String parentName;
 
-    // 分類狀態：1 = 啟用、0 = 停用
-    private Byte status;
+    // 商品分類狀態
+    // 1：啟用
+    // 0：停用
+    // 使用 Integer，與 Entity 保持一致
+    private Integer status;
 
     // 建立時間
     private LocalDateTime createdAt;
@@ -32,13 +39,13 @@ public class ProductCategoryResponse {
     // 最後修改時間
     private LocalDateTime updatedAt;
 
-    // 將 Entity 轉換成 Response DTO
+    // 建構子：用於將 Entity 資料轉換成 API Response
     public ProductCategoryResponse(
             Long id,
             String name,
             Long parentId,
             String parentName,
-            Byte status,
+            Integer status,
             LocalDateTime createdAt,
             LocalDateTime updatedAt) {
 
