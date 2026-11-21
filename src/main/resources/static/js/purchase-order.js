@@ -2,7 +2,7 @@
 
 /* 採購單管理：對應草稿 CRUD 以及送出、到貨、取消狀態流程。 */
 import {
-    API, byId, makeElement, showMessage, hideMessage,
+    API, byId, makeElement, getTaiwanToday, showMessage, hideMessage,
     setButtonLoading, displayValue, formatNumber, requestJson
 } from "./common.js";
 import { refreshProducts } from "./product.js";
@@ -18,6 +18,13 @@ export function initOrders() {
     byId("order-form-cancel").addEventListener("click", closeOrderForm);
     byId("order-add-item").addEventListener("click", () => appendItemRow());
     byId("order-form").addEventListener("submit", submitOrderForm);
+    // 使用者選擇日期後，立即檢查是否為過去日期。
+    byId("order-expected-delivery-date")
+        .addEventListener("change", () => {
+
+            validateOrderDeliveryDate();
+
+        });
 }
 
 export function enterOrdersPage() {
@@ -143,10 +150,56 @@ function formField(id, labelText, type) {
     label.htmlFor = id;
     input.id = id;
     if (type !== "select" && type !== "textarea") input.type = type;
+    // 採購單預計到貨日期不可早於台灣今天。
+    if (id === "order-expected-delivery-date") {
+        input.min = getTaiwanToday();
+    }
     if (id === "order-supplier-id") input.required = true;
     if (id === "order-remark") input.maxLength = 500;
     group.append(label, input);
     return group;
+}
+
+/**
+ * 驗證採購單預計到貨日期。
+ *
+ * 規則：
+ * 1. 日期可以留空。
+ * 2. 可以選擇今天或未來。
+ * 3. 不可選擇過去日期。
+ *
+ * @returns {boolean} 日期是否合法
+ */
+function validateOrderDeliveryDate() {
+
+    const input = byId("order-expected-delivery-date");
+
+    // 使用台灣日期，避免 UTC 時差造成判斷錯誤。
+    const today = getTaiwanToday();
+
+    // 每次驗證時同步更新最小日期。
+    input.min = today;
+
+    // 未填日期，允許通過。
+    if (!input.value) {
+        return true;
+    }
+
+    // 使用 YYYY-MM-DD 格式進行日期比較。
+    if (input.value < today) {
+
+        // 清除不合法的過去日期。
+        input.value = "";
+
+        showMessage(
+            "預計到貨日期不可早於今天，請重新選擇",
+            "error"
+        );
+
+        return false;
+    }
+
+    return true;
 }
 
 async function openOrderForm(order = null) {
@@ -167,7 +220,28 @@ async function openOrderForm(order = null) {
         supplierSelect.replaceChildren(createOption("", "請選擇供應商"));
         suppliers.forEach(supplier => supplierSelect.appendChild(createOption(supplier.id, supplier.name)));
         supplierSelect.value = order?.supplierId ?? "";
-        byId("order-expected-delivery-date").value = order?.expectedDeliveryDate ?? "";
+        // =====================================================
+        // 預計到貨日期限制
+        // =====================================================
+
+        // 取得預計到貨日期欄位。
+        const deliveryDateInput = byId(
+            "order-expected-delivery-date"
+        );
+
+        // 每次開啟表單時，重新取得台灣今天日期。
+        // 限制日期不可早於今天。
+        deliveryDateInput.min = getTaiwanToday();
+
+        // 編輯時保留原本日期，新增時保持空白。
+        deliveryDateInput.value =
+            order?.expectedDeliveryDate ?? "";
+
+        // 暫時顯示診斷資訊，確認日期限制已套用。
+        console.log("【採購單】預計到貨日限制：", {
+            min: deliveryDateInput.min,
+            value: deliveryDateInput.value
+        });
         byId("order-remark").value = order?.remark ?? "";
 
         const items = byId("order-items");
@@ -216,6 +290,11 @@ function closeOrderForm() {
 
 async function submitOrderForm(event) {
     event.preventDefault();
+    // 儲存前再次確認日期是否合法。
+    // 不合法時直接停止，不呼叫 PurchaseOrder API。
+    if (!validateOrderDeliveryDate()) {
+        return;
+    }
     const id = byId("order-id").value;
     const supplierId = Number(byId("order-supplier-id").value);
     const rows = [...document.querySelectorAll("#order-items .order-item-row")];
@@ -237,9 +316,35 @@ async function submitOrderForm(event) {
         return;
     }
 
+    // =====================================================
+    // 儲存採購單前，再次驗證預計到貨日期
+    // =====================================================
+
+    // 取得使用者填寫的預計到貨日期。
+    const deliveryDate = byId(
+        "order-expected-delivery-date"
+    ).value;
+
+    // 預計到貨日可以不填寫。
+    // 若有填寫，則不可早於台灣今天。
+    if (deliveryDate && deliveryDate < getTaiwanToday()) {
+
+        showMessage(
+            "預計到貨日期不可早於今天",
+            "error"
+        );
+
+        // 日期不符合規則時，停止送出 API。
+        return;
+    }
+
+    // =====================================================
+    // 建立採購單 Request
+    // =====================================================
+
     const payload = {
         supplierId,
-        expectedDeliveryDate: byId("order-expected-delivery-date").value || null,
+        expectedDeliveryDate: deliveryDate || null,
         remark: byId("order-remark").value.trim() || null,
         items
     };

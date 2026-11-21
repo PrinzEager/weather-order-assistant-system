@@ -1,14 +1,32 @@
 /* 天氣模組：由原 app.js 分離，保留既有功能。 */
 import { API, byId, makeElement, clearElement, showEmpty, showMessage, hideMessage, setButtonLoading, displayValue, formatNumber, getSearchParameters, apiGet, createStatCard } from "./common.js";
+import { initLocationDropdown } from "./taiwan-districts.js";
 
 let weatherLoaded = false;
 
 export function initWeather() {
+
+    // =====================================================
+    // 一、初始化縣市與鄉鎮市區連動下拉選單
+    // =====================================================
+
+    // 三天天氣預報頁面
+    initLocationDropdown("weather");
+
+    // 天氣訂貨建議頁面
+    // 共用行政區資料，確保兩個模組選項一致。
+    initLocationDropdown("recommendation");
+
+    // =====================================================
+    // 二、保留原本天氣查詢事件
+    // =====================================================
+
     byId("weather-search-form").addEventListener("submit", event => {
         event.preventDefault();
         loadWeather();
     });
 }
+
 
 export function enterWeatherPage() {
     if (!weatherLoaded) loadWeather();

@@ -205,11 +205,9 @@
 
                     <div class="form-group">
                         <label for="weather-district">鄉鎮市區</label>
-                        <input type="text"
-                               id="weather-district"
-                               name="district"
-                               value="路竹區"
-                               required>
+                        <select id="weather-district" name="district" required>
+                            <option value="路竹區">路竹區</option>
+                        </select>
                     </div>
 
                     <div class="form-group">
@@ -305,11 +303,9 @@
                         <label for="recommendation-district">
                             鄉鎮市區
                         </label>
-                        <input type="text"
-                               id="recommendation-district"
-                               name="district"
-                               value="路竹區"
-                               required>
+                        <select id="recommendation-district" name="district" required>
+                            <option value="路竹區">路竹區</option>
+                        </select>
                     </div>
 
                     <div class="form-group">
@@ -375,14 +371,189 @@
                 </div>
 
             </div>
+    
+            <!-- =====================================================
+                智慧訂貨建議：建立採購草稿
+                ===================================================== -->
 
             <div class="action-bar">
+
+                <!--
+                    使用者勾選商品後，
+                    由 recommendations.js 控制此按鈕是否啟用。
+
+                    點擊後只顯示草稿表單，
+                    不立即建立採購單。
+                -->
                 <button type="button"
                         id="create-order-from-recommendation"
                         class="primary-button"
                         disabled>
                     選擇商品建立採購草稿
                 </button>
+
+            </div>
+
+            <!-- =====================================================
+                採購草稿建立表單
+
+                預設隱藏。
+                後續由 recommendations.js 控制顯示與隱藏。
+
+                提交時呼叫：
+                POST /api/purchase-orders
+                ===================================================== -->
+            <div id="recommendation-order-panel"
+                class="panel"
+                hidden>
+
+                <div class="panel-toolbar">
+
+                    <h4>建立採購草稿</h4>
+
+                    <button type="button"
+                            id="recommendation-order-close"
+                            class="secondary-button">
+                        關閉
+                    </button>
+
+                </div>
+
+                <form id="recommendation-order-form">
+
+                    <!-- =================================================
+                        供應商選擇
+
+                        供應商清單由現有 Supplier API 載入。
+                        只允許選擇啟用且未軟刪除的供應商。
+                        ================================================= -->
+                    <div class="form-group">
+
+                        <label for="recommendation-supplier-id">
+                            採購供應商 *
+                        </label>
+
+                        <select id="recommendation-supplier-id"
+                                name="supplierId"
+                                required>
+
+                            <option value="">
+                                請選擇供應商
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                    <!-- =================================================
+                        預計到貨日期
+
+                        非必填欄位。
+                        若未選擇日期，後續 AJAX 傳送 null。
+                        ================================================= -->
+                    <div class="form-group">
+
+                        <label for="recommendation-delivery-date">
+                            預計到貨日期
+                        </label>
+
+                        <input type="date"
+                            id="recommendation-delivery-date"
+                            name="expectedDeliveryDate">
+
+                    </div>
+
+                    <!-- =================================================
+                        採購備註
+
+                        最多 500 個字元，
+                        與 PurchaseOrderRequest 驗證規則一致。
+                        ================================================= -->
+                    <div class="form-group">
+
+                        <label for="recommendation-order-remark">
+                            採購備註
+                        </label>
+
+                        <textarea id="recommendation-order-remark"
+                                name="remark"
+                                rows="3"
+                                maxlength="500"
+                                placeholder="例如：由天氣訂貨建議產生的採購草稿"></textarea>
+
+                    </div>
+
+                    <!-- =================================================
+                        已選擇的採購商品明細
+
+                        由 JavaScript 根據勾選商品產生。
+                        使用者可再次確認數量與採購單價。
+
+                        商品採購單價為必填，
+                        不直接將商品售價當成採購成本。
+                        ================================================= -->
+                    <div class="table-responsive">
+
+                        <table class="data-table">
+
+                            <thead>
+                                <tr>
+                                    <th>商品</th>
+                                    <th>實際訂貨數量</th>
+                                    <th>採購單價</th>
+                                    <th>預估小計</th>
+                                </tr>
+                            </thead>
+
+                            <tbody id="recommendation-order-items-body">
+
+                                <tr>
+                                    <td colspan="4"
+                                        class="empty-state">
+                                        尚未選擇商品
+                                    </td>
+                                </tr>
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                    <!--
+                        預估總金額由前端顯示。
+                        真正訂單金額仍由 PurchaseOrderService 計算。
+                    -->
+                    <div class="action-bar">
+
+                        <strong>
+                            預估採購總金額：
+                            NT$ <span id="recommendation-order-total">0.00</span>
+                        </strong>
+
+                    </div>
+
+                    <!-- =================================================
+                        表單操作按鈕
+                        ================================================= -->
+                    <div class="action-bar">
+
+                        <button type="button"
+                                id="recommendation-order-cancel"
+                                class="secondary-button">
+                            取消
+                        </button>
+
+                        <button type="submit"
+                                id="recommendation-order-submit"
+                                class="primary-button">
+                            確認建立採購草稿
+                        </button>
+
+                    </div>
+
+                </form>
+
             </div>
 
             <div class="panel">
