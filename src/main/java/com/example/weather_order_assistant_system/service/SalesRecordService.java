@@ -2,6 +2,9 @@ package com.example.weather_order_assistant_system.service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
@@ -11,10 +14,14 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.example.weather_order_assistant_system.entity.Product;
 import com.example.weather_order_assistant_system.entity.SalesRecord;
+import com.example.weather_order_assistant_system.entity.SalesReturn;
 import com.example.weather_order_assistant_system.repository.ProductRepository;
 import com.example.weather_order_assistant_system.repository.SalesRecordRepository;
+import com.example.weather_order_assistant_system.repository.SalesReturnRepository;
 import com.example.weather_order_assistant_system.request.SalesRecordRequest;
+import com.example.weather_order_assistant_system.request.SalesReturnRequest;
 import com.example.weather_order_assistant_system.response.SalesRecordResponse;
+import com.example.weather_order_assistant_system.response.SalesReturnResponse;
 
 import lombok.RequiredArgsConstructor;
 
@@ -29,8 +36,14 @@ public class SalesRecordService {
     // 商品 Repository
     private final ProductRepository productRepository;
 
+    // 每次退貨均由同一筆交易保存退貨紀錄與庫存變化。
+    private final SalesReturnRepository salesReturnRepository;
+
     // 商品啟用狀態
     private static final Integer ACTIVE = 1;
+
+    // 本 Demo 一般退貨期限：從銷售時間起 7 x 24 小時。
+    private static final Duration RETURN_WINDOW = Duration.ofDays(7);
 
     // 查詢全部未軟刪除的銷售紀錄
     public List<SalesRecordResponse> findAllSalesRecords() {
@@ -62,11 +75,16 @@ public class SalesRecordService {
 
         // 查詢商品，確認商品存在且未軟刪除
         Product product = productRepository
-                .findByIdAndDeletedAtIsNull(request.getProductId())
+                .findByIdForStockUpdate(request.getProductId())
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
                         "商品不存在或已刪除"
                 ));
+
+        // 軟刪除的商品不可再建立新銷售紀錄。
+        if (product.getDeletedAt() != null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "商品不存在或已刪除");
+        }
 
         // 停用商品不可建立新銷售紀錄
         if (!ACTIVE.equals(product.getStatus())) {
@@ -140,42 +158,117 @@ public class SalesRecordService {
         return toResponse(savedRecord);
     }
 
-    // 整筆退貨：軟刪除銷售紀錄並恢復商品庫存
-    public void deleteSalesRecord(Long id) {
-
-        // 只允許退貨尚未軟刪除的銷售紀錄
-        SalesRecord salesRecord = salesRecordRepository
-                .findByIdAndDeletedAtIsNull(id)
+    // 查詢指定銷售紀錄的退貨歷史。
+    // 每筆明細的 returnedQuantity / remainingReturnableQuantity
+    // 表示「該次退貨完成當下」的累計與剩餘數量，而不是目前主檔最新狀態。
+    @Transactional(readOnly = true)
+    public List<SalesReturnResponse> findReturns(Long salesRecordId) {
+        SalesRecord record = salesRecordRepository.findByIdAndDeletedAtIsNull(salesRecordId)
                 .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "銷售紀錄不存在或已退貨"
-                ));
+                        HttpStatus.NOT_FOUND, "銷售紀錄不存在或已刪除"));
 
-        // 取得原本銷售的商品
-        Product product = salesRecord.getProduct();
+        // Repository 原本依退貨時間及 ID 由新到舊排列。
+        List<SalesReturn> returns = new ArrayList<>(salesReturnRepository
+                .findBySalesRecord_IdOrderByReturnedAtDescIdDesc(salesRecordId));
 
-        // 恢復原本銷售的數量
-        // 即使商品目前已停用，也可以辦理歷史銷售退貨
-        long restoredStock = (long) product.getCurrentStock()
-                + salesRecord.getQuantity();
+        // 改成由舊到新逐筆加總，才能正確還原每次退貨後的數量。
+        Collections.reverse(returns);
+        List<SalesReturnResponse> responses = new ArrayList<>();
+        int cumulativeReturned = 0;
 
-        // 避免庫存超出 Integer 可儲存的範圍
-        if (restoredStock > Integer.MAX_VALUE) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "退貨後庫存超出允許範圍"
-            );
+        for (SalesReturn item : returns) {
+            cumulativeReturned = Math.addExact(cumulativeReturned, item.getQuantity());
+            responses.add(new SalesReturnResponse(
+                    item.getId(),
+                    record.getId(),
+                    item.getQuantity(),
+                    item.getReturnAmount(),
+                    item.getReason(),
+                    item.getReturnedAt(),
+                    cumulativeReturned,
+                    record.getQuantity() - cumulativeReturned
+            ));
         }
 
-        product.setCurrentStock((int) restoredStock);
+        // 保持原 API 的排序：最新退貨在最前面。
+        Collections.reverse(responses);
+        return responses;
+    }
 
+    // 部分退貨：所有業務檢查、紀錄與庫存回補都在同一交易內完成。
+    public SalesReturnResponse createSalesReturn(Long salesRecordId, SalesReturnRequest request) {
+        // 先讀取銷售以取得商品 ID；此時尚不使用資料做退貨數量判斷。
+        SalesRecord initial = salesRecordRepository.findByIdAndDeletedAtIsNull(salesRecordId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "銷售紀錄不存在或已刪除"));
+
+        // 全部庫存異動都先鎖商品，再鎖銷售紀錄，維持固定鎖定順序。
+        Product product = productRepository.findByIdForStockUpdate(initial.getProduct().getId())
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "商品不存在"));
+        SalesRecord salesRecord = salesRecordRepository.findActiveByIdForUpdate(salesRecordId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "銷售紀錄不存在或已刪除"));
+
+        Integer quantity = request.getQuantity();
+        if (quantity == null || quantity <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "退貨數量必須大於 0");
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        if (salesRecord.getDateTime() == null
+                || now.isBefore(salesRecord.getDateTime())
+                || now.isAfter(salesRecord.getDateTime().plus(RETURN_WINDOW))) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "已超過 7 天退貨期限");
+        }
+
+        int returned = salesRecord.getReturnedQuantity() == null
+                ? 0 : salesRecord.getReturnedQuantity();
+        int remaining = salesRecord.getQuantity() - returned;
+        if (remaining < quantity) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "退貨數量超過剩餘可退數量");
+        }
+
+        // 本版僅支援可重新販售商品的退貨，因此數量全數回補庫存。
+        if (product.getCurrentStock() == null) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "商品庫存資料不正確");
+        }
+        long stockAfterReturn = (long) product.getCurrentStock() + quantity;
+        if (stockAfterReturn > Integer.MAX_VALUE) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "退貨後庫存超出允許範圍");
+        }
+
+        SalesReturn salesReturn = new SalesReturn();
+        salesReturn.setSalesRecord(salesRecord);
+        salesReturn.setQuantity(quantity);
+        salesReturn.setReturnAmount(salesRecord.getUnitPrice()
+                .multiply(BigDecimal.valueOf(quantity)));
+        salesReturn.setReason(request.getReason() == null
+                ? null : request.getReason().trim());
+        salesReturn.setReturnedAt(now);
+
+        product.setCurrentStock((int) stockAfterReturn);
+        salesRecord.setReturnedQuantity(returned + quantity);
         productRepository.save(product);
-
-        // 設定軟刪除時間
-        // 不實際刪除資料庫中的銷售紀錄
-        salesRecord.setDeletedAt(LocalDateTime.now());
-
         salesRecordRepository.save(salesRecord);
+        SalesReturn saved = salesReturnRepository.save(salesReturn);
+
+        return toReturnResponse(saved, salesRecord);
+    }
+
+    // 停用舊 DELETE 退貨入口，避免繞過退貨期限和數量驗證。
+    // 前端需改為 POST /api/sales-records/{id}/returns。
+    public void deleteSalesRecord(Long id) {
+        throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED,
+                "請使用 POST /api/sales-records/{id}/returns 辦理退貨");
+    }
+
+    private SalesReturnResponse toReturnResponse(SalesReturn item, SalesRecord record) {
+        int returned = record.getReturnedQuantity() == null ? 0 : record.getReturnedQuantity();
+        return new SalesReturnResponse(
+                item.getId(), record.getId(), item.getQuantity(),
+                item.getReturnAmount(), item.getReason(), item.getReturnedAt(),
+                returned, record.getQuantity() - returned);
     }
 
     // 將 SalesRecord Entity 轉換為 Response DTO
@@ -185,7 +278,7 @@ public class SalesRecordService {
 
         Product product = salesRecord.getProduct();
 
-        return new SalesRecordResponse(
+        SalesRecordResponse response = new SalesRecordResponse(
                 salesRecord.getId(),
                 product.getId(),
                 product.getName(),
@@ -196,5 +289,10 @@ public class SalesRecordService {
                 salesRecord.getDateTime(),
                 salesRecord.getCreatedAt()
         );
+        int returned = salesRecord.getReturnedQuantity() == null
+                ? 0 : salesRecord.getReturnedQuantity();
+        response.setReturnedQuantity(returned);
+        response.setRemainingReturnableQuantity(salesRecord.getQuantity() - returned);
+        return response;
     }
 }

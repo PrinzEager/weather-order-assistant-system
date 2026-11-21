@@ -31,6 +31,10 @@ public class SalesRecordResponse {
     // 銷售數量
     private Integer quantity;
 
+    // 累計退貨量，以及尚可退貨的數量。
+    private Integer returnedQuantity;
+    private Integer remainingReturnableQuantity;
+
     // 銷售當下的單價
     // 保留歷史成交價格
     private BigDecimal unitPrice;
@@ -44,4 +48,21 @@ public class SalesRecordResponse {
 
     // 銷售紀錄建立時間
     private LocalDateTime createdAt;
+
+    // 保留原本九個參數的建構子，避免既有呼叫端因 DTO 擴充而無法編譯。
+    public SalesRecordResponse(Long id, Long productId, String productName,
+            String sku, Integer quantity, BigDecimal unitPrice,
+            BigDecimal totalAmount, LocalDateTime dateTime, LocalDateTime createdAt) {
+        this.id = id;
+        this.productId = productId;
+        this.productName = productName;
+        this.sku = sku;
+        this.quantity = quantity;
+        this.unitPrice = unitPrice;
+        this.totalAmount = totalAmount;
+        this.dateTime = dateTime;
+        this.createdAt = createdAt;
+        this.returnedQuantity = 0;
+        this.remainingReturnableQuantity = quantity;
+    }
 }

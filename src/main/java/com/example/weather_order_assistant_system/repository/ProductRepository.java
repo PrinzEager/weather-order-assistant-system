@@ -3,13 +3,24 @@ package com.example.weather_order_assistant_system.repository;
 import java.util.List;
 import java.util.Optional;
 
+import jakarta.persistence.LockModeType;
+
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.example.weather_order_assistant_system.entity.Product;
 
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Long> {
+
+    // 銷售與退貨時鎖定商品列，避免同時改寫 currentStock。
+    // 可讀取已停用的歷史商品；退貨不應因停用被拒絕。
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT p FROM Product p WHERE p.id = :id")
+    Optional<Product> findByIdForStockUpdate(@Param("id") Long id);
 
     // 查詢所有啟用且尚未軟刪除的商品
     // status = 1：商品啟用

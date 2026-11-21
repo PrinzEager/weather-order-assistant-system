@@ -46,6 +46,12 @@ public class SalesRecord {
     @Column(name = "quantity", nullable = false)
     private Integer quantity;
 
+    // 累計已退貨數量（預設為 0）
+    // 不修改原始銷售數量 quantity，以保留當時的真實銷售紀錄。
+    // 後續退貨服務會檢查：0 <= returnedQuantity <= quantity。
+    @Column(name = "returned_quantity", nullable = false)
+    private Integer returnedQuantity = 0;
+
     // 銷售當下的商品單價
     // 保留歷史售價，不受商品日後調整售價影響
     // 對應 DECIMAL(10,2)

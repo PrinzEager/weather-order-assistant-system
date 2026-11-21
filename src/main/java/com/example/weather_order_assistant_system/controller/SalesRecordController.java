@@ -15,7 +15,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.weather_order_assistant_system.request.SalesRecordRequest;
+import com.example.weather_order_assistant_system.request.SalesReturnRequest;
 import com.example.weather_order_assistant_system.response.SalesRecordResponse;
+import com.example.weather_order_assistant_system.response.SalesReturnResponse;
 import com.example.weather_order_assistant_system.service.SalesRecordService;
 
 import lombok.RequiredArgsConstructor;
@@ -76,21 +78,26 @@ public class SalesRecordController {
                 .body(response);
     }
 
-    // 整筆退貨（軟刪除銷售紀錄）
-    // DELETE /api/sales-records/{id}
-    // 成功回傳 HTTP 204，沒有 Response Body
-    //
-    // Service 會執行：
-    // 1. 確認銷售紀錄存在且尚未退貨
-    // 2. 恢復商品庫存
-    // 3. 設定銷售紀錄 deletedAt
+    // 建立部分退貨；回傳 201 與本次退貨紀錄。
+    @PostMapping("/{id}/returns")
+    public ResponseEntity<SalesReturnResponse> createSalesReturn(
+            @PathVariable Long id,
+            @Valid @RequestBody SalesReturnRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(salesRecordService.createSalesReturn(id, request));
+    }
+
+    // 查詢指定銷售的所有退貨紀錄。
+    @GetMapping("/{id}/returns")
+    public ResponseEntity<List<SalesReturnResponse>> findSalesReturns(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(salesRecordService.findReturns(id));
+    }
+
+    // 舊 DELETE 入口停用，不可再以刪除方式整筆回補庫存。
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteSalesRecord(
-            @PathVariable Long id
-    ) {
-
+    public ResponseEntity<Void> deleteSalesRecord(@PathVariable Long id) {
         salesRecordService.deleteSalesRecord(id);
-
         return ResponseEntity.noContent().build();
     }
 }
