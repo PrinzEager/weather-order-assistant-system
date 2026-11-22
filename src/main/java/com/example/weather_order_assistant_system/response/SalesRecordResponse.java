@@ -17,6 +17,9 @@ public class SalesRecordResponse {
     // 銷售紀錄編號
     private Long id;
 
+    // 同一批多商品銷售的識別碼；舊紀錄為 null。
+    private String batchId;
+
     // 銷售商品編號
     private Long productId;
 

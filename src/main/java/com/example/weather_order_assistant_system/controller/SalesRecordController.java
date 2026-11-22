@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.weather_order_assistant_system.request.SalesRecordRequest;
+import com.example.weather_order_assistant_system.request.SalesBatchRequest;
 import com.example.weather_order_assistant_system.request.SalesReturnRequest;
 import com.example.weather_order_assistant_system.response.SalesRecordResponse;
 import com.example.weather_order_assistant_system.response.SalesReturnResponse;
@@ -76,6 +77,15 @@ public class SalesRecordController {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(response);
+    }
+
+    // 新版一次銷售多項商品，201 回傳建立的各商品明細。
+    // Spring @Transactional 確保其中任一筆失敗時全部回滾，不會部分扣庫存。
+    @PostMapping("/batch")
+    public ResponseEntity<List<SalesRecordResponse>> createSalesBatch(
+            @Valid @RequestBody SalesBatchRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(salesRecordService.createSalesBatch(request));
     }
 
     // 建立部分退貨；回傳 201 與本次退貨紀錄。

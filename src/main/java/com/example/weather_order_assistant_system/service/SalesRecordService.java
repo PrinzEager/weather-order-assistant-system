@@ -6,6 +6,10 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.Comparator;
+import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -19,6 +23,7 @@ import com.example.weather_order_assistant_system.repository.ProductRepository;
 import com.example.weather_order_assistant_system.repository.SalesRecordRepository;
 import com.example.weather_order_assistant_system.repository.SalesReturnRepository;
 import com.example.weather_order_assistant_system.request.SalesRecordRequest;
+import com.example.weather_order_assistant_system.request.SalesBatchRequest;
 import com.example.weather_order_assistant_system.request.SalesReturnRequest;
 import com.example.weather_order_assistant_system.response.SalesRecordResponse;
 import com.example.weather_order_assistant_system.response.SalesReturnResponse;
@@ -68,10 +73,39 @@ public class SalesRecordService {
         return toResponse(salesRecord);
     }
 
-    // 新增銷售紀錄
-    public SalesRecordResponse createSalesRecord(
-            SalesRecordRequest request
-    ) {
+    // 舊版單項銷售 API 保持相容；不指定 batchId。
+    public SalesRecordResponse createSalesRecord(SalesRecordRequest request) {
+        return createSalesRecordItem(request, null, LocalDateTime.now());
+    }
+
+    /**
+     * 多項銷售使用一個 @Transactional 交易提交，任何商品庫存不足都會整批回滾。
+     * 依商品 ID 排序後依序加鎖，降低與其他批次互相等待造成死結的機會。
+     * 保留每一項為獨立 SalesRecord，原退貨 API、銷售統計與歷史資料不用修改。
+     */
+    public List<SalesRecordResponse> createSalesBatch(SalesBatchRequest request) {
+        if (request == null || request.getItems() == null
+                || request.getItems().isEmpty() || request.getItems().size() > 50) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "一次銷售請選擇 1 至 50 項商品");
+        }
+        Set<Long> seen = new HashSet<>();
+        for (SalesRecordRequest item : request.getItems()) {
+            if (item == null || item.getProductId() == null || item.getProductId() <= 0
+                    || !seen.add(item.getProductId())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "同一次銷售不可重複選擇商品，且商品編號必須有效");
+            }
+        }
+        String batchId = UUID.randomUUID().toString();
+        LocalDateTime soldAt = LocalDateTime.now();
+        return request.getItems().stream()
+                .sorted(Comparator.comparing(SalesRecordRequest::getProductId))
+                .map(item -> createSalesRecordItem(item, batchId, soldAt))
+                .toList();
+    }
+
+    // 扣庫存與儲存明細的共用核心，必須由外部帶有交易的 public 方法呼叫。
+    private SalesRecordResponse createSalesRecordItem(
+            SalesRecordRequest request, String batchId, LocalDateTime soldAt) {
 
         // 查詢商品，確認商品存在且未軟刪除
         Product product = productRepository
@@ -135,12 +169,13 @@ public class SalesRecordService {
         SalesRecord salesRecord = new SalesRecord();
 
         salesRecord.setProduct(product);
+        salesRecord.setBatchId(batchId);
         salesRecord.setQuantity(quantity);
         salesRecord.setUnitPrice(unitPrice);
         salesRecord.setTotalAmount(totalAmount);
 
         // 以系統目前時間作為實際銷售時間
-        salesRecord.setDateTime(LocalDateTime.now());
+        salesRecord.setDateTime(soldAt);
 
         // 銷售成功，扣除商品庫存
         product.setCurrentStock(
@@ -291,6 +326,7 @@ public class SalesRecordService {
         );
         int returned = salesRecord.getReturnedQuantity() == null
                 ? 0 : salesRecord.getReturnedQuantity();
+        response.setBatchId(salesRecord.getBatchId());
         response.setReturnedQuantity(returned);
         response.setRemainingReturnableQuantity(salesRecord.getQuantity() - returned);
         return response;

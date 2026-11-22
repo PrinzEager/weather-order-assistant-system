@@ -41,6 +41,10 @@ public class SalesRecord {
     )
     private Product product;
 
+    // 同一筆多商品銷售的交易識別碼；舊銷售資料保留 null。
+    @Column(name = "batch_id", length = 36)
+    private String batchId;
+
     // 銷售數量
     // 必須大於 0，後續由 Request 與 Service 驗證
     @Column(name = "quantity", nullable = false)

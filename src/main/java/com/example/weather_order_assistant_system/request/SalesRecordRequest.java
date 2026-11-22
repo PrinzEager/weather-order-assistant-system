@@ -23,7 +23,7 @@ public class SalesRecordRequest {
 
     // 銷售數量
     // 不可為空，且必須大於 0
-    // 不支援部分退貨，退貨時直接軟刪除整筆銷售紀錄
+    // 原始數量保留不變；部分退貨另由 SalesReturn 記錄
     @NotNull(message = "銷售數量不可為空")
     @Positive(message = "銷售數量必須大於 0")
     private Integer quantity;
