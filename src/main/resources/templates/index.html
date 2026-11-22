@@ -12,6 +12,8 @@
         CSS 與 JavaScript 將在後續步驟逐檔建立。
     -->
     <link rel="stylesheet" th:href="@{/css/style.css}">
+    <!-- 訂貨建議頁專用樣式，不修改現有全站樣式 -->
+    <link rel="stylesheet" th:href="@{/css/recommendation-enhancements.css}">
     <!-- 使用 ES Modules 載入前端系統 -->
     <!-- app.js 會自動 import 其他功能模組 -->
     <script type="module" th:src="@{/js/app.js}"></script>
@@ -275,298 +277,184 @@
         <!-- =================================================
              3. 天氣訂貨建議
              ================================================= -->
-        <section id="page-recommendations"
-                 class="page-section"
-                 hidden>
+        <section id="page-recommendations" class="page-section" hidden>
 
+            <!-- =========================================================
+                 天氣訂貨建議：使用者自行選擇是否套用天氣係數。
+                 歷史基準與天氣係數為獨立選項，不改變後端既有公式。
+                 ========================================================= -->
             <div class="section-heading">
                 <h3>天氣訂貨建議</h3>
-                <p>
-                    使用歷史銷售與天氣倍率計算建議訂貨量，
-                    最終數量由使用者確認。
-                </p>
+                <p>先選地區與需求期間，再依商品分類篩選，選擇要採購的商品。</p>
             </div>
 
             <div class="panel">
-
-                <form id="recommendation-search-form"
-                      class="filter-form">
-
+                <form id="recommendation-search-form" class="filter-form">
                     <div class="form-group">
                         <label for="recommendation-city">縣市</label>
-                        <select id="recommendation-city" name="city">
+                        <select id="recommendation-city" name="city" required>
                             <option value="高雄市">高雄市</option>
                         </select>
                     </div>
-
                     <div class="form-group">
-                        <label for="recommendation-district">
-                            鄉鎮市區
-                        </label>
+                        <label for="recommendation-district">鄉鎮市區</label>
                         <select id="recommendation-district" name="district" required>
                             <option value="路竹區">路竹區</option>
                         </select>
                     </div>
-
                     <div class="form-group">
-                        <label for="recommendation-start-date">
-                            起始日期
-                        </label>
-                        <input type="date"
-                               id="recommendation-start-date"
-                               name="startDate"
-                               required>
+                        <label for="recommendation-start-date">起始日期</label>
+                        <input type="date" id="recommendation-start-date" name="startDate" required>
                     </div>
-
                     <div class="form-group">
-                        <label for="recommendation-end-date">
-                            結束日期
-                        </label>
-                        <input type="date"
-                               id="recommendation-end-date"
-                               name="endDate"
-                               required>
+                        <label for="recommendation-end-date">結束日期</label>
+                        <input type="date" id="recommendation-end-date" name="endDate" required>
                     </div>
-
-                    <button type="submit" class="primary-button">
-                        產生訂貨建議
-                    </button>
-
+                    <div class="form-group">
+                        <label for="recommendation-history-basis">歷史銷量比較依據</label>
+                        <select id="recommendation-history-basis" name="basis">
+                            <option value="MONTH" selected>上月同期（相同天數）</option>
+                            <option value="WEEK">上週同期（相同星期幾）</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="primary-button">產生訂貨建議</button>
                 </form>
-
             </div>
 
-            <div id="recommendation-summary"
-                 class="recommendation-summary">
-            </div>
+            <div id="recommendation-summary" class="recommendation-summary"></div>
 
             <div class="panel table-panel">
+                <div class="panel-toolbar">
+                    <h4>商品訂貨建議清單</h4>
+                    <span class="rec-small-hint">每頁 10 筆；分類切換不會清除選購商品</span>
+                </div>
 
-                <h4>商品訂貨建議清單</h4>
+                <!-- 第一層選完才能選第二層；依商品實際 categoryId 篩選。 -->
+                <div class="recommendation-filter-row">
+                    <div class="form-group">
+                        <label for="recommendation-parent-category">第一層商品分類</label>
+                        <select id="recommendation-parent-category" disabled>
+                            <option value="">請先產生訂貨建議</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="recommendation-child-category">第二層商品分類</label>
+                        <select id="recommendation-child-category" disabled>
+                            <option value="">請先選擇第一層分類</option>
+                        </select>
+                    </div>
+                    <span id="recommendation-list-meta" class="rec-small-hint">請先產生訂貨建議</span>
+                </div>
 
                 <div class="table-responsive">
-                    <table class="data-table">
-
+                    <table class="data-table recommendation-data-table">
                         <thead>
                             <tr>
-                                <th>選擇</th>
+                                <th>選擇訂貨</th>
                                 <th>商品</th>
                                 <th>目前庫存</th>
-                                <th>歷史銷售</th>
+                                <th>歷史淨銷量</th>
                                 <th>天氣倍率</th>
+                                <th>套用天氣</th>
                                 <th>建議訂貨量</th>
                                 <th>實際訂貨量</th>
                             </tr>
                         </thead>
-
                         <tbody id="recommendation-table-body">
-                            <tr>
-                                <td colspan="7" class="empty-state">
-                                    尚未產生訂貨建議
-                                </td>
-                            </tr>
+                            <tr><td colspan="8" class="empty-state">尚未產生訂貨建議</td></tr>
                         </tbody>
-
                     </table>
                 </div>
-
-            </div>
-    
-            <!-- =====================================================
-                智慧訂貨建議：建立採購草稿
-                ===================================================== -->
-
-            <div class="action-bar">
-
-                <!--
-                    使用者勾選商品後，
-                    由 recommendations.js 控制此按鈕是否啟用。
-
-                    點擊後只顯示草稿表單，
-                    不立即建立採購單。
-                -->
-                <button type="button"
-                        id="create-order-from-recommendation"
-                        class="primary-button"
-                        disabled>
-                    選擇商品建立採購草稿
-                </button>
-
-            </div>
-
-            <!-- =====================================================
-                採購草稿建立表單
-
-                預設隱藏。
-                後續由 recommendations.js 控制顯示與隱藏。
-
-                提交時呼叫：
-                POST /api/purchase-orders
-                ===================================================== -->
-            <div id="recommendation-order-panel"
-                class="panel"
-                hidden>
-
-                <div class="panel-toolbar">
-
-                    <h4>建立採購草稿</h4>
-
-                    <button type="button"
-                            id="recommendation-order-close"
-                            class="secondary-button">
-                        關閉
-                    </button>
-
+                <div id="recommendation-pagination" class="recommendation-pagination" hidden>
+                    <button type="button" id="recommendation-page-prev" class="secondary-button">上一頁</button>
+                    <span id="recommendation-page-info" aria-live="polite"></span>
+                    <button type="button" id="recommendation-page-next" class="secondary-button">下一頁</button>
                 </div>
+            </div>
 
-                <form id="recommendation-order-form">
+            <div class="action-bar rec-select-toolbar">
+                <strong id="recommendation-selected-count" aria-live="polite">已選擇 0 項商品</strong>
+                <button type="button" id="create-order-from-recommendation"
+                        class="primary-button" disabled>確認選購商品並建立採購草稿</button>
+            </div>
 
-                    <!-- =================================================
-                        供應商選擇
-
-                        供應商清單由現有 Supplier API 載入。
-                        只允許選擇啟用且未軟刪除的供應商。
-                        ================================================= -->
-                    <div class="form-group">
-
-                        <label for="recommendation-supplier-id">
-                            採購供應商 *
-                        </label>
-
-                        <select id="recommendation-supplier-id"
-                                name="supplierId"
-                                required>
-
-                            <option value="">
-                                請選擇供應商
-                            </option>
-
-                        </select>
-
+            <!-- =========================================================
+                 多供應商採購草稿確認視窗：前端不直接建立單張採購單。
+                 每個商品可選不同供應商；後端批次拆成多張 DRAFT。
+                 ========================================================= -->
+            <div id="recommendation-order-panel" class="recommendation-modal"
+                 role="dialog" aria-modal="true" aria-labelledby="recommendation-order-title" hidden>
+                <div class="recommendation-modal-card" tabindex="-1">
+                    <div class="recommendation-modal-header">
+                        <div>
+                            <h4 id="recommendation-order-title">確認採購草稿</h4>
+                            <p class="rec-small-hint">為每項商品選擇供應商與採購數量，系統將依供應商自動拆單。</p>
+                        </div>
+                        <button type="button" id="recommendation-order-close"
+                                class="secondary-button">關閉</button>
                     </div>
+                    <form id="recommendation-order-form">
+                        <div class="recommendation-filter-row">
+                            <div class="form-group">
+                                <label for="recommendation-delivery-date">預計到貨日期 *</label>
+                                <input type="date" id="recommendation-delivery-date"
+                                       name="expectedDeliveryDate" required>
+                                <small id="recommendation-delivery-policy" class="rec-small-hint">
+                                    日期限制由後端台灣時間計算。
+                                </small>
+                            </div>
+                            <div class="form-group rec-remark-group">
+                                <label for="recommendation-order-remark">採購備註（全部草稿共用）</label>
+                                <textarea id="recommendation-order-remark" name="remark"
+                                          maxlength="500" rows="2"
+                                          placeholder="例如：由天氣訂貨建議產生"></textarea>
+                            </div>
+                        </div>
 
-                    <!-- =================================================
-                        預計到貨日期
-
-                        非必填欄位。
-                        若未選擇日期，後續 AJAX 傳送 null。
-                        ================================================= -->
-                    <div class="form-group">
-
-                        <label for="recommendation-delivery-date">
-                            預計到貨日期
-                        </label>
-
-                        <input type="date"
-                            id="recommendation-delivery-date"
-                            name="expectedDeliveryDate">
-
-                    </div>
-
-                    <!-- =================================================
-                        採購備註
-
-                        最多 500 個字元，
-                        與 PurchaseOrderRequest 驗證規則一致。
-                        ================================================= -->
-                    <div class="form-group">
-
-                        <label for="recommendation-order-remark">
-                            採購備註
-                        </label>
-
-                        <textarea id="recommendation-order-remark"
-                                name="remark"
-                                rows="3"
-                                maxlength="500"
-                                placeholder="例如：由天氣訂貨建議產生的採購草稿"></textarea>
-
-                    </div>
-
-                    <!-- =================================================
-                        已選擇的採購商品明細
-
-                        由 JavaScript 根據勾選商品產生。
-                        使用者可再次確認數量與採購單價。
-
-                        商品採購單價為必填，
-                        不直接將商品售價當成採購成本。
-                        ================================================= -->
-                    <div class="table-responsive">
-
-                        <table class="data-table">
-
-                            <thead>
-                                <tr>
-                                    <th>商品</th>
-                                    <th>實際訂貨數量</th>
-                                    <th>採購單價</th>
-                                    <th>預估小計</th>
-                                </tr>
-                            </thead>
-
-                            <tbody id="recommendation-order-items-body">
-
-                                <tr>
-                                    <td colspan="4"
-                                        class="empty-state">
-                                        尚未選擇商品
-                                    </td>
-                                </tr>
-
-                            </tbody>
-
-                        </table>
-
-                    </div>
-
-                    <!--
-                        預估總金額由前端顯示。
-                        真正訂單金額仍由 PurchaseOrderService 計算。
-                    -->
-                    <div class="action-bar">
-
-                        <strong>
-                            預估採購總金額：
-                            NT$ <span id="recommendation-order-total">0.00</span>
-                        </strong>
-
-                    </div>
-
-                    <!-- =================================================
-                        表單操作按鈕
-                        ================================================= -->
-                    <div class="action-bar">
-
-                        <button type="button"
-                                id="recommendation-order-cancel"
-                                class="secondary-button">
-                            取消
-                        </button>
-
-                        <button type="submit"
-                                id="recommendation-order-submit"
-                                class="primary-button">
-                            確認建立採購草稿
-                        </button>
-
-                    </div>
-
-                </form>
-
+                        <div class="table-responsive">
+                            <table class="data-table recommendation-preview-table">
+                                <thead>
+                                    <tr>
+                                        <th>商品</th>
+                                        <th>採購數量</th>
+                                        <th>選擇供應商 *</th>
+                                        <th>採購單價</th>
+                                        <th>預估小計</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recommendation-order-items-body">
+                                    <tr><td colspan="5" class="empty-state">尚未選擇商品</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="recommendation-pagination">
+                            <button type="button" id="recommendation-order-page-prev"
+                                    class="secondary-button">上一頁</button>
+                            <span id="recommendation-order-page-info" aria-live="polite"></span>
+                            <button type="button" id="recommendation-order-page-next"
+                                    class="secondary-button">下一頁</button>
+                        </div>
+                        <div class="recommendation-order-summary">
+                            <span id="recommendation-order-count">尚未選擇供應商</span>
+                            <strong>預估採購總金額：NT$ <span id="recommendation-order-total">0.00</span></strong>
+                        </div>
+                        <p id="recommendation-order-warning" class="rec-warning" role="status" aria-live="polite"></p>
+                        <div class="action-bar rec-modal-actions">
+                            <button type="button" id="recommendation-order-cancel"
+                                    class="secondary-button">取消</button>
+                            <button type="submit" id="recommendation-order-submit"
+                                    class="primary-button" disabled>確認建立採購草稿</button>
+                        </div>
+                    </form>
+                </div>
             </div>
 
             <div class="panel">
-                <h4>訂貨建議計算依據</h4>
-                <p>
-                    調整後需求 = ceil（歷史銷售量 × 天氣倍率）
-                </p>
-                <p>
-                    建議訂貨量 = max（0，調整後需求 +
-                    安全庫存 − 目前庫存 − 未到貨數量）
-                </p>
+                <h4>訂貨建議計算依據（方案 A）</h4>
+                <p>一般建議量 = max（0，歷史淨銷量 + 安全庫存 − 目前庫存 − 未到貨量）</p>
+                <p>勾選天氣後 = max（0，ceil（歷史淨銷量 × 天氣倍率）+ 安全庫存 − 目前庫存 − 未到貨量）</p>
+                <p class="rec-small-hint">選擇訂貨與套用天氣為獨立操作；實際採購單價依所選供應商取得，正式金額由後端計算。</p>
             </div>
-
         </section>
 
         <!-- =================================================
@@ -1022,7 +910,7 @@
 
             <div class="section-heading">
                 <h3>供應商管理</h3>
-                <p>管理目前合作中的供應商。</p>
+                <p>管理合作供應商、供貨商品及各商品的採購單價。</p>
             </div>
 
             <div class="panel">

@@ -1,1030 +1,525 @@
 "use strict";
 
-/*
- * 智慧天氣訂貨建議模組。
+/**
+ * 天氣訂貨建議：兩層商品分類、歷史基準、天氣套用、跨頁選購。
  *
- * 功能：
- * 1. 查詢並顯示智慧訂貨建議。
- * 2. 勾選商品及調整實際訂貨數量。
- * 3. 載入有效供應商。
- * 4. 預覽採購草稿明細。
- * 5. 呼叫 PurchaseOrder API 建立 DRAFT 採購單。
- *
- * 注意：
- * 建立草稿不等於正式送出採購單。
- * 本模組不直接修改商品庫存。
+ * 後端一次回傳每項商品的「正常建議量」與「天氣建議量」。
+ * 這裡只根據勾選狀態切換數量，不自行重新計算天氣係數。
+ * 舊 /api/order-recommendations 保留，不改動既有後端 API。
  */
-
 import {
-    API,
-    byId,
-    getTaiwanToday,
-    makeElement,
-    clearElement,
-    showEmpty,
-    showMessage,
-    hideMessage,
-    setButtonLoading,
-    displayValue,
-    formatNumber,
-    getSearchParameters,
-    apiGet,
-    requestJson,
-    createStatCard
+    API, byId, makeElement, clearElement, showMessage,
+    hideMessage, setButtonLoading, formatNumber,
+    getTaiwanToday, addDays, apiGet, createStatCard
 } from "./common.js";
+import {
+    initDraftConfirmation, openDraftConfirmation, closeDraftConfirmation
+} from "./recommendation-order-draft.js";
 
-// 記錄目前是否已成功取得訂貨建議。
-let recommendationLoaded = false;
-
-// 暫存本次查詢的訂貨建議。
-let recommendationData = [];
-
-// 防止使用者連續送出重複草稿。
-let creatingOrder = false;
-
-// Java Integer 可接受的最大正整數。
+const OPTION_API = "/api/order-recommendation-options";
+const PAGE_SIZE = 10;
 const MAX_QUANTITY = 2147483647;
 
-/**
- * 初始化智慧訂貨建議頁面。
- *
- * 由 app.js 呼叫一次。
- */
+let recommendationLoaded = false;
+let loading = false;
+let recommendationData = [];
+let categories = [];
+let productCategoryIds = new Map();
+
+// 以商品 ID 保存狀態，不依賴目前畫面有哪些列，因此跨頁及跨分類不會遺失選擇。
+// value = { selected:boolean, applyWeather:boolean, quantityRaw:string|null }
+let productStates = new Map();
+let listPage = 1;
+
 export function initRecommendations() {
+    // 即使共用工具仍保留三天限制，也讓訂貨建議日期可以選擇未來七天。
+    const today = getTaiwanToday();
+    const lastDay = addDays(today, 6);
+    for (const id of ["recommendation-start-date", "recommendation-end-date"]) {
+        byId(id).min = today;
+        byId(id).max = lastDay;
+    }
+    // 舊版共用初始化預設三天，訂貨建議頁改為預設完整七天。
+    if (byId("recommendation-end-date").value === addDays(today, 2)) {
+        byId("recommendation-end-date").value = lastDay;
+    }
+    byId("recommendation-search-form").addEventListener("submit", event => {
+        event.preventDefault();
+        void loadRecommendations();
+    });
 
-    // 查詢訂貨建議。
-    byId("recommendation-search-form")
-        .addEventListener("submit", event => {
+    byId("recommendation-history-basis").addEventListener("change", () => {
+        // 換歷史基準必須由後端重新計算：兩種來源不相加。
+        if (recommendationLoaded && !loading) void loadRecommendations();
+    });
 
-            event.preventDefault();
+    byId("recommendation-parent-category").addEventListener("change", () => {
+        populateChildCategories();
+        listPage = 1;
+        renderRecommendationTable();
+    });
+    byId("recommendation-child-category").addEventListener("change", () => {
+        listPage = 1;
+        renderRecommendationTable();
+    });
+    byId("recommendation-page-prev").addEventListener("click", () => {
+        if (listPage > 1) {
+            listPage -= 1;
+            renderRecommendationTable();
+        }
+    });
+    byId("recommendation-page-next").addEventListener("click", () => {
+        listPage += 1;
+        renderRecommendationTable();
+    });
 
-            loadRecommendations();
-        });
+    const body = byId("recommendation-table-body");
+    body.addEventListener("change", handleTableChange);
+    body.addEventListener("input", handleTableInput);
 
-    // 勾選商品或取消勾選時，更新按鈕狀態。
-    byId("recommendation-table-body")
-        .addEventListener("change", event => {
+    byId("create-order-from-recommendation").addEventListener("click", () => {
+        try {
+            openDraftConfirmation(getSelectedItems());
+        } catch (error) {
+            showMessage(error.message, "error");
+        }
+    });
 
-            if (
-                event.target.matches(
-                    ".recommendation-select, .actual-order-quantity"
-                )
-            ) {
-                updateCreateButtonState();
-            }
-        });
-
-    // 修改實際訂貨數量時，更新按鈕狀態。
-    byId("recommendation-table-body")
-        .addEventListener("input", event => {
-
-            if (
-                event.target.matches(
-                    ".actual-order-quantity"
-                )
-            ) {
-                updateCreateButtonState();
-            }
-        });
-
-    // 點擊建立採購草稿。
-    byId("create-order-from-recommendation")
-        .addEventListener("click", openOrderPanel);
-
-    // 關閉表單。
-    byId("recommendation-order-close")
-        .addEventListener("click", closeOrderPanel);
-
-    // 取消建立。
-    byId("recommendation-order-cancel")
-        .addEventListener("click", closeOrderPanel);
-
-    // 正式建立 DRAFT 採購草稿。
-    byId("recommendation-order-form")
-        .addEventListener("submit", createPurchaseOrder);
-
-    // 預設不允許建立草稿。
+    initDraftConfirmation(() => {
+        // 成功建立草稿後清空選購（避免再次送出）；保留計算結果供參考。
+        productStates.clear();
+        renderRecommendationTable();
+        renderRecommendationSummary();
+    });
     updateCreateButtonState();
 }
 
-/**
- * 查詢智慧訂貨建議。
- */
+/** 訂貨建議專用的七天日期驗證，不影響原本天氣頁的日期工具。 */
+function getRecommendationSearchParameters() {
+    const city = byId("recommendation-city").value.trim();
+    const district = byId("recommendation-district").value.trim();
+    const startDate = byId("recommendation-start-date").value;
+    const endDate = byId("recommendation-end-date").value;
+    const today = getTaiwanToday();
+    const lastDay = addDays(today, 6);
+    if (!city || !district) throw new Error("請選擇縣市與鄉鎮市區");
+    if (!startDate || !endDate) throw new Error("請選擇起始日期與結束日期");
+    if (startDate > endDate) throw new Error("起始日期不可晚於結束日期");
+    if (startDate < today || endDate > lastDay) {
+        throw new Error(`訂貨建議日期範圍為 ${today} 至 ${lastDay}（含首尾）`);
+    }
+    return {city, district, startDate, endDate};
+}
+
 async function loadRecommendations() {
-
-    const form = byId("recommendation-search-form");
-    const button =
-        form.querySelector('button[type="submit"]');
-
+    if (loading) return;
+    const button = byId("recommendation-search-form").querySelector('button[type="submit"]');
+    loading = true;
+    recommendationLoaded = false;
+    recommendationData = [];
+    categories = [];
+    productCategoryIds.clear();
+    productStates.clear();
+    listPage = 1;
+    closeDraftConfirmation();
+    resetFilters();
+    updateCreateButtonState();
+    clearElement(byId("recommendation-summary"));
+    showTableMessage("正在計算訂貨建議...");
     try {
-
-        const parameters =
-            getSearchParameters("recommendation");
-
-        setButtonLoading(
-            button,
-            true,
-            "計算訂貨建議中..."
-        );
-
         hideMessage();
+        setButtonLoading(button, true, "計算訂貨建議中...");
+        const params = getRecommendationSearchParameters();
+        params.basis = byId("recommendation-history-basis").value;
 
-        recommendationLoaded = false;
-        recommendationData = [];
-
-        closeOrderPanel();
-        updateCreateButtonState();
-
-        showEmpty(
-            byId("recommendation-summary"),
-            "正在計算訂貨建議..."
+        // 一次取得全部有效商品的兩種建議量、分類、商品關聯。
+        // 查天氣的呼叫只會發生在後端訂貨建議服務內，不為每個商品重複查天氣。
+        const [options, categoryResponse, productResponse] = await Promise.all([
+            apiGet(OPTION_API, params),
+            apiGet(API.categories, {}),
+            apiGet(API.products, {})
+        ]);
+        const productList = Array.isArray(productResponse)
+            ? productResponse : productResponse?.content;
+        if (!Array.isArray(options) || !Array.isArray(categoryResponse)
+                || !Array.isArray(productList)) {
+            throw new Error("訂貨建議、商品或分類 API 回傳格式不正確");
+        }
+        // 避免 API 版本不符時，把缺少的建議數量誤當成 0 件。
+        const incomplete = options.find(item =>
+            item.productId == null ||
+            item.normalRecommendedQuantity == null ||
+            item.weatherRecommendedQuantity == null ||
+            item.selectedHistoricalSalesQuantity == null ||
+            item.weatherFactor == null
         );
-
-        clearElement(
-            byId("recommendation-table-body")
-        );
-
-        const data = await apiGet(
-            API.recommendations,
-            parameters
-        );
-
-        if (!Array.isArray(data)) {
-            throw new Error(
-                "訂貨建議 API 回傳格式不正確"
-            );
+        if (incomplete) {
+            throw new Error("訂貨建議 API 缺少一般／天氣建議量或歷史淨銷量，請檢查後端版本");
+        }
+        // 如果 Product API 改成分頁，只拿第一頁可能造成部分商品找不到分類。
+        if (!Array.isArray(productResponse) &&
+                Number(productResponse?.totalElements) > productList.length) {
+            throw new Error("商品 API 已啟用後端分頁，請先取得完整商品分類對應資料");
         }
 
-        recommendationData = data;
+        recommendationData = options;
+        categories = categoryResponse.filter(c => Number(c.status) === 1 && c.deletedAt == null);
+        productCategoryIds = new Map(productList
+            .filter(p => p.id != null && p.categoryId != null)
+            .map(p => [Number(p.id), Number(p.categoryId)]));
         recommendationLoaded = true;
-
-        renderRecommendationSummary(data);
-        renderRecommendationTable(data);
-
-        updateCreateButtonState();
-
-        showMessage(
-            `訂貨建議計算完成，共 ${data.length} 筆商品`,
-            "success"
-        );
-
+        populateParentCategories();
+        renderRecommendationTable();
+        renderRecommendationSummary();
+        showMessage(`已產生 ${options.length} 筆商品建議，請選擇第一層與第二層分類`, "success");
     } catch (error) {
-
         recommendationLoaded = false;
         recommendationData = [];
-
-        clearElement(
-            byId("recommendation-summary")
-        );
-
-        const tbody =
-            byId("recommendation-table-body");
-
-        clearElement(tbody);
-
-        const row = makeElement("tr");
-
-        const cell = makeElement(
-            "td",
-            "無法取得訂貨建議",
-            "empty-state"
-        );
-
-        cell.colSpan = 7;
-
-        row.appendChild(cell);
-        tbody.appendChild(row);
-
+        categories = [];
+        productStates.clear();
+        showTableMessage("訂貨建議載入失敗，請檢查後端 API");
         byId("stat-reorder").textContent = "--";
-
-        updateCreateButtonState();
-
         showMessage(error.message, "error");
-
-        console.error(
-            "OrderRecommendation API 錯誤：",
-            error
-        );
-
+        console.error("訂貨建議查詢失敗：", error);
     } finally {
-
+        loading = false;
         setButtonLoading(button, false);
+        updateCreateButtonState();
     }
 }
 
-/**
- * 顯示訂貨建議摘要。
- */
-function renderRecommendationSummary(data) {
-
-    const container =
-        byId("recommendation-summary");
-
-    clearElement(container);
-
-    const needsReorder = data.filter(
-        item => item.needsReorder === true
-    ).length;
-
-    const totalQuantity = data.reduce(
-        (sum, item) =>
-            sum +
-            (Number(item.recommendedQuantity) || 0),
-        0
-    );
-
-    container.appendChild(
-        createStatCard(
-            "有效商品數",
-            data.length,
-            "本次查詢"
-        )
-    );
-
-    container.appendChild(
-        createStatCard(
-            "需要補貨商品",
-            needsReorder,
-            "建議數量大於零"
-        )
-    );
-
-    container.appendChild(
-        createStatCard(
-            "建議訂貨總數",
-            formatNumber(totalQuantity),
-            "所有商品建議量合計"
-        )
-    );
-
-    byId("stat-reorder").textContent =
-        needsReorder;
+function resetFilters() {
+    const parent = byId("recommendation-parent-category");
+    const child = byId("recommendation-child-category");
+    setPlaceholder(parent, "請先產生訂貨建議");
+    setPlaceholder(child, "請先選擇第一層分類");
+    parent.disabled = true;
+    child.disabled = true;
+    byId("recommendation-list-meta").textContent = "請先產生訂貨建議";
+    updatePaging(0, 0, 0);
 }
 
-/**
- * 顯示訂貨建議商品表格。
- */
-function renderRecommendationTable(data) {
-
-    const tbody =
-        byId("recommendation-table-body");
-
-    clearElement(tbody);
-
-    if (data.length === 0) {
-
-        const row = makeElement("tr");
-
-        const cell = makeElement(
-            "td",
-            "目前沒有符合條件的有效商品",
-            "empty-state"
-        );
-
-        cell.colSpan = 7;
-
-        row.appendChild(cell);
-        tbody.appendChild(row);
-
-        return;
-    }
-
-    data.forEach(item => {
-
-        const row = makeElement("tr");
-
-        // 第一欄：商品選取。
-        const selectCell = makeElement("td");
-
-        const checkbox = makeElement("input");
-
-        checkbox.type = "checkbox";
-        checkbox.className =
-            "recommendation-select";
-
-        checkbox.dataset.productId =
-            String(item.productId);
-
-        checkbox.setAttribute(
-            "aria-label",
-            `選擇商品 ${displayValue(item.productName)}`
-        );
-
-        selectCell.appendChild(checkbox);
-        row.appendChild(selectCell);
-
-        // 第二欄：商品名稱與 SKU。
-        const productCell = makeElement("td");
-
-        productCell.appendChild(
-            makeElement(
-                "strong",
-                item.productName
-            )
-        );
-
-        productCell.appendChild(
-            makeElement(
-                "div",
-                displayValue(item.sku),
-                "weather-description"
-            )
-        );
-
-        row.appendChild(productCell);
-
-        // 第三欄：目前庫存。
-        row.appendChild(
-            makeElement(
-                "td",
-                formatNumber(item.currentStock)
-            )
-        );
-
-        // 第四欄：歷史銷售。
-        row.appendChild(
-            makeElement(
-                "td",
-                formatNumber(
-                    item.historicalSalesQuantity
-                )
-            )
-        );
-
-        // 第五欄：天氣倍率。
-        const factor = item.weatherFactor;
-
-        row.appendChild(
-            makeElement(
-                "td",
-                factor == null
-                    ? "--"
-                    : `${Number(factor).toFixed(2)} ×`
-            )
-        );
-
-        // 第六欄：建議訂貨量。
-        const quantityCell = makeElement("td");
-
-        quantityCell.appendChild(
-            makeElement(
-                "span",
-                formatNumber(item.recommendedQuantity),
-                item.needsReorder
-                    ? "status-badge warning"
-                    : "status-badge success"
-            )
-        );
-
-        row.appendChild(quantityCell);
-
-        // 第七欄：使用者實際訂貨數量。
-        const actualCell = makeElement("td");
-
-        const quantityInput = makeElement("input");
-
-        quantityInput.type = "number";
-        quantityInput.min = "0";
-        quantityInput.max = String(MAX_QUANTITY);
-        quantityInput.step = "1";
-
-        quantityInput.value = String(
-            item.recommendedQuantity ?? 0
-        );
-
-        quantityInput.className =
-            "actual-order-quantity";
-
-        quantityInput.dataset.productId =
-            String(item.productId);
-
-        quantityInput.style.width = "90px";
-
-        quantityInput.setAttribute(
-            "aria-label",
-            `${displayValue(item.productName)}實際訂貨量`
-        );
-
-        actualCell.appendChild(quantityInput);
-        row.appendChild(actualCell);
-
-        // 保留詳細計算依據。
-        row.title =
-            `歷史銷售：${displayValue(item.historicalSalesQuantity)}\n` +
-            `天氣倍率：${displayValue(item.weatherFactor)}\n` +
-            `調整後需求：${displayValue(item.weatherAdjustedSalesQuantity)}\n` +
-            `安全庫存：${displayValue(item.safetyStock)}\n` +
-            `目前庫存：${displayValue(item.currentStock)}\n` +
-            `未到貨數量：${displayValue(item.outstandingQuantity)}\n` +
-            `可用庫存：${displayValue(item.availableStock)}`;
-
-        tbody.appendChild(row);
-    });
-}
-
-/**
- * 驗證數量是否為正整數。
- *
- * 回傳 null 代表無效。
- */
-function parsePositiveQuantity(value) {
-
-    const text = String(value).trim();
-
-    // 不允許空字串、小數、負數及科學記號。
-    if (!/^[0-9]+$/.test(text)) {
-        return null;
-    }
-
-    const quantity = Number(text);
-
-    if (
-        !Number.isSafeInteger(quantity) ||
-        quantity <= 0 ||
-        quantity > MAX_QUANTITY
-    ) {
-        return null;
-    }
-
-    return quantity;
-}
-
-/**
- * 收集訂貨建議表格中已勾選的商品。
- *
- * 使用者可以自行修改訂貨量。
- * 但真正送出時，每筆數量必須大於 0。
- */
-function getSelectedItems() {
-
-    const checkboxes = document.querySelectorAll(
-        "#recommendation-table-body " +
-        ".recommendation-select:checked"
-    );
-
-    const selectedItems = [];
-
-    checkboxes.forEach(checkbox => {
-
-        const productId =
-            Number(checkbox.dataset.productId);
-
-        const quantityInput = Array.from(
-            document.querySelectorAll(
-                "#recommendation-table-body " +
-                ".actual-order-quantity"
-            )
-        ).find(input =>
-            Number(input.dataset.productId) ===
-            productId
-        );
-
-        if (!quantityInput) {
-            throw new Error(
-                "找不到商品訂貨數量欄位"
-            );
-        }
-
-        const quantity = parsePositiveQuantity(
-            quantityInput.value
-        );
-
-        if (quantity === null) {
-            throw new Error(
-                `商品 ID ${productId} 的訂貨數量必須為大於 0 的整數`
-            );
-        }
-
-        if (
-            !Number.isSafeInteger(productId) ||
-            productId <= 0
-        ) {
-            throw new Error(
-                "商品編號不正確"
-            );
-        }
-
-        selectedItems.push({
-            productId,
-            quantity
-        });
-    });
-
-    return selectedItems;
-}
-
-/**
- * 根據商品選取狀態與實際訂貨數量，
- * 決定是否啟用建立採購草稿按鈕。
- *
- * 暫時加入 Console 診斷訊息，
- * 用來找出按鈕持續停用的原因。
- */
-function updateCreateButtonState() {
-
-    const button = byId(
-        "create-order-from-recommendation"
-    );
-
-    if (!button) {
-        console.error("找不到建立採購草稿按鈕");
-        return;
-    }
-
-    // 顯示模組目前的內部狀態。
-    console.log("【訂貨建議】按鈕狀態檢查：", {
-        recommendationLoaded,
-        creatingOrder
-    });
-
-    // 尚未載入成功，或正在建立訂單時停用按鈕。
-    if (!recommendationLoaded || creatingOrder) {
-
-        button.disabled = true;
-
-        console.warn(
-            "【訂貨建議】按鈕停用：資料未載入或正在建立訂單"
-        );
-
-        return;
-    }
-
-    try {
-
-        // 取得已勾選且數量合法的商品。
-        const items = getSelectedItems();
-
-        console.log(
-            "【訂貨建議】已選取商品：",
-            items
-        );
-
-        // 至少選擇一項商品才允許建立採購草稿。
-        button.disabled = items.length === 0;
-
-        console.log(
-            "【訂貨建議】最終按鈕狀態：",
-            button.disabled
-        );
-
-    } catch (error) {
-
-        // 將原本被隱藏的錯誤原因顯示出來。
-        console.error(
-            "【訂貨建議】商品驗證失敗：",
-            error
-        );
-
-        button.disabled = true;
-    }
-}
-
-/**
- * 從 Supplier API 載入有效供應商。
- */
-async function loadSuppliersForOrder() {
-
-    const select = byId(
-        "recommendation-supplier-id"
-    );
-
+function setPlaceholder(select, label) {
     clearElement(select);
+    const option = makeElement("option", label);
+    option.value = "";
+    select.appendChild(option);
+    select.value = "";
+}
 
-    const placeholder = makeElement(
-        "option",
-        "請選擇供應商"
-    );
-
-    placeholder.value = "";
-    select.appendChild(placeholder);
-
-    const response = await requestJson(
-        API.suppliers
-    );
-
-    // 相容一般陣列或分頁回傳格式。
-    const suppliers = Array.isArray(response)
-        ? response
-        : response?.content;
-
-    if (!Array.isArray(suppliers)) {
-        throw new Error(
-            "供應商 API 回傳格式不正確"
-        );
-    }
-
-    // 排除已停用或已軟刪除的供應商。
-    const activeSuppliers = suppliers.filter(
-        supplier =>
-            Number(supplier.status) === 1 &&
-            supplier.deletedAt == null
-    );
-
-    activeSuppliers.forEach(supplier => {
-
-        const option = makeElement(
-            "option",
-            supplier.name
-        );
-
-        option.value = String(supplier.id);
-
+function populateParentCategories() {
+    const select = byId("recommendation-parent-category");
+    setPlaceholder(select, "請選擇第一層分類");
+    const parents = categories.filter(c => c.parentId == null)
+        .sort((a, b) => Number(a.id) - Number(b.id));
+    for (const parent of parents) {
+        const option = makeElement("option", parent.name);
+        option.value = String(parent.id);
         select.appendChild(option);
-    });
-
-    if (activeSuppliers.length === 0) {
-        throw new Error(
-            "目前沒有可使用的有效供應商，請先建立或啟用供應商"
-        );
     }
+    select.disabled = parents.length === 0;
+    populateChildCategories();
+}
+
+function populateChildCategories() {
+    const parentId = Number(byId("recommendation-parent-category").value);
+    const child = byId("recommendation-child-category");
+    setPlaceholder(child, "請選擇第二層分類");
+    if (!parentId) {
+        child.disabled = true;
+        return;
+    }
+    const children = categories.filter(c => Number(c.parentId) === parentId)
+        .sort((a, b) => Number(a.id) - Number(b.id));
+    for (const category of children) {
+        const option = makeElement("option", category.name);
+        option.value = String(category.id);
+        child.appendChild(option);
+    }
+    child.disabled = children.length === 0;
+}
+
+function getFilteredItems() {
+    const childId = Number(byId("recommendation-child-category").value);
+    if (!childId) return [];
+    return recommendationData.filter(p => productCategoryIds.get(Number(p.productId)) === childId);
+}
+
+function stateFor(id) {
+    const productId = Number(id);
+    if (!productStates.has(productId)) {
+        productStates.set(productId, { selected: false, applyWeather: false, quantityRaw: null });
+    }
+    return productStates.get(productId);
+}
+
+function recommendedQuantity(item, state) {
+    const number = state.applyWeather
+        ? item.weatherRecommendedQuantity : item.normalRecommendedQuantity;
+    return Number(number ?? 0);
+}
+
+function actualValue(item, state) {
+    return state.quantityRaw === null
+        ? String(recommendedQuantity(item, state)) : state.quantityRaw;
 }
 
 /**
- * 開啟採購草稿表單。
+ * 說明為什麼一般建議與天氣建議可能相同。
+ * 即使天氣倍率不是 1.00，也可能因歷史淨銷量為零，
+ * 或現有庫存已足夠，導致兩個最終補貨數量相同。
  *
- * 不會在此步驟呼叫 POST API。
+ * 此方法僅供畫面解釋；真正建議量仍完全採用後端回傳值。
  */
-async function openOrderPanel() {
+function explainSameRecommendation(item) {
+    const sales = Number(item.selectedHistoricalSalesQuantity ?? 0);
+    const factor = Number(item.weatherFactor ?? 1);
+    const adjusted = Number(item.weatherAdjustedSalesQuantity ?? sales);
+    const normal = Number(item.normalRecommendedQuantity);
+    const weather = Number(item.weatherRecommendedQuantity);
 
-    if (creatingOrder) return;
+    if (normal !== weather) return "天氣調整後的補貨數量不同";
+    if (sales === 0) return "選定的歷史期間淨銷量為 0，無可調整的銷售需求";
+    if (factor === 1) return "天氣倍率為 1.00，未增加或減少預期需求";
+    if (adjusted === sales) return "歷史需求乘倍率後經無條件進位仍相同";
+    if (normal === 0 && weather === 0) {
+        return "現有庫存與未到貨量足夠，兩種計算最後都不需要補貨";
+    }
+    return "經安全庫存、現貨與未到貨量計算後，最終補貨數量相同";
+}
 
-    const button = byId(
-        "create-order-from-recommendation"
-    );
+/**
+ * 建議量格子的提示文字會隨「套用天氣」勾選狀態改變。
+ * 同時列出後端兩個原始結果，方便直接核對 Postman。
+ */
+function buildRecommendationTooltip(item, state) {
+    const sales = Number(item.selectedHistoricalSalesQuantity ?? 0);
+    const factor = Number(item.weatherFactor ?? 1);
+    const normal = Number(item.normalRecommendedQuantity);
+    const weather = Number(item.weatherRecommendedQuantity);
+    const basis = item.historicalBasis === "WEEK" ? "上週同期" : "上月同期";
+    const mode = state.applyWeather ? "已勾選：套用天氣係數" : "未勾選：一般建議（天氣倍率視為 1.00）";
+    const difference = weather - normal;
+    const sign = difference > 0 ? "+" : "";
 
-    try {
+    return [
+        mode,
+        `歷史基準：${basis}；歷史淨銷量：${formatNumber(sales)} 件`,
+        `當前預報倍率：${factor.toFixed(2)} ×`,
+        `一般建議：${formatNumber(normal)} 件`,
+        `天氣建議：${formatNumber(weather)} 件`,
+        `天氣對訂貨量差異：${sign}${formatNumber(difference)} 件`,
+        `安全庫存：${formatNumber(item.safetyStock)}；目前庫存：${formatNumber(item.currentStock)}；未到貨：${formatNumber(item.outstandingQuantity)}`,
+        ...(difference === 0 ? [`數量相同原因：${explainSameRecommendation(item)}`] : []),
+        ...(state.quantityRaw !== null ? ["※ 實際訂貨量已手動修改，不隨建議量自動覆蓋"] : [])
+    ].join("\n");
+}
 
-        if (!recommendationLoaded) {
-            throw new Error(
-                "請先產生訂貨建議"
-            );
-        }
+function parsePositiveQuantity(value) {
+    const text = String(value ?? "").trim();
+    if (!/^[0-9]+$/.test(text)) return null;
+    const n = Number(text);
+    return Number.isSafeInteger(n) && n > 0 && n <= MAX_QUANTITY ? n : null;
+}
 
-        const selectedItems = getSelectedItems();
+function showTableMessage(message) {
+    const row = makeElement("tr");
+    const td = makeElement("td", message, "empty-state");
+    td.colSpan = 8;
+    row.appendChild(td);
+    byId("recommendation-table-body").replaceChildren(row);
+}
 
-        if (selectedItems.length === 0) {
-            throw new Error(
-                "請先勾選至少一項商品"
-            );
-        }
-
-        hideMessage();
-
-        button.disabled = true;
-
-        // 每次開啟時清除前一次填寫內容。
-        byId("recommendation-order-form").reset();
-
-        // =====================================================
-        // 限制預計到貨日期不可早於台灣今天
-        // =====================================================
-
-        // 使用既有台灣日期工具，避免 UTC 時差問題。
-        const today = getTaiwanToday();
-
-        // 取得預計到貨日期欄位。
-        const deliveryDateInput = byId(
-            "recommendation-delivery-date"
-        );
-
-        // 不允許選擇今天以前的日期。
-        deliveryDateInput.min = today;
-
-        // 每次開啟表單時重新設定最小日期，
-        // 避免頁面跨日後仍使用昨天的限制。
-
-        // 先載入有效供應商。
-        await loadSuppliersForOrder();
-
-        // 產生確認表單的商品明細。
-        renderOrderPreview(selectedItems);
-
-        // 顯示草稿表單。
-        byId("recommendation-order-panel").hidden =
-            false;
-
-        byId("recommendation-order-panel")
-            .scrollIntoView({
-                behavior: "smooth",
-                block: "start"
-            });
-
-    } catch (error) {
-
-        byId("recommendation-order-panel").hidden =
-            true;
-
-        showMessage(error.message, "error");
-
-        console.error(
-            "開啟採購草稿失敗：",
-            error
-        );
-
-    } finally {
-
+function renderRecommendationTable() {
+    const child = byId("recommendation-child-category").value;
+    if (!recommendationLoaded) {
+        showTableMessage("尚未產生訂貨建議");
+        updatePaging(0, 0, 0);
+        return;
+    }
+    if (!child) {
+        showTableMessage("請選擇第一層及第二層商品分類");
+        byId("recommendation-list-meta").textContent = `共 ${recommendationData.length} 筆有效商品，請選擇第二層分類`;
+        updatePaging(0, 0, 0);
         updateCreateButtonState();
+        return;
     }
-}
-
-/**
- * 將勾選的商品顯示於採購草稿確認表格。
- *
- * 目前後端 Request 不接收採購單價，
- * 因此不自行推算採購價格。
- */
-function renderOrderPreview(items) {
-
-    const tbody = byId(
-        "recommendation-order-items-body"
-    );
-
-    clearElement(tbody);
-
-    items.forEach(item => {
-
-        const product = recommendationData.find(
-            data =>
-                Number(data.productId) ===
-                item.productId
-        );
-
-        if (!product) {
-            throw new Error(
-                "找不到選取商品的訂貨建議資料"
-            );
-        }
-
-        const row = makeElement("tr");
-
-        row.dataset.productId =
-            String(item.productId);
-
-        // 商品名稱與 SKU。
-        const productCell = makeElement("td");
-
-        productCell.appendChild(
-            makeElement(
-                "strong",
-                product.productName
-            )
-        );
-
-        productCell.appendChild(
-            makeElement(
-                "div",
-                displayValue(product.sku),
-                "weather-description"
-            )
-        );
-
-        row.appendChild(productCell);
-
-        // 讓使用者再次確認實際訂貨數量。
-        const quantityCell = makeElement("td");
-
-        const quantityInput = makeElement("input");
-
-        quantityInput.type = "number";
-        quantityInput.min = "1";
-        quantityInput.max = String(MAX_QUANTITY);
-        quantityInput.step = "1";
-        quantityInput.required = true;
-        quantityInput.value = String(item.quantity);
-
-        quantityInput.className =
-            "recommendation-preview-quantity";
-
-        quantityInput.style.width = "100px";
-
-        quantityCell.appendChild(quantityInput);
-        row.appendChild(quantityCell);
-
-        // 目前 Request DTO 不提供採購單價。
-        row.appendChild(
-            makeElement("td", "—")
-        );
-
-        // 金額由後端建立訂單時處理。
-        row.appendChild(
-            makeElement("td", "由後端計算")
-        );
-
-        tbody.appendChild(row);
-    });
-
-    // 不顯示虛構的預估採購金額。
-    byId("recommendation-order-total")
-        .textContent = "由後端計算";
-}
-
-/**
- * 關閉採購草稿表單。
- *
- * 若正在送出請求，不允許關閉，
- * 避免使用者誤以為請求已取消。
- */
-function closeOrderPanel() {
-
-    if (creatingOrder) return;
-
-    const panel = byId(
-        "recommendation-order-panel"
-    );
-
-    if (panel) {
-        panel.hidden = true;
+    const filtered = getFilteredItems();
+    const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+    listPage = Math.min(Math.max(1, listPage), pageCount);
+    const items = filtered.slice((listPage - 1) * PAGE_SIZE, listPage * PAGE_SIZE);
+    const body = byId("recommendation-table-body");
+    clearElement(body);
+    if (!items.length) {
+        showTableMessage("此分類沒有有效商品的訂貨建議");
+    } else {
+        for (const item of items) body.appendChild(createRecommendationRow(item));
     }
+    byId("recommendation-list-meta").textContent = `此分類 ${filtered.length} 筆商品，每頁 ${PAGE_SIZE} 筆`;
+    updatePaging(filtered.length, listPage, pageCount);
+    updateCreateButtonState();
 }
 
-/**
- * 讀取採購草稿預覽表格中的商品明細。
- */
-function getPreviewItems() {
+function createRecommendationRow(item) {
+    const id = Number(item.productId);
+    const state = stateFor(id);
+    const row = makeElement("tr");
+    row.dataset.productId = String(id);
 
-    const rows = document.querySelectorAll(
-        "#recommendation-order-items-body " +
-        "tr[data-product-id]"
-    );
+    const selectedCell = makeElement("td");
+    const select = makeElement("input");
+    select.type = "checkbox";
+    select.className = "recommendation-select";
+    select.checked = state.selected;
+    select.dataset.productId = String(id);
+    select.setAttribute("aria-label", `選擇訂貨商品 ${item.productName}`);
+    selectedCell.appendChild(select);
+    row.appendChild(selectedCell);
 
-    const items = [];
+    const nameCell = makeElement("td");
+    nameCell.append(makeElement("strong", item.productName),
+        makeElement("div", item.sku ?? "--", "weather-description"));
+    row.appendChild(nameCell);
+    row.appendChild(makeElement("td", formatNumber(item.currentStock)));
+    row.appendChild(makeElement("td", formatNumber(item.selectedHistoricalSalesQuantity)));
+    row.appendChild(makeElement("td", `${Number(item.weatherFactor ?? 1).toFixed(2)} ×`));
 
-    rows.forEach(row => {
+    const weatherCell = makeElement("td");
+    const weather = makeElement("input");
+    weather.type = "checkbox";
+    weather.className = "recommendation-weather-check";
+    weather.dataset.productId = String(id);
+    weather.checked = state.applyWeather;
+    weather.setAttribute("aria-label", `套用 ${item.productName} 的天氣係數`);
+    weatherCell.appendChild(weather);
+    row.appendChild(weatherCell);
 
-        const productId =
-            Number(row.dataset.productId);
+    const suggested = recommendedQuantity(item, state);
+    const suggestedCell = makeElement("td");
+    const suggestedText = makeElement("strong", formatNumber(suggested),
+        suggested > 0 ? "status-badge warning" : "status-badge success");
+    suggestedCell.appendChild(suggestedText);
 
-        const quantityInput = row.querySelector(
-            ".recommendation-preview-quantity"
-        );
+    // 明確標示目前採用哪個建議，即使兩種建議數量相同，勾選仍有回饋。
+    suggestedCell.appendChild(makeElement("div",
+        state.applyWeather ? "已套用天氣" : "一般建議", "weather-description"));
 
-        const quantity = parsePositiveQuantity(
-            quantityInput?.value ?? ""
-        );
+    // 同時顯示兩種數量的差距，避免誤以為勾選事件沒有反應。
+    const difference = Number(item.weatherRecommendedQuantity)
+        - Number(item.normalRecommendedQuantity);
+    const diffLabel = difference === 0
+        ? `差異 0 件｜${explainSameRecommendation(item)}`
+        : `天氣差異 ${difference > 0 ? "+" : ""}${formatNumber(difference)} 件`;
+    suggestedCell.appendChild(makeElement("small", diffLabel, "weather-description"));
 
-        if (
-            !Number.isSafeInteger(productId) ||
-            productId <= 0 ||
-            quantity === null
-        ) {
-            throw new Error(
-                "採購明細的商品編號或訂貨數量不正確"
-            );
+    // 提示需綁定到實際滑鼠指向的元素，而不只是外層 tr。
+    const tooltip = buildRecommendationTooltip(item, state);
+    suggestedCell.title = tooltip;
+    suggestedText.title = tooltip;
+    row.appendChild(suggestedCell);
+
+    const qtyCell = makeElement("td");
+    const quantity = makeElement("input");
+    quantity.type = "number";
+    quantity.min = "0";
+    quantity.step = "1";
+    quantity.max = String(MAX_QUANTITY);
+    quantity.value = actualValue(item, state);
+    quantity.className = "actual-order-quantity";
+    quantity.dataset.productId = String(id);
+    quantity.setAttribute("aria-label", `${item.productName} 的實際訂貨量`);
+    qtyCell.appendChild(quantity);
+    row.appendChild(qtyCell);
+
+    row.title = `上週淨銷量：${formatNumber(item.lastWeekNetSalesQuantity)}\n` +
+        `上月淨銷量：${formatNumber(item.lastMonthNetSalesQuantity)}\n` +
+        buildRecommendationTooltip(item, state);
+    return row;
+}
+
+function handleTableChange(event) {
+    const input = event.target;
+    const id = Number(input.dataset?.productId);
+    if (!id || !recommendationData.some(p => Number(p.productId) === id)) return;
+    const state = stateFor(id);
+    if (input.matches(".recommendation-select")) {
+        state.selected = input.checked;
+        renderRecommendationSummary();
+    } else if (input.matches(".recommendation-weather-check")) {
+        state.applyWeather = input.checked;
+        // 使用者未自行修改訂貨量時，實際數量才跟著預設建議量切換。
+        renderRecommendationTable();
+        renderRecommendationSummary();
+    } else if (input.matches(".actual-order-quantity")) {
+        state.quantityRaw = input.value;
+    }
+    updateCreateButtonState();
+}
+
+function handleTableInput(event) {
+    const input = event.target;
+    if (!input.matches(".actual-order-quantity")) return;
+    const id = Number(input.dataset.productId);
+    if (!id) return;
+    stateFor(id).quantityRaw = input.value;
+    updateCreateButtonState();
+}
+
+function getSelectedItems() {
+    if (!recommendationLoaded) throw new Error("請先產生訂貨建議");
+    const selected = [];
+    for (const item of recommendationData) {
+        const state = productStates.get(Number(item.productId));
+        if (!state?.selected) continue;
+        const quantity = parsePositiveQuantity(actualValue(item, state));
+        if (quantity === null) {
+            throw new Error(`「${item.productName}」訂貨數量必須是大於 0 的整數`);
         }
-
-        items.push({
-            productId,
+        selected.push({
+            productId: Number(item.productId),
+            productName: item.productName,
+            sku: item.sku,
             quantity
         });
-    });
-
-    if (items.length === 0) {
-        throw new Error(
-            "採購單至少需要一筆商品明細"
-        );
     }
-
-    return items;
+    return selected;
 }
 
-/**
- * 建立真正的採購草稿。
- *
- * POST /api/purchase-orders
- *
- * 成功時後端會建立 DRAFT 採購單，
- * 不會在此自動送出成 SUBMITTED。
- */
-async function createPurchaseOrder(event) {
-
-    event.preventDefault();
-
-    if (creatingOrder) return;
-
-    const form = byId(
-        "recommendation-order-form"
-    );
-
-    const button = byId(
-        "recommendation-order-submit"
-    );
-
-    try {
-
-        const supplierId = Number(
-            byId("recommendation-supplier-id").value
-        );
-
-        if (
-            !Number.isSafeInteger(supplierId) ||
-            supplierId <= 0
-        ) {
-            throw new Error(
-                "請選擇有效的供應商"
-            );
-        }
-
-        const items = getPreviewItems();
-
-        const deliveryDate = byId(
-            "recommendation-delivery-date"
-        ).value;
-
-        // =====================================================
-        // 再次驗證預計到貨日期
-        // =====================================================
-
-        // 預計到貨日可以不填。
-        // 若有填寫，就不可早於台灣今天。
-        if (
-            deliveryDate &&
-            deliveryDate < getTaiwanToday()
-        ) {
-            throw new Error(
-                "預計到貨日期不可早於今天"
-            );
-        }
-        
-        const remark = byId(
-            "recommendation-order-remark"
-        ).value.trim();
-
-        if (remark.length > 500) {
-            throw new Error(
-                "採購備註不可超過 500 個字元"
-            );
-        }
-
-        // 完全符合目前 PurchaseOrderRequest、
-        // PurchaseOrderItemRequest 的欄位結構。
-        const payload = {
-            supplierId,
-            expectedDeliveryDate:
-                deliveryDate || null,
-            remark: remark || null,
-            items
-        };
-
-        creatingOrder = true;
-
-        setButtonLoading(
-            button,
-            true,
-            "建立採購草稿中..."
-        );
-
-        updateCreateButtonState();
-
-        hideMessage();
-
-        // 呼叫目前已存在的採購單建立 API。
-        const createdOrder = await requestJson(
-            API.purchaseOrders,
-            "POST",
-            payload
-        );
-
-        // 建立成功後關閉表單。
-        byId("recommendation-order-panel").hidden =
-            true;
-
-        // 清除已勾選商品，降低重複建立風險。
-        document.querySelectorAll(
-            "#recommendation-table-body " +
-            ".recommendation-select"
-        ).forEach(checkbox => {
-            checkbox.checked = false;
-        });
-
-        const orderId = createdOrder?.id;
-
-        showMessage(
-            orderId != null
-                ? `採購草稿 #${orderId} 建立成功，請至採購訂貨單頁面確認並送出`
-                : "採購草稿建立成功，請至採購訂貨單頁面確認",
-            "success"
-        );
-
-        form.reset();
-
-    } catch (error) {
-
-        showMessage(error.message, "error");
-
-        console.error(
-            "建立採購草稿失敗：",
-            error
-        );
-
-    } finally {
-
-        creatingOrder = false;
-
-        setButtonLoading(
-            button,
-            false
-        );
-
-        updateCreateButtonState();
+function updateCreateButtonState() {
+    const button = byId("create-order-from-recommendation");
+    const count = Array.from(productStates.values()).filter(s => s.selected).length;
+    byId("recommendation-selected-count").textContent = `已選擇 ${count} 項商品（跨分類／頁面保留）`;
+    let valid = false;
+    if (recommendationLoaded && !loading && count > 0) {
+        try { valid = getSelectedItems().length > 0; } catch (_) { valid = false; }
     }
+    button.disabled = !valid;
+}
+
+function renderRecommendationSummary() {
+    const container = byId("recommendation-summary");
+    clearElement(container);
+    if (!recommendationLoaded) return;
+    let needsReorder = 0;
+    let totalQuantity = 0;
+    for (const item of recommendationData) {
+        const q = recommendedQuantity(item,
+            productStates.get(Number(item.productId)) ?? {applyWeather:false});
+        if (q > 0) needsReorder += 1;
+        totalQuantity += q;
+    }
+    container.append(
+        createStatCard("有效商品數", recommendationData.length, "全部分類"),
+        createStatCard("需要補貨商品", needsReorder, "依目前天氣勾選狀態"),
+        createStatCard("建議訂貨總數", formatNumber(totalQuantity), "未勾選天氣時使用一般建議")
+    );
+    byId("stat-reorder").textContent = String(needsReorder);
+}
+
+function updatePaging(total, page, pages) {
+    const visible = pages > 0 && total > 0;
+    byId("recommendation-pagination").hidden = !visible;
+    byId("recommendation-page-info").textContent = visible ? `第 ${page}／${pages} 頁` : "";
+    byId("recommendation-page-prev").disabled = !visible || page <= 1;
+    byId("recommendation-page-next").disabled = !visible || page >= pages;
 }

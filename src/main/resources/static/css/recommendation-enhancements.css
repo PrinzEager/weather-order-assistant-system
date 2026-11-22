@@ -1,0 +1,123 @@
+/* 天氣訂貨建議專用樣式。只限定 recommendation 頁，避免影響其它管理模組。 */
+#page-recommendations .recommendation-filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px 20px;
+    align-items: end;
+    margin: 16px 0;
+}
+#page-recommendations .recommendation-filter-row .form-group { flex: 1 1 210px; min-width: 180px; }
+#page-recommendations .recommendation-filter-row label { display: block; margin-bottom: 6px; font-weight: 600; }
+#page-recommendations .recommendation-filter-row select,
+#page-recommendations .recommendation-filter-row input,
+#page-recommendations .recommendation-filter-row textarea {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid #cfbfaa;
+    border-radius: 8px;
+    padding: 9px 11px;
+    background: #fffefa;
+    color: #4f3928;
+}
+#page-recommendations .recommendation-filter-row select:disabled { background: #f2eee6; cursor: not-allowed; }
+#page-recommendations .rec-small-hint { color: #786454; font-size: .88rem; line-height: 1.5; }
+#page-recommendations .recommendation-data-table th,
+#page-recommendations .recommendation-preview-table th { white-space: nowrap; }
+#page-recommendations .recommendation-data-table input[type="checkbox"] {
+    accent-color: #b86d36;
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+#page-recommendations .actual-order-quantity,
+#page-recommendations .recommendation-preview-quantity {
+    box-sizing: border-box;
+    max-width: 110px;
+    width: 100%;
+    padding: 7px;
+    border: 1px solid #cfbfaa;
+    border-radius: 6px;
+    background: #fffefa;
+    color: #4f3928;
+}
+#page-recommendations .recommendation-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    padding: 14px 6px 6px;
+    color: #5d4736;
+}
+#page-recommendations .recommendation-pagination[hidden] { display: none; }
+#page-recommendations .recommendation-pagination button:disabled { opacity: .42; cursor: not-allowed; }
+#page-recommendations .rec-select-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+
+/* 採購草稿使用真正的遮罩視窗；背景表單不被覆蓋或重新排版。 */
+body.rec-modal-open { overflow: hidden; }
+#page-recommendations .recommendation-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 20000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    box-sizing: border-box;
+    background: rgba(42, 29, 18, .57);
+    backdrop-filter: blur(4px);
+}
+#page-recommendations .recommendation-modal[hidden] { display: none !important; }
+#page-recommendations .recommendation-modal-card {
+    width: min(1100px, 100%);
+    max-height: min(90vh, 940px);
+    background: #fffdf8;
+    border: 1px solid #e4d4bf;
+    border-radius: 16px;
+    box-shadow: 0 20px 72px rgba(42, 29, 18, .33);
+    overflow-y: auto;
+    padding: 22px;
+    box-sizing: border-box;
+    color: #4f3928;
+}
+#page-recommendations .recommendation-modal-header {
+    display: flex;
+    align-items: start;
+    justify-content: space-between;
+    gap: 14px;
+    border-bottom: 1px solid #e8dccd;
+    padding-bottom: 12px;
+}
+#page-recommendations .recommendation-modal-header h4 { margin: 0 0 6px; color: #51351e; }
+#page-recommendations .recommendation-modal-header p { margin: 0; }
+#page-recommendations .rec-remark-group { flex-grow: 2; }
+#page-recommendations .recommendation-preview-table select {
+    min-width: 160px;
+    max-width: 260px;
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #cfbfaa;
+    border-radius: 8px;
+    background: #fffefa;
+    color: #4f3928;
+}
+#page-recommendations .rec-price,
+#page-recommendations .rec-subtotal { white-space: nowrap; font-variant-numeric: tabular-nums; }
+#page-recommendations .recommendation-order-summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 14px 16px;
+    border-radius: 10px;
+    background: #f6eee3;
+    color: #593d24;
+}
+#page-recommendations .rec-warning { color: #a34d1e; min-height: 1.3em; font-size: .92rem; }
+#page-recommendations .rec-modal-actions { display: flex; justify-content: flex-end; gap: 12px; }
+@media (max-width: 700px) {
+    #page-recommendations .recommendation-modal { padding: 8px; align-items: stretch; }
+    #page-recommendations .recommendation-modal-card { padding: 14px; max-height: 100%; border-radius: 10px; }
+    #page-recommendations .recommendation-modal-header { align-items: center; }
+    #page-recommendations .rec-select-toolbar { justify-content: flex-start; }
+}

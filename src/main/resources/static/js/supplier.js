@@ -5,15 +5,22 @@ import {
     API, byId, makeElement, showMessage, hideMessage,
     setButtonLoading, displayValue, requestJson
 } from "./common.js";
+import {
+    installSupplierProductsEditor, openSupplierProductsEditor,
+    closeSupplierProductsEditor, validateSupplierProductsEditor,
+    saveSupplierProducts
+} from "./supplier-products.js";
 
 let suppliersLoaded = false;
+let supplierFormVersion = 0;
+let supplierFormSaving = false;
 
 export function initSuppliers() {
     installSupplierForm();
     byId("add-supplier-button").disabled = false;
     byId("add-supplier-button").addEventListener("click", () => openSupplierForm());
-    byId("supplier-form-close").addEventListener("click", closeSupplierForm);
-    byId("supplier-form-cancel").addEventListener("click", closeSupplierForm);
+    byId("supplier-form-close").addEventListener("click", () => closeSupplierForm());
+    byId("supplier-form-cancel").addEventListener("click", () => closeSupplierForm());
     byId("supplier-form").addEventListener("submit", submitSupplierForm);
 }
 
@@ -62,7 +69,7 @@ function renderSuppliers(suppliers) {
 
         const actions = makeElement("td");
         actions.append(
-            actionButton("編輯", "secondary-button", () => openSupplierForm(supplier)),
+            actionButton("編輯／供貨商品", "secondary-button", () => openSupplierForm(supplier)),
             actionButton(supplier.status === 1 ? "停用" : "啟用", "secondary-button", () => updateStatus(supplier)),
             actionButton("刪除", "danger-button", () => deleteSupplier(supplier))
         );
@@ -81,7 +88,8 @@ function installSupplierForm() {
     const toolbar = makeElement("div", null, "panel-toolbar");
     const title = makeElement("h4", "新增供應商");
     title.id = "supplier-form-title";
-    const close = actionButton("關閉", "secondary-button", () => {});
+    const close = makeElement("button", "關閉", "secondary-button");
+    close.type = "button";
     close.id = "supplier-form-close";
     toolbar.append(title, close);
     panel.appendChild(toolbar);
@@ -113,18 +121,23 @@ function installSupplierForm() {
     });
 
     const buttons = makeElement("div", null, "action-bar");
-    const cancel = actionButton("取消", "secondary-button", () => {});
+    const cancel = makeElement("button", "取消", "secondary-button");
+    cancel.type = "button";
     cancel.id = "supplier-form-cancel";
     const submit = makeElement("button", "儲存供應商", "primary-button");
     submit.id = "supplier-form-submit";
     submit.type = "submit";
     buttons.append(cancel, submit);
+    // 供貨商品區塊由獨立模組建立，避免 Supplier 基本資料程式變得過長。
+    installSupplierProductsEditor(form);
     form.appendChild(buttons);
     panel.appendChild(form);
     byId("page-suppliers").appendChild(panel);
 }
 
-function openSupplierForm(supplier = null) {
+async function openSupplierForm(supplier = null) {
+    if (supplierFormSaving) return;
+    const version = ++supplierFormVersion;
     byId("supplier-form").reset();
     byId("supplier-id").value = supplier?.id ?? "";
     byId("supplier-name").value = supplier?.name ?? "";
@@ -132,13 +145,29 @@ function openSupplierForm(supplier = null) {
     byId("supplier-phone").value = supplier?.phone ?? "";
     byId("supplier-email").value = supplier?.email ?? "";
     byId("supplier-address").value = supplier?.address ?? "";
-    byId("supplier-form-title").textContent = supplier ? "編輯供應商" : "新增供應商";
+    byId("supplier-form-title").textContent = supplier ? "編輯供應商與供貨商品" : "新增供應商與供貨商品";
     byId("supplier-form-panel").hidden = false;
     byId("supplier-form-panel").scrollIntoView({ behavior: "smooth", block: "start" });
-    byId("supplier-name").focus();
+
+    const submit = byId("supplier-form-submit");
+    submit.disabled = true;
+    try {
+        // 開啟表單時同步取得可供貨商品及既有報價。
+        await openSupplierProductsEditor(supplier?.id ?? null);
+    } catch (error) {
+        showMessage(error.message, "error");
+        return;
+    } finally {
+        // 舊視窗的非同步請求不得將新視窗的按鈕提前啟用。
+        if (version === supplierFormVersion) submit.disabled = false;
+    }
+    if (version === supplierFormVersion) byId("supplier-name").focus();
 }
 
-function closeSupplierForm() {
+function closeSupplierForm(force = false) {
+    if (supplierFormSaving && !force) return;
+    supplierFormVersion++;
+    closeSupplierProductsEditor();
     byId("supplier-form-panel").hidden = true;
     byId("supplier-form").reset();
     byId("supplier-id").value = "";
@@ -146,7 +175,8 @@ function closeSupplierForm() {
 
 async function submitSupplierForm(event) {
     event.preventDefault();
-    const id = byId("supplier-id").value;
+    if (supplierFormSaving) return;
+    const originalId = byId("supplier-id").value;
     const valueOrNull = id => byId(id).value.trim() || null;
     const payload = {
         name: byId("supplier-name").value.trim(),
@@ -160,17 +190,52 @@ async function submitSupplierForm(event) {
         return;
     }
 
-    const submit = byId("supplier-form-submit");
+    // 先驗證供貨設定，避免供應商基本資料已儲存才發現價格有誤。
     try {
-        hideMessage();
-        setButtonLoading(submit, true, "儲存中...");
-        await requestJson(id ? `${API.suppliers}/${id}` : API.suppliers, id ? "PUT" : "POST", payload);
-        closeSupplierForm();
-        await refreshSuppliers();
-        showMessage(`供應商已${id ? "更新" : "新增"}`, "success");
+        validateSupplierProductsEditor();
     } catch (error) {
         showMessage(error.message, "error");
+        return;
+    }
+
+    const submit = byId("supplier-form-submit");
+    let basicSaved = false;
+    let savedId = originalId ? Number(originalId) : null;
+    try {
+        supplierFormSaving = true;
+        hideMessage();
+        setButtonLoading(submit, true, "儲存中...");
+
+        // 現有 Supplier API 先建立／修改基本資料，維持原本 CRUD 行為。
+        const saved = await requestJson(
+            originalId ? `${API.suppliers}/${originalId}` : API.suppliers,
+            originalId ? "PUT" : "POST",
+            payload
+        );
+        savedId = Number(saved?.id ?? savedId);
+        if (!Number.isSafeInteger(savedId) || savedId <= 0) {
+            throw new Error("後端未回傳有效供應商 ID，請查詢供應商清單後再重試");
+        }
+        basicSaved = true;
+
+        // 新增供應商後才有 supplierId，可用來建立每筆供貨關聯。
+        // 供貨 API 各筆獨立；若部分失敗，保留 supplierId 讓使用者修正重試。
+        byId("supplier-id").value = String(savedId);
+        await saveSupplierProducts(savedId);
+
+        closeSupplierForm(true);
+        await refreshSuppliers();
+        showMessage(`供應商及供貨商品已${originalId ? "更新" : "新增"}`, "success");
+    } catch (error) {
+        if (basicSaved) {
+            byId("supplier-form-title").textContent = "編輯供應商與供貨商品";
+            await refreshSuppliers();
+            showMessage(`供應商基本資料已儲存（ID：${savedId}），但供貨商品尚未全部完成：${error.message}。請修正後再次按儲存，系統會比對已成功的資料。`, "error");
+        } else {
+            showMessage(error.message, "error");
+        }
     } finally {
+        supplierFormSaving = false;
         setButtonLoading(submit, false);
     }
 }
