@@ -1,6 +1,7 @@
 package com.example.weather_order_assistant_system.service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.SocketTimeoutException;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -23,6 +24,8 @@ import com.example.weather_order_assistant_system.client.CwaApiClient;
 import com.example.weather_order_assistant_system.client.CwaDatasetMapping;
 import com.example.weather_order_assistant_system.response.WeatherConditionResponse;
 import com.example.weather_order_assistant_system.response.WeatherDailyResponse;
+import com.example.weather_order_assistant_system.response.WeatherDailyFactorResponse;
+import com.example.weather_order_assistant_system.response.WeatherHumidityResponse;
 import com.example.weather_order_assistant_system.response.WeatherForecastResponse;
 import com.example.weather_order_assistant_system.response.WeatherPrecipitationResponse;
 import com.example.weather_order_assistant_system.response.WeatherTemperatureResponse;
@@ -43,7 +46,7 @@ import tools.jackson.databind.json.JsonMapper;
  * 5. 計算天氣需求倍率。
  * 6. 判斷預報資料完整性。
  *
- * 第一版僅提供未來 3 天預報。
+ * 此版本提供今天至第七天（含）之 7 個日曆日預報。
  * 不儲存天氣資料，也不修改商品庫存。
  */
 @Service
@@ -58,30 +61,18 @@ public class WeatherService {
     private static final ZoneOffset TAIWAN_OFFSET =
             ZoneOffset.ofHours(8);
 
-    // 溫度影響訂貨需求的門檻
-    private static final int TEMPERATURE_THRESHOLD = 32;
-
-    // 降雨機率影響訂貨需求的門檻
-    private static final int RAIN_THRESHOLD = 60;
-
-    // 每個條件達成時增加的倍率
-    private static final BigDecimal FACTOR_INCREMENT =
-            new BigDecimal("0.10");
-
-    // 預設天氣倍率
-    private static final BigDecimal DEFAULT_FACTOR =
-            new BigDecimal("1.00");
-
-    // 依目前確認的預報格式，溫度資料最大預期相隔 3 小時
-    // 若未來中央氣象署調整頻率，需重新檢查此規則
-    private static final Duration MAX_TEMPERATURE_GAP =
-            Duration.ofHours(3);
+    // 官方一週預報中，12 小時降雨機率通常僅涵蓋前三個日曆日。
+    // 第四至第七天未提供的降雨資料，不當成缺失或 0%。
+    private static final int RAIN_FORECAST_DAYS = 3;
 
     // 已建立的中央氣象署 API Client
     private final CwaApiClient cwaApiClient;
 
     // Spring Boot 4 提供的 Jackson 3 JSON Mapper
     private final JsonMapper jsonMapper;
+
+    // 獨立的冷飲天氣係數計算器：與 API 解析邏輯分開。
+    private final WeatherFactorCalculator weatherFactorCalculator;
 
     /**
      * 查詢指定地點及日期範圍的天氣預報。
@@ -102,13 +93,18 @@ public class WeatherService {
         validateDates(startDate, endDate);
 
         if (district == null || district.isBlank()) {
-            throw new IllegalArgumentException(
-                    "鄉鎮市區名稱不可為空");
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "鄉鎮市區名稱不可為空");
         }
 
-        // 根據縣市取得對應的官方資料集
-        String datasetId =
-                CwaDatasetMapping.getDatasetId(city);
+        // 將不支援的縣市視為使用者輸入錯誤，而非伺服器 500。
+        String datasetId;
+        try {
+            datasetId = CwaDatasetMapping.getDatasetId(city);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
+        }
 
         // 一次取得指定地點的預報 JSON
         String json = fetchForecastJson(datasetId, district);
@@ -143,8 +139,17 @@ public class WeatherService {
         // 尋找指定縣市、指定行政區的 Location
         JsonNode location = findLocation(root, city, district);
 
-        // 分別儲存三種不同時間粒度的預報資料
+        // 分別儲存逐 12 小時溫度、濕度、降雨及天氣預報。
+        // 平均溫度轉為時段中點供原本的前端折線圖使用。
         List<WeatherTemperatureResponse> temperatures =
+                new ArrayList<>();
+
+        // 最高、最低溫度採官方逐 12 小時時段資料。
+        // 不用「平均溫度」推算極值，以免影響天氣倍率。
+        List<TemperaturePeriod> maximumTemperatures = new ArrayList<>();
+        List<TemperaturePeriod> minimumTemperatures = new ArrayList<>();
+
+        List<WeatherHumidityResponse> humidities =
                 new ArrayList<>();
 
         List<WeatherPrecipitationResponse> precipitations =
@@ -157,6 +162,9 @@ public class WeatherService {
         parseWeatherElements(
                 location,
                 temperatures,
+                maximumTemperatures,
+                minimumTemperatures,
+                humidities,
                 precipitations,
                 conditions);
 
@@ -164,6 +172,9 @@ public class WeatherService {
         temperatures.sort(
                 Comparator.comparing(
                         WeatherTemperatureResponse::getDataTime));
+
+        humidities.sort(
+                Comparator.comparing(WeatherHumidityResponse::getStartTime));
 
         precipitations.sort(
                 Comparator.comparing(
@@ -201,6 +212,22 @@ public class WeatherService {
                                 .isBefore(rangeEnd))
                         .toList();
 
+        // 只取與有效查詢期間重疊的最高／最低溫時段。
+        List<TemperaturePeriod> selectedMaximums = maximumTemperatures.stream()
+                .filter(item -> overlaps(item.start(), item.end(),
+                        effectiveStart, rangeEnd))
+                .toList();
+
+        List<TemperaturePeriod> selectedMinimums = minimumTemperatures.stream()
+                .filter(item -> overlaps(item.start(), item.end(),
+                        effectiveStart, rangeEnd))
+                .toList();
+
+        List<WeatherHumidityResponse> selectedHumidities = humidities.stream()
+                .filter(item -> overlaps(item.getStartTime(), item.getEndTime(),
+                        effectiveStart, rangeEnd))
+                .toList();
+
         List<WeatherPrecipitationResponse> selectedPrecipitations =
                 precipitations.stream()
                         .filter(item -> overlaps(
@@ -219,13 +246,13 @@ public class WeatherService {
                                 rangeEnd))
                         .toList();
 
-        // 計算查詢期間最高有效氣溫
-        Integer maxTemperature =
-                selectedTemperatures.stream()
-                        .map(WeatherTemperatureResponse::getTemperature)
-                        .filter(value -> value != null)
-                        .max(Integer::compareTo)
-                        .orElse(null);
+        // 官方「最高溫度」元素才是天氣倍率的溫度依據。
+        // 不使用逐 12 小時平均溫度誤當最高溫。
+        Integer maxTemperature = selectedMaximums.stream()
+                .map(TemperaturePeriod::value)
+                .filter(value -> value != null)
+                .max(Integer::compareTo)
+                .orElse(null);
 
         // 計算查詢期間最高有效降雨機率
         Integer maxRain =
@@ -237,33 +264,54 @@ public class WeatherService {
                         .max(Integer::compareTo)
                         .orElse(null);
 
-        // 計算天氣需求倍率
-        BigDecimal weatherFactor =
-                calculateWeatherFactor(maxTemperature, maxRain);
-
         // 建立每日天氣卡片摘要
-        // 每日卡片保留當日有效的完整預報資料，
-        // 不將已過去的時間點誤判為資料缺失
+        // 每日卡片呈現與該日重疊的官方 12 小時溫度區間，
+        // 日期範圍內可能跨午夜，詳見 buildDailyForecasts。
         List<WeatherDailyResponse> dailyForecasts =
                 buildDailyForecasts(
                         startDate,
                         endDate,
-                        temperatures,
+                        maximumTemperatures,
+                        minimumTemperatures,
                         conditions);
 
-        // 判定預報資料完整性
+        // 每天獨立計算冷飲係數，然後取所選日期的算術平均。
+        // 今日只計入目前以後仍有效的預報時段。
+        List<WeatherDailyFactorResponse> dailyWeatherFactors =
+                buildDailyWeatherFactors(
+                        startDate, endDate, effectiveStart,
+                        selectedMaximums, selectedHumidities,
+                        selectedPrecipitations);
+
+        BigDecimal weatherFactor =
+                weatherFactorCalculator.calculatePeriodAverage(dailyWeatherFactors);
+
+        // 降雨機率官方通常只提供前三天；未提供的遠期降雨不當成異常。
+        OffsetDateTime officialRainEnd = LocalDate.now(TAIWAN_ZONE)
+                .plusDays(RAIN_FORECAST_DAYS)
+                .atStartOfDay(TAIWAN_ZONE)
+                .toOffsetDateTime();
+
+        OffsetDateTime requiredRainEnd = rangeEnd.isBefore(officialRainEnd)
+                ? rangeEnd : officialRainEnd;
+
+        // 判定預報完整性：溫度與天氣覆蓋查詢範圍，
+        // 降雨只在官方提供前三天的範圍內檢查。
         String forecastStatus = calculateForecastStatus(
-                selectedTemperatures,
+                selectedMaximums,
+                selectedMinimums,
+                selectedHumidities,
                 selectedPrecipitations,
                 selectedConditions,
                 effectiveStart,
-                rangeEnd);
+                rangeEnd,
+                requiredRainEnd);
 
         String warning = switch (forecastStatus) {
             case "PARTIAL" ->
-                    "部分氣象預報資料缺失，天氣倍率僅依有效資料計算";
+                    "部分氣象預報資料缺失，缺值採中性調整，天氣倍率僅供參考";
             case "UNAVAILABLE" ->
-                    "沒有可用的氣溫及降雨機率資料，天氣倍率使用 1.00";
+                    "沒有可用的最高／最低氣溫與降雨機率資料，天氣倍率使用 1.00";
             default -> null;
         };
 
@@ -284,6 +332,8 @@ public class WeatherService {
         response.setTemperatureForecasts(selectedTemperatures);
         response.setPrecipitationForecasts(selectedPrecipitations);
         response.setWeatherConditions(selectedConditions);
+        response.setHumidityForecasts(selectedHumidities);
+        response.setDailyWeatherFactors(dailyWeatherFactors);
 
         return response;
     }
@@ -291,32 +341,32 @@ public class WeatherService {
     /**
      * 驗證日期。
      *
-     * 第一版限制今天至後天，共 3 個日曆日。
+     * 限制今天起至第七天，共 7 個日曆日（含起迄）。
      */
     private void validateDates(
             LocalDate startDate,
             LocalDate endDate) {
 
         if (startDate == null || endDate == null) {
-            throw new IllegalArgumentException(
-                    "起始日期與結束日期不可為空");
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "起始日期與結束日期不可為空");
         }
 
         LocalDate today = LocalDate.now(TAIWAN_ZONE);
 
         if (startDate.isBefore(today)) {
-            throw new IllegalArgumentException(
-                    "預報起始日期不可早於今天");
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "預報起始日期不可早於今天");
         }
 
         if (endDate.isBefore(startDate)) {
-            throw new IllegalArgumentException(
-                    "預報結束日期不可早於起始日期");
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "預報結束日期不可早於起始日期");
         }
 
-        if (endDate.isAfter(today.plusDays(2))) {
-            throw new IllegalArgumentException(
-                    "目前僅支援今天至後天的天氣預報");
+        if (endDate.isAfter(today.plusDays(6))) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "目前僅支援今天起七天內的天氣預報");
         }
     }
 
@@ -445,7 +495,8 @@ public class WeatherService {
                 }
             }
 
-            throw new IllegalArgumentException(
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
                     "指定行政區不存在於該縣市：" + district);
         }
 
@@ -455,13 +506,21 @@ public class WeatherService {
     }
 
     /**
-     * 依 ElementName 分別解析三種天氣預報。
+     * 解析一週逐 12 小時的天氣元素。
      *
-     * 不依賴 WeatherElement 的陣列順序。
+     * 元素名稱不依陣列順序，依中央氣象署官方 ElementName 比對：
+     * 平均溫度、最高溫度、最低溫度、平均相對濕度、
+     * 12小時降雨機率、天氣現象。
+     *
+     * 平均溫度屬「時段平均值」，轉成時段中點供既有圖表顯示。
+     * 每日最高／最低與整體天氣倍率則讀取專屬的時段極值。
      */
     private void parseWeatherElements(
             JsonNode location,
             List<WeatherTemperatureResponse> temperatures,
+            List<TemperaturePeriod> maximumTemperatures,
+            List<TemperaturePeriod> minimumTemperatures,
+            List<WeatherHumidityResponse> humidities,
             List<WeatherPrecipitationResponse> precipitations,
             List<WeatherConditionResponse> conditions) {
 
@@ -474,84 +533,70 @@ public class WeatherService {
         }
 
         for (JsonNode element : elements) {
-
-            String elementName =
-                    readText(element.path("ElementName"));
-
+            String elementName = readText(element.path("ElementName"));
             JsonNode times = element.path("Time");
 
             if (!times.isArray()) {
                 continue;
             }
 
+            // 七天資料均以 StartTime / EndTime 表示有效時段。
             for (JsonNode time : times) {
-
                 JsonNode values = time.path("ElementValue");
-
-                // 取得第一個氣象元素值
-                JsonNode value = values.isArray()
-                        && !values.isEmpty()
-                        ? values.get(0)
-                        : null;
+                JsonNode value = values.isArray() && !values.isEmpty()
+                        ? values.get(0) : null;
 
                 if (value == null) {
                     continue;
                 }
 
                 try {
-                    if ("溫度".equals(elementName)) {
+                    OffsetDateTime start = parseTime(time.path("StartTime"));
+                    OffsetDateTime end = parseTime(time.path("EndTime"));
 
-                        OffsetDateTime dataTime = parseTime(
-                                time.path("DataTime"));
+                    if (!validPeriod(start, end)) {
+                        continue;
+                    }
 
-                        if (dataTime != null) {
-                            temperatures.add(
-                                    new WeatherTemperatureResponse(
-                                            dataTime,
-                                            parseTemperature(
-                                                    value.path("Temperature"))));
-                        }
+                    if ("平均溫度".equals(elementName)) {
+                        // 舊版 DTO 使用資料點；以時段中點表示 12 小時平均溫。
+                        OffsetDateTime midpoint = start.plusSeconds(
+                                Duration.between(start, end).getSeconds() / 2);
+                        temperatures.add(new WeatherTemperatureResponse(
+                                midpoint,
+                                parseTemperature(value.path("Temperature"))));
 
-                    } else if ("3小時降雨機率".equals(elementName)) {
+                    } else if ("最高溫度".equals(elementName)) {
+                        maximumTemperatures.add(new TemperaturePeriod(
+                                start, end,
+                                parseTemperature(value.path("MaxTemperature"))));
 
-                        OffsetDateTime start = parseTime(
-                                time.path("StartTime"));
+                    } else if ("最低溫度".equals(elementName)) {
+                        minimumTemperatures.add(new TemperaturePeriod(
+                                start, end,
+                                parseTemperature(value.path("MinTemperature"))));
 
-                        OffsetDateTime end = parseTime(
-                                time.path("EndTime"));
+                    } else if ("平均相對濕度".equals(elementName)) {
+                        // 七天資料使用 RelativeHumidity，無效數值保留 null。
+                        humidities.add(new WeatherHumidityResponse(
+                                start, end,
+                                parsePercent(value.path("RelativeHumidity"))));
 
-                        if (validPeriod(start, end)) {
-                            precipitations.add(
-                                    new WeatherPrecipitationResponse(
-                                            start,
-                                            end,
-                                            parseRain(
-                                                    value.path(
-                                                            "ProbabilityOfPrecipitation"))));
-                        }
+                    } else if ("12小時降雨機率".equals(elementName)) {
+                        // 有效值 0～100；"-" 等缺值保留 null。
+                        precipitations.add(new WeatherPrecipitationResponse(
+                                start, end,
+                                parseRain(value.path("ProbabilityOfPrecipitation"))));
 
                     } else if ("天氣現象".equals(elementName)) {
-
-                        OffsetDateTime start = parseTime(
-                                time.path("StartTime"));
-
-                        OffsetDateTime end = parseTime(
-                                time.path("EndTime"));
-
-                        if (validPeriod(start, end)) {
-                            conditions.add(
-                                    new WeatherConditionResponse(
-                                            start,
-                                            end,
-                                            readText(value.path("Weather")),
-                                            readText(value.path("WeatherCode"))));
-                        }
+                        conditions.add(new WeatherConditionResponse(
+                                start, end,
+                                readText(value.path("Weather")),
+                                readText(value.path("WeatherCode"))));
                     }
 
                 } catch (DateTimeParseException ex) {
-                    // 單一時段的日期格式異常時跳過該筆。
-                    // 後續完整性檢查會反映資料缺口。
-                    // 不讓單筆資料破壞其他有效預報。
+                    // 單一不合法時間略過，完整性檢查會反映缺口。
                 }
             }
         }
@@ -613,6 +658,13 @@ public class WeatherService {
      * 0 是有效降雨機率，不等於缺值。
      */
     private Integer parseRain(JsonNode node) {
+        return parsePercent(node);
+    }
+
+    /**
+     * 濕度與降雨機率都是百分比，數值只允許 0～100。
+     */
+    private Integer parsePercent(JsonNode node) {
 
         Integer value = parseNumber(node);
 
@@ -667,239 +719,242 @@ public class WeatherService {
     }
 
     /**
-     * 計算天氣需求倍率。
+     * 逐日計算冷飲天氣係數，將氣溫、濕度與降雨分開處理。
      *
-     * 最高氣溫 >= 32°C：增加 0.10
-     * 最高降雨機率 >= 60%：增加 0.10
-     *
-     * 缺值不視為達標。
+     * 氣溫：取當日有效預報的最高溫。
+     * 濕度：依與該日重疊的有效時段分鐘數加權平均。
+     * 降雨：取當日有效降雨機率最高值；遠期缺值維持 null。
      */
-    private BigDecimal calculateWeatherFactor(
-            Integer maxTemperature,
-            Integer maxRain) {
-
-        BigDecimal factor = DEFAULT_FACTOR;
-
-        if (maxTemperature != null
-                && maxTemperature >= TEMPERATURE_THRESHOLD) {
-            factor = factor.add(FACTOR_INCREMENT);
-        }
-
-        if (maxRain != null
-                && maxRain >= RAIN_THRESHOLD) {
-            factor = factor.add(FACTOR_INCREMENT);
-        }
-
-        return factor;
-    }
-
-    /**
-     * 建立每日天氣摘要。
-     *
-     * 每日最高、最低溫取當日有效溫度值。
-     * 代表性天氣使用當地 12:00 所屬預報時段。
-     *
-     * 若無有效資料，相關欄位保留 null。
-     */
-    private List<WeatherDailyResponse> buildDailyForecasts(
+    private List<WeatherDailyFactorResponse> buildDailyWeatherFactors(
             LocalDate startDate,
             LocalDate endDate,
-            List<WeatherTemperatureResponse> temperatures,
-            List<WeatherConditionResponse> conditions) {
+            OffsetDateTime effectiveStart,
+            List<TemperaturePeriod> maximumTemperatures,
+            List<WeatherHumidityResponse> humidities,
+            List<WeatherPrecipitationResponse> precipitations) {
 
-        List<WeatherDailyResponse> dailyForecasts =
-                new ArrayList<>();
+        List<WeatherDailyFactorResponse> result = new ArrayList<>();
 
         for (LocalDate date = startDate;
                 !date.isAfter(endDate);
                 date = date.plusDays(1)) {
 
-            OffsetDateTime dayStart =
-                    date.atStartOfDay(TAIWAN_ZONE)
-                            .toOffsetDateTime();
+            OffsetDateTime dayStart = date.atStartOfDay(TAIWAN_ZONE)
+                    .toOffsetDateTime();
+            OffsetDateTime dayEnd = date.plusDays(1)
+                    .atStartOfDay(TAIWAN_ZONE).toOffsetDateTime();
 
-            OffsetDateTime dayEnd =
-                    date.plusDays(1)
-                            .atStartOfDay(TAIWAN_ZONE)
-                            .toOffsetDateTime();
+            // 今天已經過去的時間不參與倍率計算。
+            OffsetDateTime validStart = dayStart.isAfter(effectiveStart)
+                    ? dayStart : effectiveStart;
 
-            OffsetDateTime noon =
-                    date.atTime(12, 0)
-                            .atZone(TAIWAN_ZONE)
-                            .toOffsetDateTime();
+            Integer dayMaxTemperature = maximumTemperatures.stream()
+                    .filter(item -> overlaps(item.start(), item.end(),
+                            validStart, dayEnd))
+                    .map(TemperaturePeriod::value)
+                    .filter(value -> value != null)
+                    .max(Integer::compareTo)
+                    .orElse(null);
 
-            Integer max = null;
-            Integer min = null;
+            Integer dayHumidity = calculateDayAverageHumidity(
+                    humidities, validStart, dayEnd);
 
-            // 計算每日最高及最低氣溫
-            for (WeatherTemperatureResponse item : temperatures) {
+            Integer dayMaxRain = precipitations.stream()
+                    .filter(item -> overlaps(item.getStartTime(), item.getEndTime(),
+                            validStart, dayEnd))
+                    .map(WeatherPrecipitationResponse::getPrecipitationProbability)
+                    .filter(value -> value != null)
+                    .max(Integer::compareTo)
+                    .orElse(null);
 
-                OffsetDateTime time = item.getDataTime();
-                Integer value = item.getTemperature();
+            result.add(weatherFactorCalculator.calculateDaily(
+                    date, dayMaxTemperature, dayHumidity, dayMaxRain));
+        }
+        return result;
+    }
 
-                if (value == null
-                        || time.isBefore(dayStart)
-                        || !time.isBefore(dayEnd)) {
-                    continue;
-                }
+    /**
+     * 依時段重疊分鐘數取得每日平均相對濕度。
+     *
+     * 例如 18:00～隔日 06:00 的濕度值，
+     * 前一天與隔一天各貢獻 6 小時，不會都當成完整 12 小時。
+     */
+    private Integer calculateDayAverageHumidity(
+            List<WeatherHumidityResponse> humidities,
+            OffsetDateTime dayStart,
+            OffsetDateTime dayEnd) {
 
-                if (max == null || value > max) {
-                    max = value;
-                }
+        long totalMinutes = 0L;
+        BigDecimal weightedSum = BigDecimal.ZERO;
 
-                if (min == null || value < min) {
-                    min = value;
-                }
+        for (WeatherHumidityResponse item : humidities) {
+            if (item.getRelativeHumidity() == null || !overlaps(
+                    item.getStartTime(), item.getEndTime(), dayStart, dayEnd)) {
+                continue;
             }
+
+            OffsetDateTime overlapStart = item.getStartTime().isAfter(dayStart)
+                    ? item.getStartTime() : dayStart;
+            OffsetDateTime overlapEnd = item.getEndTime().isBefore(dayEnd)
+                    ? item.getEndTime() : dayEnd;
+
+            long minutes = Duration.between(overlapStart, overlapEnd).toMinutes();
+            if (minutes <= 0) {
+                continue;
+            }
+
+            totalMinutes = Math.addExact(totalMinutes, minutes);
+            weightedSum = weightedSum.add(
+                    BigDecimal.valueOf(item.getRelativeHumidity())
+                            .multiply(BigDecimal.valueOf(minutes)));
+        }
+
+        if (totalMinutes == 0L) {
+            return null;
+        }
+        return weightedSum.divide(
+                BigDecimal.valueOf(totalMinutes), 0, RoundingMode.HALF_UP)
+                .intValueExact();
+    }
+
+    /**
+     * 依官方逐 12 小時最高／最低氣溫產生每日卡片。
+     *
+     * 因為預報時段可能跨過午夜（18:00～隔天 06:00），
+     * 這裡採「與當日有重疊」的時段極值計算。
+     * 此值是預報時段的近似日摘要，不是逐時觀測極值。
+     */
+    private List<WeatherDailyResponse> buildDailyForecasts(
+            LocalDate startDate,
+            LocalDate endDate,
+            List<TemperaturePeriod> maximumTemperatures,
+            List<TemperaturePeriod> minimumTemperatures,
+            List<WeatherConditionResponse> conditions) {
+
+        List<WeatherDailyResponse> dailyForecasts = new ArrayList<>();
+
+        for (LocalDate date = startDate;
+                !date.isAfter(endDate);
+                date = date.plusDays(1)) {
+
+            OffsetDateTime dayStart = date.atStartOfDay(TAIWAN_ZONE)
+                    .toOffsetDateTime();
+            OffsetDateTime dayEnd = date.plusDays(1).atStartOfDay(TAIWAN_ZONE)
+                    .toOffsetDateTime();
+            OffsetDateTime noon = date.atTime(12, 0)
+                    .atZone(TAIWAN_ZONE).toOffsetDateTime();
+
+            Integer max = maximumTemperatures.stream()
+                    .filter(item -> overlaps(item.start(), item.end(), dayStart, dayEnd))
+                    .map(TemperaturePeriod::value)
+                    .filter(value -> value != null)
+                    .max(Integer::compareTo)
+                    .orElse(null);
+
+            Integer min = minimumTemperatures.stream()
+                    .filter(item -> overlaps(item.start(), item.end(), dayStart, dayEnd))
+                    .map(TemperaturePeriod::value)
+                    .filter(value -> value != null)
+                    .min(Integer::compareTo)
+                    .orElse(null);
 
             String weather = null;
             String weatherCode = null;
 
-            // 取得涵蓋當日中午 12:00 的代表性天氣
+            // 延續原本以當日 12:00 預報作為代表性天氣的規則。
             for (WeatherConditionResponse item : conditions) {
-
                 if (!noon.isBefore(item.getStartTime())
                         && noon.isBefore(item.getEndTime())) {
-
                     weather = item.getWeather();
                     weatherCode = item.getWeatherCode();
                     break;
                 }
             }
 
-            dailyForecasts.add(
-                    new WeatherDailyResponse(
-                            date,
-                            max,
-                            min,
-                            weather,
-                            weatherCode));
+            dailyForecasts.add(new WeatherDailyResponse(
+                    date, max, min, weather, weatherCode));
         }
 
         return dailyForecasts;
     }
 
     /**
-     * 判定天氣預報完整性。
+     * 判定未來七天天氣預報的資料完整性。
      *
-     * UNAVAILABLE：
-     * 氣溫與降雨機率都沒有有效資料。
+     * COMPLETE：最高／最低溫、相對濕度與天氣現象覆蓋有效查詢期間；
+     *           降雨只需覆蓋官方前三天的有效查詢期間。
+     * PARTIAL：有可用資料，但查詢期間內存在需要的缺口。
+     * UNAVAILABLE：最高／最低溫及降雨機率皆無有效數值。
      *
-     * COMPLETE：
-     * 氣溫資料符合預期的最大 3 小時間距，
-     * 降雨及天氣現象的有效時段完整覆蓋查詢區間。
-     *
-     * 其餘可使用部分資料的情況為 PARTIAL。
+     * 不把官方第四～第七天未提供的降雨機率當成資料缺失。
      */
     private String calculateForecastStatus(
-            List<WeatherTemperatureResponse> temperatures,
+            List<TemperaturePeriod> maximumTemperatures,
+            List<TemperaturePeriod> minimumTemperatures,
+            List<WeatherHumidityResponse> humidities,
             List<WeatherPrecipitationResponse> precipitations,
             List<WeatherConditionResponse> conditions,
             OffsetDateTime start,
-            OffsetDateTime end) {
+            OffsetDateTime end,
+            OffsetDateTime requiredRainEnd) {
 
-        boolean hasTemperature = temperatures.stream()
-                .anyMatch(item -> item.getTemperature() != null);
+        boolean hasTemperature = maximumTemperatures.stream()
+                .anyMatch(item -> item.value() != null)
+                || minimumTemperatures.stream()
+                .anyMatch(item -> item.value() != null);
 
         boolean hasRain = precipitations.stream()
-                .anyMatch(item ->
-                        item.getPrecipitationProbability() != null);
+                .anyMatch(item -> item.getPrecipitationProbability() != null);
 
         if (!hasTemperature && !hasRain) {
             return "UNAVAILABLE";
         }
 
-        boolean temperatureComplete =
-                isTemperatureComplete(temperatures, start, end);
+        boolean maximumComplete = isPeriodCoverageComplete(
+                maximumTemperatures.stream()
+                        .filter(item -> item.value() != null)
+                        .map(item -> new TimePeriod(item.start(), item.end()))
+                        .toList(),
+                start, end);
 
-        // 降雨資料只有數值有效的時段才能算作覆蓋
-        List<WeatherPrecipitationResponse> validRain =
-                precipitations.stream()
-                        .filter(item ->
-                                item.getPrecipitationProbability() != null)
-                        .toList();
+        boolean minimumComplete = isPeriodCoverageComplete(
+                minimumTemperatures.stream()
+                        .filter(item -> item.value() != null)
+                        .map(item -> new TimePeriod(item.start(), item.end()))
+                        .toList(),
+                start, end);
 
-        boolean rainComplete =
-                isPeriodCoverageComplete(
-                        validRain.stream()
+        // 相對濕度是冷飲倍率的新依據，缺失時顯示 PARTIAL。
+        boolean humidityComplete = isPeriodCoverageComplete(
+                humidities.stream()
+                        .filter(item -> item.getRelativeHumidity() != null)
+                        .map(item -> new TimePeriod(
+                                item.getStartTime(), item.getEndTime()))
+                        .toList(),
+                start, end);
+
+        boolean conditionComplete = isPeriodCoverageComplete(
+                conditions.stream()
+                        .filter(item -> item.getWeather() != null
+                                && item.getWeatherCode() != null)
+                        .map(item -> new TimePeriod(
+                                item.getStartTime(), item.getEndTime()))
+                        .toList(),
+                start, end);
+
+        // 若選擇的期間全部在第 4 天以後，就不要求降雨覆蓋。
+        boolean rainComplete = !requiredRainEnd.isAfter(start)
+                || isPeriodCoverageComplete(
+                        precipitations.stream()
+                                .filter(item -> item.getPrecipitationProbability() != null)
                                 .map(item -> new TimePeriod(
-                                        item.getStartTime(),
-                                        item.getEndTime()))
+                                        item.getStartTime(), item.getEndTime()))
                                 .toList(),
-                        start,
-                        end);
+                        start, requiredRainEnd);
 
-        // 天氣現象與代碼皆有效，才算完整覆蓋
-        boolean conditionComplete =
-                isPeriodCoverageComplete(
-                        conditions.stream()
-                                .filter(item ->
-                                        item.getWeather() != null
-                                        && item.getWeatherCode() != null)
-                                .map(item -> new TimePeriod(
-                                        item.getStartTime(),
-                                        item.getEndTime()))
-                                .toList(),
-                        start,
-                        end);
-
-        if (temperatureComplete
-                && rainComplete
-                && conditionComplete) {
-            return "COMPLETE";
-        }
-
-        return "PARTIAL";
-    }
-
-    /**
-     * 檢查溫度資料時間點是否連續到足以覆蓋預報期間。
-     *
-     * 依已確認的官方樣本，溫度前段為逐小時，
-     * 後段為每 3 小時，因此最大容許間距為 3 小時。
-     *
-     * 這是時間點資料的完整性近似判斷，
-     * 並非將溫度當成連續時段資料。
-     */
-    private boolean isTemperatureComplete(
-            List<WeatherTemperatureResponse> temperatures,
-            OffsetDateTime start,
-            OffsetDateTime end) {
-
-        List<OffsetDateTime> times = temperatures.stream()
-                .filter(item -> item.getTemperature() != null)
-                .map(WeatherTemperatureResponse::getDataTime)
-                .sorted()
-                .toList();
-
-        if (times.isEmpty()) {
-            return false;
-        }
-
-        OffsetDateTime first = times.get(0);
-        OffsetDateTime last = times.get(times.size() - 1);
-
-        if (Duration.between(start, first)
-                .compareTo(MAX_TEMPERATURE_GAP) > 0) {
-            return false;
-        }
-
-        if (Duration.between(last, end)
-                .compareTo(MAX_TEMPERATURE_GAP) > 0) {
-            return false;
-        }
-
-        for (int i = 1; i < times.size(); i++) {
-
-            Duration gap =
-                    Duration.between(times.get(i - 1), times.get(i));
-
-            if (gap.compareTo(MAX_TEMPERATURE_GAP) > 0) {
-                return false;
-            }
-        }
-
-        return true;
+        return maximumComplete && minimumComplete
+                && humidityComplete && conditionComplete && rainComplete
+                ? "COMPLETE" : "PARTIAL";
     }
 
     /**
@@ -939,6 +994,16 @@ public class WeatherService {
         }
 
         return false;
+    }
+
+    /**
+     * 官方逐 12 小時的最高／最低氣溫資料。
+     * 僅供本服務計算，不直接暴露到 API DTO。
+     */
+    private record TemperaturePeriod(
+            OffsetDateTime start,
+            OffsetDateTime end,
+            Integer value) {
     }
 
     /**

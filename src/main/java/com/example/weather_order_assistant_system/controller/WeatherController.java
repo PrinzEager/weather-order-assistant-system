@@ -17,7 +17,7 @@ import lombok.RequiredArgsConstructor;
 /**
  * 天氣預報 API Controller。
  *
- * 提供前端查詢中央氣象署未來 3 天天氣預報。
+ * 提供前端查詢中央氣象署未來 7 天天氣預報。
  *
  * 主要功能：
  * 1. 接收縣市與鄉鎮市區名稱。
@@ -48,7 +48,7 @@ public class WeatherController {
      * ?city=高雄市
      * &district=路竹區
      * &startDate=2026-11-21
-     * &endDate=2026-11-23
+     * &endDate=2026-11-27
      *
      * @param city 縣市完整名稱
      * @param district 鄉鎮市區完整名稱

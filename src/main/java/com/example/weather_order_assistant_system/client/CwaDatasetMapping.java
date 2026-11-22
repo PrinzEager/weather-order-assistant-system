@@ -6,11 +6,11 @@ import java.util.Map;
  * 中央氣象署縣市與天氣預報資料集對應類別。
  *
  * 負責將使用者選擇的縣市名稱，
- * 轉換成中央氣象署未來 3 天天氣預報資料集代碼。
+ * 轉換成中央氣象署未來 1 週逐 12 小時天氣預報資料集代碼。
  *
  * 例如：
- * 高雄市 -> F-D0047-065
- * 臺南市 -> F-D0047-077
+ * 高雄市 -> F-D0047-067
+ * 臺南市 -> F-D0047-079
  *
  * 此類別只負責資料集代碼對應，
  * 不負責發送 HTTP 請求或解析天氣 JSON。
@@ -24,7 +24,7 @@ public final class CwaDatasetMapping {
     private CwaDatasetMapping() {
     }
 
-    // 全臺 22 縣市的未來 3 天天氣預報資料集代碼
+    // 全臺 22 縣市的未來 1 週逐 12 小時天氣預報資料集代碼
     //
     // 使用 Map.ofEntries 建立不可修改的對應資料。
     // 縣市名稱採用中央氣象署官方名稱。
@@ -32,43 +32,43 @@ public final class CwaDatasetMapping {
             Map.ofEntries(
 
                     // 北部地區
-                    Map.entry("臺北市", "F-D0047-061"),
-                    Map.entry("新北市", "F-D0047-069"),
-                    Map.entry("基隆市", "F-D0047-049"),
-                    Map.entry("桃園市", "F-D0047-005"),
-                    Map.entry("新竹市", "F-D0047-053"),
-                    Map.entry("新竹縣", "F-D0047-009"),
-                    Map.entry("宜蘭縣", "F-D0047-001"),
+                    Map.entry("臺北市", "F-D0047-063"),
+                    Map.entry("新北市", "F-D0047-071"),
+                    Map.entry("基隆市", "F-D0047-051"),
+                    Map.entry("桃園市", "F-D0047-007"),
+                    Map.entry("新竹市", "F-D0047-055"),
+                    Map.entry("新竹縣", "F-D0047-011"),
+                    Map.entry("宜蘭縣", "F-D0047-003"),
 
                     // 中部地區
-                    Map.entry("臺中市", "F-D0047-073"),
-                    Map.entry("苗栗縣", "F-D0047-013"),
-                    Map.entry("彰化縣", "F-D0047-017"),
-                    Map.entry("南投縣", "F-D0047-021"),
-                    Map.entry("雲林縣", "F-D0047-025"),
+                    Map.entry("臺中市", "F-D0047-075"),
+                    Map.entry("苗栗縣", "F-D0047-015"),
+                    Map.entry("彰化縣", "F-D0047-019"),
+                    Map.entry("南投縣", "F-D0047-023"),
+                    Map.entry("雲林縣", "F-D0047-027"),
 
                     // 南部地區
-                    Map.entry("臺南市", "F-D0047-077"),
-                    Map.entry("高雄市", "F-D0047-065"),
-                    Map.entry("嘉義市", "F-D0047-057"),
-                    Map.entry("嘉義縣", "F-D0047-029"),
-                    Map.entry("屏東縣", "F-D0047-033"),
+                    Map.entry("臺南市", "F-D0047-079"),
+                    Map.entry("高雄市", "F-D0047-067"),
+                    Map.entry("嘉義市", "F-D0047-059"),
+                    Map.entry("嘉義縣", "F-D0047-031"),
+                    Map.entry("屏東縣", "F-D0047-035"),
 
                     // 東部地區
-                    Map.entry("花蓮縣", "F-D0047-041"),
-                    Map.entry("臺東縣", "F-D0047-037"),
+                    Map.entry("花蓮縣", "F-D0047-043"),
+                    Map.entry("臺東縣", "F-D0047-039"),
 
                     // 離島地區
-                    Map.entry("澎湖縣", "F-D0047-045"),
-                    Map.entry("金門縣", "F-D0047-085"),
-                    Map.entry("連江縣", "F-D0047-081")
+                    Map.entry("澎湖縣", "F-D0047-047"),
+                    Map.entry("金門縣", "F-D0047-087"),
+                    Map.entry("連江縣", "F-D0047-083")
             );
 
     /**
      * 根據縣市名稱取得中央氣象署資料集代碼。
      *
      * @param city 縣市完整名稱，例如：高雄市
-     * @return 對應的未來 3 天天氣預報資料集代碼
+     * @return 對應的未來 1 週逐 12 小時天氣預報資料集代碼
      */
     public static String getDatasetId(String city) {
 
