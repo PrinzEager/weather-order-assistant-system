@@ -1,5 +1,5 @@
 /* 商品分類管理模組：由原 app.js 分離，保留既有功能。 */
-import { API, byId, makeElement, clearElement, showEmpty, showMessage, hideMessage, setButtonLoading, displayValue, apiGet } from "./common.js";
+import { API, byId, makeElement, clearElement, showEmpty, showMessage, hideMessage, setButtonLoading, displayValue, apiGet, csrfHeaders, redirectIfSessionExpired } from "./common.js";
 
 let categoriesLoaded = false;
 let categoryData = [];
@@ -581,10 +581,13 @@ async function submitCategoryForm() {
             method: method,
             headers: {
                 "Content-Type": "application/json",
-                "Accept": "application/json"
+                "Accept": "application/json",
+                ...csrfHeaders(method)
             },
             body: JSON.stringify(requestBody)
         });
+
+        redirectIfSessionExpired(response);
 
         const contentType =
             response.headers.get("content-type") || "";
@@ -787,10 +790,13 @@ async function deleteCategory(category) {
             {
                 method: "DELETE",
                 headers: {
-                    "Accept": "application/json"
+                    "Accept": "application/json",
+                    ...csrfHeaders("DELETE")
                 }
             }
         );
+
+        redirectIfSessionExpired(response);
 
         // DELETE 成功時沒有 Response Body。
         // 不可直接呼叫 response.json()。

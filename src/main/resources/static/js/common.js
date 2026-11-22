@@ -1,5 +1,22 @@
 "use strict";
 
+// AJAX 與 Spring Security 共用 CSRF header；Token 來自後端渲染的 index.html。
+export function csrfHeaders(method = "GET") {
+    const safeMethod = String(method).toUpperCase();
+    if (["GET", "HEAD", "OPTIONS", "TRACE"].includes(safeMethod)) return {};
+    const token = document.querySelector('meta[name="_csrf"]')?.content;
+    const headerName = document.querySelector('meta[name="_csrf_header"]')?.content;
+    return token && headerName ? { [headerName]: token } : {};
+}
+
+// Session 過期時，避免將登入頁 HTML 誤當成 JSON。
+export function redirectIfSessionExpired(response) {
+    if (response.status === 401) {
+        window.location.assign("/login?expired");
+        throw new Error("登入已逾時，請重新登入");
+    }
+}
+
 export const API = Object.freeze({
     weather: "/api/weather/forecast",
     recommendations: "/api/order-recommendations",
@@ -190,6 +207,8 @@ export async function apiGet(path, parameters) {
         }
     });
 
+    redirectIfSessionExpired(response);
+
     // 避免伺服器回傳非 JSON 時直接造成解析例外。
     const contentType =
         response.headers.get("content-type") || "";
@@ -265,12 +284,15 @@ export async function requestJson(url, method = "GET", body) {
             "Accept": "application/json",
             ...(body === undefined
                 ? {}
-                : { "Content-Type": "application/json" })
+                : { "Content-Type": "application/json" }),
+            ...csrfHeaders(method)
         },
         ...(body === undefined
             ? {}
             : { body: JSON.stringify(body) })
     });
+
+    redirectIfSessionExpired(response);
 
     const raw = await response.text();
     let data = null;
