@@ -1022,7 +1022,7 @@ textarea:focus-visible,
 
 .main-content::before {
     z-index: -2;
-    background: url('/images/beverage-shelves-warm-.webp') center top / cover no-repeat;
+    background: url('/images/beverage-shelves-warm.webp') center top / cover no-repeat;
     opacity: var(--shelf-background-opacity);
     filter: blur(var(--shelf-background-blur)) saturate(.65);
 }

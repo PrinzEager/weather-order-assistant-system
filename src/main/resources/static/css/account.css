@@ -1,0 +1,68 @@
+/* 我的帳號介面：暖米白／奶茶棕／焦糖橘，避免改動舊系統樣式。 */
+.account-open-button {
+    padding: 6px 11px;
+    border: 1px solid #c9946b;
+    border-radius: 8px;
+    background: #fff1e2;
+    color: #754727;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}
+.account-open-button:hover { background: #ffe8d2; }
+.account-open-button:focus-visible,
+.account-close-button:focus-visible,
+.account-dialog button:focus-visible,
+.account-dialog input:focus-visible { outline: 2px solid #aa6637; outline-offset: 2px; }
+.account-dialog {
+    box-sizing: border-box;
+    width: min(92vw, 490px);
+    max-height: min(90vh, 820px);
+    overflow-y: auto;
+    padding: 24px;
+    border: 1px solid #e3d2c0;
+    border-radius: 16px;
+    background: #fffaf5;
+    box-shadow: 0 24px 65px rgba(62, 41, 23, .20);
+    color: #493629;
+    font: inherit;
+}
+.account-dialog::backdrop { background: rgba(37, 28, 20, .56); }
+.account-dialog-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; }
+.account-dialog-heading h2 { margin: 0 0 6px; font-size: 21px; }
+.account-dialog-heading p { margin: 0 0 16px; font-size: 13px; color: #7e6758; }
+.account-close-button { padding: 0 7px; border: 0; background: transparent; font-size: 26px; color: #79604d; cursor: pointer; }
+.account-dialog h3 { margin: 0 0 10px; font-size: 15px; }
+.account-detail-section { padding: 15px; background: #f7eee5; border: 1px solid #efdfcf; border-radius: 10px; margin-bottom: 18px; }
+.account-info-message { font-size: 13px; color: #6a5140; }
+.account-details { display: grid; grid-template-columns: 90px 1fr; column-gap: 12px; row-gap: 9px; margin: 0; font-size: 13px; }
+.account-details dt { color: #806959; }
+.account-details dd { margin: 0; overflow-wrap: anywhere; font-weight: 700; }
+.account-password-form { display: grid; gap: 9px; }
+.account-password-form label { font-size: 13px; font-weight: 700; }
+.account-password-form input {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 42px;
+    padding: 9px 11px;
+    border: 1px solid #d8c3ac;
+    border-radius: 8px;
+    background: white;
+    color: #433127;
+    font: inherit;
+}
+.account-helper { margin: 0 0 4px; font-size: 12px; line-height: 1.55; color: #786150; }
+.account-form-message { padding: 9px 10px; border: 1px solid #e9beb0; border-radius: 8px; background: #fff1ed; color: #9b3428; font-size: 13px; }
+.account-form-message.account-form-success { border-color: #a8d4b2; background: #e6f4ea; color: #28613c; }
+.account-dialog-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 10px; }
+.account-dialog-actions button { border-radius: 8px; padding: 10px 14px; font: inherit; cursor: pointer; }
+.account-secondary-button { border: 1px solid #ddc8b4; background: #fff; color: #634936; }
+.account-primary-button { border: 1px solid #a76035; background: #a76035; color: white; font-weight: 700; }
+.account-primary-button:hover:not(:disabled) { background: #8f4c27; }
+.account-dialog-actions button:disabled { opacity: .62; cursor: progress; }
+@media (max-width: 540px) {
+    .account-dialog { padding: 18px; }
+    .account-dialog-actions { flex-direction: column-reverse; }
+    .account-dialog-actions button { width: 100%; }
+    .account-details { grid-template-columns: 77px 1fr; }
+}

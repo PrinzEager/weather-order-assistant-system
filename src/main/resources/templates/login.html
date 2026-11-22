@@ -16,6 +16,7 @@
         <p class="login-alert" th:if="${param.error}" role="alert">帳號或密碼不正確，或此帳號已停用。</p>
         <p class="login-alert" th:if="${param.occupied}" role="alert">此帳號已在其他裝置登入。請先在原裝置登出，或等待 Session 逾時。</p>
         <p class="login-success" th:if="${param.logout}" role="status">已安全登出，可以重新登入。</p>
+        <p class="login-success" th:if="${param.passwordChanged}" role="status">密碼已更新，請使用新密碼重新登入。</p>
         <p class="login-alert" th:if="${param.expired}" role="alert">登入已逾時，請重新登入。</p>
 
         <!-- 使用 Spring Security 的表單登入與 CSRF 防護，不在前端自行驗證密碼。 -->

@@ -15,6 +15,8 @@
     <link rel="stylesheet" th:href="@{/css/modules.css}">
     <link rel="stylesheet" th:href="@{/css/dashboard.css}">
     <link rel="stylesheet" th:href="@{/css/security.css}">
+    <!-- 我的帳號：獨立 CSS，不改動原有管理模組樣式。 -->
+    <link rel="stylesheet" th:href="@{/css/account.css}">
 
     <!-- 原本功能模組入口保持不變。 -->
     <script type="module" th:src="@{/js/app.js}"></script>
@@ -23,6 +25,8 @@
 
     <!-- 頁面路由與訂貨時間保護：獨立模組，不覆蓋原有 app.js／訂貨 JS。 -->
     <script type="module" th:src="@{/js/router.js}"></script>
+    <!-- 帳號資訊與修改密碼：獨立模組，不混入 app.js / router.js。 -->
+    <script type="module" th:src="@{/js/account.js}"></script>
     <script type="module" th:src="@{/js/order-date-guard.js}"></script>
 
     <!-- 首頁：七天天氣與氣溫圖／銷售趨勢、訂貨摘要、KPI。 -->
@@ -124,6 +128,8 @@
             <div class="topbar-status">
                 <span class="status-dot"></span>
                 <span>Weather Order Demo</span>
+                <!-- 不使用 data-page，避免影響原本的 History Router。 -->
+                <button id="account-open-button" type="button" class="account-open-button">我的帳號</button>
                 <!-- 登出使用 POST + CSRF，不使用 GET 連結。 -->
                 <form class="security-logout-form" th:action="@{/logout}" method="post">
                     <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
@@ -1251,6 +1257,58 @@
         </section>
 
     </main>
+
+
+    <!-- =====================================================
+         我的帳號對話框：從頂部按鈕開啟，不額外新增前端網址。
+         對話框只處理目前登入者，不允許指定其他使用者 ID。
+         ===================================================== -->
+    <dialog id="account-dialog" class="account-dialog" aria-labelledby="account-dialog-title">
+        <div class="account-dialog-heading">
+            <div>
+                <h2 id="account-dialog-title">我的帳號</h2>
+                <p>查看登入資訊及安全地修改自己的密碼。</p>
+            </div>
+            <button id="account-close-button" class="account-close-button" type="button"
+                    aria-label="關閉我的帳號">×</button>
+        </div>
+
+        <section class="account-detail-section" aria-labelledby="account-details-title">
+            <h3 id="account-details-title">帳號資訊</h3>
+            <p id="account-info-message" class="account-info-message" role="status">尚未載入</p>
+            <dl id="account-details" class="account-details" hidden>
+                <dt>帳號</dt><dd id="account-name">--</dd>
+                <dt>狀態</dt><dd id="account-status">--</dd>
+                <dt>建立時間</dt><dd id="account-created-at">--</dd>
+                <dt>更新時間</dt><dd id="account-updated-at">--</dd>
+            </dl>
+        </section>
+
+        <form id="account-password-form" class="account-password-form" autocomplete="off">
+            <h3>修改密碼</h3>
+            <p class="account-helper">修改成功後會立即登出，請使用新密碼重新登入。</p>
+
+            <label for="account-current-password">目前密碼</label>
+            <input id="account-current-password" type="password" name="currentPassword"
+                   autocomplete="current-password" required>
+
+            <label for="account-new-password">新密碼</label>
+            <input id="account-new-password" type="password" name="newPassword"
+                   autocomplete="new-password" minlength="12" required
+                   aria-describedby="account-new-password-hint">
+            <p id="account-new-password-hint" class="account-helper">至少 12 個字元，UTF-8 不超過 72 bytes，且不可與舊密碼相同。</p>
+
+            <label for="account-confirm-password">確認新密碼</label>
+            <input id="account-confirm-password" type="password" name="confirmPassword"
+                   autocomplete="new-password" required>
+
+            <p id="account-form-message" class="account-form-message" role="alert" hidden></p>
+            <div class="account-dialog-actions">
+                <button id="account-cancel-button" type="button" class="account-secondary-button">取消</button>
+                <button id="account-submit-button" type="submit" class="account-primary-button">確認修改密碼</button>
+            </div>
+        </form>
+    </dialog>
 
 </body>
 </html>
