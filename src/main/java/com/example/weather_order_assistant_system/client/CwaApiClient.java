@@ -1,6 +1,10 @@
 package com.example.weather_order_assistant_system.client;
 
+import java.net.http.HttpClient;
+import java.time.Duration;
+
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
@@ -36,11 +40,26 @@ public class CwaApiClient {
     public CwaApiClient(
             RestClient.Builder restClientBuilder,
             @Value("${cwa.api.base-url}") String baseUrl,
-            @Value("${cwa.api.authorization}") String authorization) {
+            @Value("${cwa.api.authorization}") String authorization,
+            @Value("${cwa.api.connect-timeout-ms:5000}") long connectTimeoutMs,
+            @Value("${cwa.api.read-timeout-ms:10000}") long readTimeoutMs) {
 
-        // 設定中央氣象署 API 的基礎網址
+        if (connectTimeoutMs <= 0 || readTimeoutMs <= 0) {
+            throw new IllegalArgumentException("天氣資料連線及讀取逾時必須大於 0");
+        }
+
+        // 連線逾時用於建立 TCP 連線；讀取逾時限制單次請求等待時間。
+        // 限定在 CWA 客戶端，不影響其他 RestClient 的網路設定。
+        HttpClient httpClient = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofMillis(connectTimeoutMs))
+                .build();
+        JdkClientHttpRequestFactory requestFactory =
+                new JdkClientHttpRequestFactory(httpClient);
+        requestFactory.setReadTimeout(Duration.ofMillis(readTimeoutMs));
+
         this.restClient = restClientBuilder
                 .baseUrl(baseUrl)
+                .requestFactory(requestFactory)
                 .build();
 
         // 保存 API 授權碼

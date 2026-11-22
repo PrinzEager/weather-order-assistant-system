@@ -1,5 +1,7 @@
 # 程式碼架構與品質審查報告
 
+> **P1 修正進度（2026-11-22）**：本報告保留「修正前」的風險評估作為歷史紀錄。採購入庫鎖定、商品舊庫存覆寫防護、部署健康檢查、氣象連線逾時及正式環境基本設定已納入程式補丁，但尚需本機 Maven／MySQL 併發驗收。`.gitignore` 原本由使用者在本機管理，已確認排除 `.env`，此次不覆蓋。修改清單及驗收項目請參閱 [P1_FIX_AND_VERIFICATION.md](P1_FIX_AND_VERIFICATION.md)。
+
 **日期**：2026-11-22　**方式**：對已整理的原始碼、前端、POM、設定及 11 個 Flyway Migration 進行唯讀靜態審查；沒有修改業務程式。
 
 **基準版本**：`weather_order_assistant_system_formatted_flyway_fixed.zip`（V005/V006 保留已套用資料庫的原始 checksum）。本報告的「風險」是**原始碼推導或部署前待驗證項目**，不是已重現的實際故障。
