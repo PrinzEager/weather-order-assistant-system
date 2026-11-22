@@ -17,6 +17,8 @@
     <link rel="stylesheet" th:href="@{/css/security.css}">
     <!-- 我的帳號：獨立 CSS，不改動原有管理模組樣式。 -->
     <link rel="stylesheet" th:href="@{/css/account.css}">
+    <!-- 操作手冊、訂貨公式及銷售報表：新增獨立樣式，不覆寫舊 CSS。 -->
+    <link rel="stylesheet" th:href="@{/css/user-guidance-sales.css}">
 
     <!-- 原本功能模組入口保持不變。 -->
     <script type="module" th:src="@{/js/app.js}"></script>
@@ -33,6 +35,7 @@
     <script type="module" th:src="@{/js/dashboard-overview.js}"></script>
     <script type="module" th:src="@{/js/dashboard-recommendations.js}"></script>
     <script type="module" th:src="@{/js/dashboard-stats.js}"></script>
+    <script type="module" th:src="@{/js/help-dialogs.js}"></script>
 </head>
 
 <body>
@@ -105,6 +108,9 @@
         </nav>
 
         <div class="sidebar-footer">
+            <button type="button" id="user-guide-open" class="sidebar-guide-button">
+                <span aria-hidden="true">ⓘ</span> 操作說明
+            </button>
             <small>Weather Order Assistant System</small>
         </div>
 
@@ -474,9 +480,14 @@
                  天氣訂貨建議：使用者自行選擇是否套用天氣係數。
                  歷史基準與天氣係數為獨立選項，不改變後端既有公式。
                  ========================================================= -->
-            <div class="section-heading">
-                <h3>天氣訂貨建議</h3>
-                <p>先選地區與需求期間，再依商品分類篩選，選擇要採購的商品。</p>
+            <div class="section-heading guidance-heading">
+                <div>
+                    <h3>天氣訂貨建議</h3>
+                    <p>先選地區與需求期間，再依商品分類篩選，選擇要採購的商品。</p>
+                </div>
+                <button type="button" id="recommendation-formula-open" class="secondary-button guidance-open-button">
+                    <span aria-hidden="true">ⓘ</span> 計算方式說明
+                </button>
             </div>
 
             <div class="panel">
@@ -640,12 +651,6 @@
                 </div>
             </div>
 
-            <div class="panel">
-                <h4>訂貨建議計算依據（方案 A）</h4>
-                <p>一般建議量 = max（0，歷史淨銷量 + 安全庫存 − 目前庫存 − 未到貨量）</p>
-                <p>勾選天氣後 = max（0，ceil（歷史淨銷量 × 天氣倍率）+ 安全庫存 − 目前庫存 − 未到貨量）</p>
-                <p class="rec-small-hint">選擇訂貨與套用天氣為獨立操作；實際採購單價依所選供應商取得，正式金額由後端計算。</p>
-            </div>
         </section>
 
         <!-- =================================================
@@ -1155,19 +1160,47 @@
 
             <div class="section-heading">
                 <h3>銷售紀錄</h3>
-                <p>查詢商品歷史銷售資料。</p>
+                <p>可一次銷售多項商品，展開查看每項明細、辦理部分退貨及匯出報表。</p>
+            </div>
+
+            <div class="panel sales-report-panel">
+                <div class="panel-toolbar sales-report-heading">
+                    <div>
+                        <h4>銷售趨勢與報表</h4>
+                        <p class="rec-small-hint">依所選日期範圍統計；柱狀圖顯示每日售出數量與金額。</p>
+                    </div>
+                    <div class="sales-report-actions">
+                        <button type="button" id="sales-export-csv" class="secondary-button">下載 CSV 報表</button>
+                        <button type="button" id="sales-print-report" class="secondary-button">列印／另存 PDF</button>
+                    </div>
+                </div>
+                <form id="sales-filter-form" class="filter-form sales-filter-form">
+                    <div class="form-group">
+                        <label for="sales-start-date">起始日期</label>
+                        <input id="sales-start-date" type="date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="sales-end-date">結束日期</label>
+                        <input id="sales-end-date" type="date" required>
+                    </div>
+                    <button type="submit" class="primary-button">查詢銷售</button>
+                    <button type="button" id="sales-last-seven-days" class="secondary-button">最近七日</button>
+                </form>
+                <div id="sales-report-summary" class="sales-report-summary" aria-live="polite"></div>
+                <div id="sales-trend-chart" class="sales-trend-chart" role="img" aria-label="銷售趨勢長條圖"></div>
+                <p id="sales-chart-note" class="rec-small-hint"></p>
             </div>
 
             <div class="panel">
 
                 <div class="panel-toolbar">
-                    <h4>銷售紀錄清單</h4>
+                    <h4>銷售紀錄清單（點箭頭展開商品）</h4>
 
                     <button type="button"
                             id="add-sale-button"
                             class="primary-button"
                             disabled>
-                        新增銷售紀錄
+                        新增多商品銷售
                     </button>
                 </div>
 
@@ -1176,10 +1209,10 @@
 
                         <thead>
                             <tr>
-                                <th>銷售編號</th>
-                                <th>商品</th>
-                                <th>銷售數量</th>
-                                <th>單價</th>
+                                <th>明細</th>
+                                <th>銷售項目</th>
+                                <th>銷售總數量</th>
+                                <th>商品項數</th>
                                 <th>銷售總額</th>
                                 <th>銷售時間</th>
                                 <th>操作</th>
@@ -1187,11 +1220,7 @@
                         </thead>
 
                         <tbody id="sales-table-body">
-                            <tr>
-                                <td colspan="7" class="empty-state">
-                                    尚未載入銷售資料
-                                </td>
-                            </tr>
+                            <tr><td colspan="7" class="empty-state">尚未載入銷售資料</td></tr>
                         </tbody>
 
                     </table>
@@ -1308,6 +1337,59 @@
                 <button id="account-submit-button" type="submit" class="account-primary-button">確認修改密碼</button>
             </div>
         </form>
+    </dialog>
+
+
+    <!-- 訂貨公式對話框：公式與數值範例需與 OrderRecommendationQuantityCalculator 一致。 -->
+    <dialog id="recommendation-formula-dialog" class="guidance-dialog" aria-labelledby="recommendation-formula-title">
+        <div class="guidance-dialog-header">
+            <div><h2 id="recommendation-formula-title">天氣訂貨建議怎麼算？</h2>
+                <p>用一個簡單範例理解歷史銷售、庫存與天氣係數。</p></div>
+            <button type="button" id="recommendation-formula-close" class="guidance-dialog-close" aria-label="關閉公式說明">×</button>
+        </div>
+        <div class="guidance-dialog-content">
+            <h3>① 一般訂貨建議</h3>
+            <div class="guidance-formula">max(0, 歷史淨銷量 ＋ 安全庫存 − 目前庫存 − 未到貨量)</div>
+            <h3>② 勾選套用天氣後</h3>
+            <div class="guidance-formula">max(0, ceil(歷史淨銷量 × 天氣倍率) ＋ 安全庫存 − 目前庫存 − 未到貨量)</div>
+            <p>其中 <strong>ceil</strong> 表示小數無條件進位；<strong>max(0, …)</strong> 表示不會建議負數訂貨。</p>
+            <h3>③ 實際計算範例</h3>
+            <div class="guidance-example-grid">
+                <span>歷史淨銷量 <strong>80 件</strong></span>
+                <span>安全庫存 <strong>20 件</strong></span>
+                <span>目前庫存 <strong>35 件</strong></span>
+                <span>未到貨量 <strong>10 件</strong></span>
+                <span>天氣倍率 <strong>1.25 倍</strong></span>
+            </div>
+            <p>一般建議：max(0, 80 + 20 − 35 − 10) = <strong>55 件</strong></p>
+            <p>套用天氣：max(0, ceil(80 × 1.25) + 20 − 35 − 10) = <strong>75 件</strong></p>
+            <p class="guidance-tip">歷史基準可選「上週同期」或「上月同期（相同天數）」；以淨銷量（已扣退貨）為準。
+                天氣倍率依選定期間預報計算，若預報不足可能顯示警告，沒有涵蓋的時段以 1.00 倍計算。
+                訂貨選取與是否套用天氣為兩個獨立操作；供應商價格於建立採購草稿時另外計算。</p>
+        </div>
+    </dialog>
+
+    <!-- 左側導覽底部操作手冊：使用者自行開啟，不會阻擋一般切頁。 -->
+    <dialog id="user-guide-dialog" class="guidance-dialog" aria-labelledby="user-guide-title">
+        <div class="guidance-dialog-header">
+            <div><h2 id="user-guide-title">系統操作說明</h2>
+                <p>依照左側功能選單快速找到需要的操作。</p></div>
+            <button type="button" id="user-guide-close" class="guidance-dialog-close" aria-label="關閉操作說明">×</button>
+        </div>
+        <div class="guidance-dialog-content">
+            <ol class="guidance-steps">
+                <li><strong>首頁</strong>：查看目前商品、供應商、待處理採購單與近七日銷售趨勢。</li>
+                <li><strong>七天天氣預報</strong>：選擇縣市及行政區，查看每日預報、氣溫與降雨資訊。</li>
+                <li><strong>天氣訂貨建議</strong>：選日期、地區與歷史基準，產生建議；先選第一層、第二層分類，再勾選商品與是否套用天氣；確認後選供應商建立採購草稿。右上角可查詢計算公式。</li>
+                <li><strong>商品分類管理</strong>：建立兩層分類，可編輯、停用或刪除；商品歸在第二層分類。</li>
+                <li><strong>商品管理</strong>：新增商品、調整庫存及狀態；停用商品不會出現在有效商品的銷售與訂貨選擇中。</li>
+                <li><strong>供應商管理</strong>：管理供應商、狀態與供貨商品；停用後歷史採購單仍可查閱。</li>
+                <li><strong>銷售紀錄</strong>：新增時可一次選多項商品；銷售成功自動扣庫存；列表按箭頭展開逐項明細，再依商品辦理退貨。上方可選日期查看圖表、下載 CSV 或列印成 PDF。</li>
+                <li><strong>採購訂貨單</strong>：可新增草稿、展開明細、提交、收貨或取消；草稿需依當天的訂貨日期規則處理。</li>
+                <li><strong>我的帳號</strong>：在右上角查看帳號資料及修改密碼；修改後需重新登入。</li>
+            </ol>
+            <p class="guidance-tip">操作不確定時可隨時從左側「操作說明」重新開啟。按右上角 × 或 Esc 即可關閉。</p>
+        </div>
     </dialog>
 
 </body>

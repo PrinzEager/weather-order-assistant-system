@@ -217,14 +217,7 @@ function renderCategories(categories) {
                     createCategoryStatusBadge(child.status)
                 );
 
-                // 顯示分類 ID。
-                childRow.appendChild(
-                    makeElement(
-                        "small",
-                        `ID：${child.id}`,
-                        "weather-description"
-                    )
-                );
+                // 分類 ID 僅作為 API 識別，不顯示給一般使用者。
 
                 // 第二層分類編輯按鈕。
                 childRow.appendChild(
@@ -269,7 +262,7 @@ function renderCategories(categories) {
             container.appendChild(
                 makeElement(
                     "p",
-                    `${displayValue(category.name)}（ID：${category.id}）`
+                    `${displayValue(category.name)}（找不到上層分類）`
                 )
             );
         });
