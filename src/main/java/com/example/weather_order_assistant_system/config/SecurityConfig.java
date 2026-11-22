@@ -51,6 +51,9 @@ public class SecurityConfig {
                 // 登入畫面與靜態資源必須能在未登入時讀取。
                 .requestMatchers("/login", "/css/**", "/js/**", "/favicon.ico", "/error")
                 .permitAll()
+                // 僅健康檢查可匿名存取，不公開 env、beans、metrics 等資訊。
+                .requestMatchers("/actuator/health", "/actuator/health/**")
+                .permitAll()
                 // 後台功能、首頁以及所有 REST API 均必須登入。
                 .anyRequest().authenticated()
             )

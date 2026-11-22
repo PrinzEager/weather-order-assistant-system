@@ -4,7 +4,12 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import jakarta.persistence.LockModeType;
+
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.example.weather_order_assistant_system.entity.PurchaseOrder;
@@ -33,6 +38,14 @@ public interface PurchaseOrderRepository
     // 只要採購單本身未被軟刪除，就允許查詢。
     // =====================================================
     Optional<PurchaseOrder> findByIdAndDeletedAtIsNull(Long id);
+
+    // 修改採購單狀態或明細時必須先取得主檔排他鎖。
+    // 同一張採購單的到貨、取消、送出與草稿修改必須依序執行，
+    // 避免兩個請求同時讀到 SUBMITTED 後重複入庫。
+    // 呼叫端必須在 @Transactional 交易內使用此方法。
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT po FROM PurchaseOrder po WHERE po.id = :id AND po.deletedAt IS NULL")
+    Optional<PurchaseOrder> findActiveByIdForUpdate(@Param("id") Long id);
 
     // =====================================================
     // 3. 查詢指定供應商的歷史採購單

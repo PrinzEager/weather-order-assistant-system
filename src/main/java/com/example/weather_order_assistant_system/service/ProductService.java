@@ -195,7 +195,7 @@ public class ProductService {
 
         // 1. 查詢要修改的商品
         Product product = productRepository
-                .findByIdAndDeletedAtIsNull(id)
+                .findByIdForStockUpdate(id)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
                         "商品不存在或已刪除"
@@ -264,13 +264,31 @@ public class ProductService {
             product.setUnit(unit);
         }
 
-        // 9. 更新目前庫存
-        // 未提供時，預設為 0
-        product.setCurrentStock(
-                request.getCurrentStock() == null
-                        ? 0
-                        : request.getCurrentStock()
-        );
+        // 9. 避免使用者開啟舊表單後，覆寫銷售／入庫已更新的庫存。
+        // 上方已鎖定商品列；只有送出時的庫存快照等於最新庫存，
+        // 才能接受對目前庫存數量的修改。
+        Integer expectedStock = request.getExpectedCurrentStock();
+        Integer requestedStock = request.getCurrentStock();
+        Integer currentStock = product.getCurrentStock();
+
+        if (expectedStock != null && !expectedStock.equals(currentStock)) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "商品庫存已變更，請重新載入商品資料後再儲存"
+            );
+        }
+
+        if (requestedStock != null && !requestedStock.equals(currentStock)) {
+            // 相容舊版只修改商品基本資料的請求，
+            // 但不允許缺少快照時直接覆寫庫存。
+            if (expectedStock == null) {
+                throw new ResponseStatusException(
+                        HttpStatus.CONFLICT,
+                        "修改庫存前請重新載入商品資料"
+                );
+            }
+            product.setCurrentStock(requestedStock);
+        }
 
         // 10. 更新安全庫存
         // 未提供時，預設為 0
@@ -313,7 +331,7 @@ public class ProductService {
         // 2. 查詢要修改狀態的商品
         // 已軟刪除商品不允許修改狀態
         Product product = productRepository
-                .findByIdAndDeletedAtIsNull(id)
+                .findByIdForStockUpdate(id)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
                         "商品不存在或已刪除"
@@ -350,7 +368,7 @@ public class ProductService {
         // 1. 查詢要刪除的商品
         // 商品不存在或已軟刪除時，回傳 HTTP 404
         Product product = productRepository
-                .findByIdAndDeletedAtIsNull(id)
+                .findByIdForStockUpdate(id)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
                         "商品不存在或已刪除"

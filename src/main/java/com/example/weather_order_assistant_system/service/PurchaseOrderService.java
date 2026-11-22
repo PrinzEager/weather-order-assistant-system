@@ -408,7 +408,7 @@ public class PurchaseOrderService {
         // -------------------------------------------------
 
         PurchaseOrder order = purchaseOrderRepository
-                .findByIdAndDeletedAtIsNull(id)
+                .findActiveByIdForUpdate(id)
                 .orElseThrow(() ->
                         new ResponseStatusException(
                                 HttpStatus.NOT_FOUND,
@@ -514,7 +514,7 @@ public class PurchaseOrderService {
         // -------------------------------------------------
 
         PurchaseOrder order = purchaseOrderRepository
-                .findByIdAndDeletedAtIsNull(id)
+                .findActiveByIdForUpdate(id)
                 .orElseThrow(() ->
                         new ResponseStatusException(
                                 HttpStatus.NOT_FOUND,
@@ -563,54 +563,47 @@ public class PurchaseOrderService {
         // 因此仍可完成既有採購單的入庫。
         // -------------------------------------------------
 
-        for (PurchaseOrderItem item : order.getItems()) {
-
-            Product product = item.getProduct();
-
-            // 檢查明細數量是否有效
-            if (item.getQuantity() == null
-                    || item.getQuantity() <= 0) {
-
+        // 預先檢查所有明細；接著依商品 ID 排序逐筆鎖定。
+        // 銷售與退貨也使用 findByIdForStockUpdate()，讓這些異動排隊，
+        // 避免同時執行時覆蓋庫存。商品停用／軟刪除仍可入原有訂單。
+        List<PurchaseOrderItem> sortedItems = new ArrayList<>(order.getItems());
+        for (PurchaseOrderItem item : sortedItems) {
+            if (item.getQuantity() == null || item.getQuantity() <= 0) {
                 throw new ResponseStatusException(
                         HttpStatus.BAD_REQUEST,
                         "採購明細數量不正確，無法確認到貨"
                 );
             }
+        }
+        sortedItems.sort((left, right) ->
+                left.getProduct().getId().compareTo(right.getProduct().getId()));
 
-            // 取得商品目前庫存
+        for (PurchaseOrderItem item : sortedItems) {
+            Long productId = item.getProduct().getId();
+            Product product = productRepository.findByIdForStockUpdate(productId)
+                    .orElseThrow(() -> new ResponseStatusException(
+                            HttpStatus.NOT_FOUND,
+                            "採購明細商品不存在，無法確認到貨"
+                    ));
+
             Integer currentStock = product.getCurrentStock();
-
-            // 防止資料庫存在不合理的庫存資料
             if (currentStock == null || currentStock < 0) {
-
                 throw new ResponseStatusException(
                         HttpStatus.BAD_REQUEST,
                         "商品目前庫存資料不正確"
                 );
             }
 
-            // 使用 long 進行加總，
-            // 避免 int 相加時發生整數溢位。
-            long newStock =
-                    (long) currentStock + item.getQuantity();
-
-            // products.current_stock 為 INT，
-            // 不可超過 Integer.MAX_VALUE。
+            long newStock = (long) currentStock + item.getQuantity();
             if (newStock > Integer.MAX_VALUE) {
-
                 throw new ResponseStatusException(
                         HttpStatus.BAD_REQUEST,
                         "商品庫存超過允許的最大數量"
                 );
             }
 
-            // 設定入庫後的商品庫存
+            // 鎖定中的商品由 JPA 追蹤，交易提交時會一併更新。
             product.setCurrentStock((int) newStock);
-
-            // product 是 JPA 管理中的 Entity，
-            // @Transactional 提交時會自動更新資料庫。
-            //
-            // 不需要在迴圈內反覆呼叫 save()。
         }
 
         // -------------------------------------------------
@@ -674,7 +667,7 @@ public class PurchaseOrderService {
         // -------------------------------------------------
 
         PurchaseOrder order = purchaseOrderRepository
-                .findByIdAndDeletedAtIsNull(id)
+                .findActiveByIdForUpdate(id)
                 .orElseThrow(() ->
                         new ResponseStatusException(
                                 HttpStatus.NOT_FOUND,
@@ -759,7 +752,7 @@ public class PurchaseOrderService {
         // -------------------------------------------------
 
         PurchaseOrder order = purchaseOrderRepository
-                .findByIdAndDeletedAtIsNull(id)
+                .findActiveByIdForUpdate(id)
                 .orElseThrow(() ->
                         new ResponseStatusException(
                                 HttpStatus.NOT_FOUND,
@@ -1092,7 +1085,7 @@ public class PurchaseOrderService {
         // -------------------------------------------------
 
         PurchaseOrder order = purchaseOrderRepository
-                .findByIdAndDeletedAtIsNull(id)
+                .findActiveByIdForUpdate(id)
                 .orElseThrow(() ->
                         new ResponseStatusException(
                                 HttpStatus.NOT_FOUND,

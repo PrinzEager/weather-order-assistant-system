@@ -15,6 +15,9 @@ import {
 
 let productsLoaded = false;
 
+// 商品表單開啟時的庫存快照；用於防止舊畫面覆寫新的庫存異動。
+let editingOriginalStock = null;
+
 export function initProducts() {
     // 專案目前已有商品表單；保留補建邏輯以避免舊版 HTML 無法操作。
     installProductForm();
@@ -152,6 +155,7 @@ async function openProductForm(product = null) {
             throw new Error("商品分類回傳格式不正確");
         byId("product-form").reset();
         byId("product-id").value = product?.id ?? "";
+        editingOriginalStock = product ? product.currentStock : null;
         byId("product-form-title").textContent = product ? "編輯商品" : "新增商品";
 
         const select = byId("product-category-id");
@@ -191,6 +195,7 @@ function closeProductForm() {
     byId("product-form-panel").hidden = true;
     byId("product-form").reset();
     byId("product-id").value = "";
+    editingOriginalStock = null;
 }
 
 async function submitProductForm(event) {
@@ -221,6 +226,11 @@ async function submitProductForm(event) {
             currentStock: parseStock("product-current-stock"),
             safetyStock: parseStock("product-safety-stock")
         };
+        // 修改商品時帶上開啟表單當下的庫存，讓伺服器比對是否過期。
+        if (id) {
+            payload.expectedCurrentStock = editingOriginalStock;
+        }
+
         const submit = byId("product-form-submit");
         try {
             setButtonLoading(submit, true, "儲存中...");

@@ -58,6 +58,13 @@ public class ProductRequest {
     @PositiveOrZero(message = "目前庫存不可小於 0")
     private Integer currentStock;
 
+    // 編輯表單開啟時讀到的庫存快照（只用於修改商品）。
+    // 修改庫存前，Service 會與資料庫最新庫存比對；
+    // 若銷售或入庫已改變庫存，拒絕覆蓋，請使用者重新載入。
+    // 新增商品不需要傳入；舊版僅修改基本資料的請求可省略。
+    @PositiveOrZero(message = "原始庫存不可小於 0")
+    private Integer expectedCurrentStock;
+
     // 安全庫存數量
     // 可不提供，預設為 0
     // 若有提供，不可小於 0
