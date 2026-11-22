@@ -1,0 +1,618 @@
+/* 功能模組樣式：天氣、採購、分類狀態及訂貨建議
+ * 此檔已整合舊版多份樣式；保留必要的 CSS cascade 與媒體查詢覆寫。
+ */
+
+
+/* ===================================================
+ * 訂貨建議管理
+ * =================================================== */
+
+/* 天氣訂貨建議專用樣式。只限定 recommendation 頁，避免影響其它管理模組。 */
+#page-recommendations .recommendation-filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px 20px;
+    align-items: end;
+    margin: 16px 0;
+}
+#page-recommendations .recommendation-filter-row .form-group { flex: 1 1 210px; min-width: 180px; }
+#page-recommendations .recommendation-filter-row label { display: block; margin-bottom: 6px; font-weight: 600; }
+#page-recommendations .recommendation-filter-row select,
+#page-recommendations .recommendation-filter-row input,
+#page-recommendations .recommendation-filter-row textarea {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid #cfbfaa;
+    border-radius: 8px;
+    padding: 9px 11px;
+    background: #fffefa;
+    color: #4f3928;
+}
+#page-recommendations .recommendation-filter-row select:disabled { background: #f2eee6; cursor: not-allowed; }
+#page-recommendations .rec-small-hint { color: #786454; font-size: .88rem; line-height: 1.5; }
+#page-recommendations .recommendation-data-table th,
+#page-recommendations .recommendation-preview-table th { white-space: nowrap; }
+#page-recommendations .recommendation-data-table input[type="checkbox"] {
+    accent-color: #b86d36;
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+#page-recommendations .actual-order-quantity,
+#page-recommendations .recommendation-preview-quantity {
+    box-sizing: border-box;
+    max-width: 110px;
+    width: 100%;
+    padding: 7px;
+    border: 1px solid #cfbfaa;
+    border-radius: 6px;
+    background: #fffefa;
+    color: #4f3928;
+}
+#page-recommendations .recommendation-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    padding: 14px 6px 6px;
+    color: #5d4736;
+}
+#page-recommendations .recommendation-pagination[hidden] { display: none; }
+#page-recommendations .recommendation-pagination button:disabled { opacity: .42; cursor: not-allowed; }
+#page-recommendations .rec-select-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+
+/* 採購草稿使用真正的遮罩視窗；背景表單不被覆蓋或重新排版。 */
+body.rec-modal-open { overflow: hidden; }
+#page-recommendations .recommendation-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 20000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    box-sizing: border-box;
+    background: rgba(42, 29, 18, .57);
+    backdrop-filter: blur(4px);
+}
+#page-recommendations .recommendation-modal[hidden] { display: none !important; }
+#page-recommendations .recommendation-modal-card {
+    width: min(1100px, 100%);
+    max-height: min(90vh, 940px);
+    background: #fffdf8;
+    border: 1px solid #e4d4bf;
+    border-radius: 16px;
+    box-shadow: 0 20px 72px rgba(42, 29, 18, .33);
+    overflow-y: auto;
+    padding: 22px;
+    box-sizing: border-box;
+    color: #4f3928;
+}
+#page-recommendations .recommendation-modal-header {
+    display: flex;
+    align-items: start;
+    justify-content: space-between;
+    gap: 14px;
+    border-bottom: 1px solid #e8dccd;
+    padding-bottom: 12px;
+}
+#page-recommendations .recommendation-modal-header h4 { margin: 0 0 6px; color: #51351e; }
+#page-recommendations .recommendation-modal-header p { margin: 0; }
+#page-recommendations .rec-remark-group { flex-grow: 2; }
+#page-recommendations .recommendation-preview-table select {
+    min-width: 160px;
+    max-width: 260px;
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #cfbfaa;
+    border-radius: 8px;
+    background: #fffefa;
+    color: #4f3928;
+}
+#page-recommendations .rec-price,
+#page-recommendations .rec-subtotal { white-space: nowrap; font-variant-numeric: tabular-nums; }
+#page-recommendations .recommendation-order-summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 14px 16px;
+    border-radius: 10px;
+    background: #f6eee3;
+    color: #593d24;
+}
+#page-recommendations .rec-warning { color: #a34d1e; min-height: 1.3em; font-size: .92rem; }
+#page-recommendations .rec-modal-actions { display: flex; justify-content: flex-end; gap: 12px; }
+@media (max-width: 700px) {
+    #page-recommendations .recommendation-modal { padding: 8px; align-items: stretch; }
+    #page-recommendations .recommendation-modal-card { padding: 14px; max-height: 100%; border-radius: 10px; }
+    #page-recommendations .recommendation-modal-header { align-items: center; }
+    #page-recommendations .rec-select-toolbar { justify-content: flex-start; }
+}
+
+
+/* ===================================================
+ * 採購單明細
+ * =================================================== */
+
+/* 採購單展開明細：僅影響採購單頁面，沿用暖米白／奶茶棕／焦糖色。 */
+#page-orders .purchase-order-detail-toggle {
+    border: 1px solid #dfcfbc;
+    border-radius: 7px;
+    background: #fff8ee;
+    color: #80532e;
+    cursor: pointer;
+    width: 29px;
+    height: 29px;
+    margin-right: 9px;
+    font-size: 18px;
+    line-height: 1;
+    vertical-align: middle;
+}
+#page-orders .purchase-order-detail-toggle:hover,
+#page-orders .purchase-order-detail-toggle:focus-visible {
+    background: #f2e1cd;
+    outline-color: #bd7c3e;
+}
+#page-orders .purchase-order-detail-toggle:disabled { opacity: 0.55; cursor: wait; }
+#page-orders .purchase-order-detail-row[hidden] { display: none !important; }
+#page-orders .purchase-order-detail-row > td {
+    padding: 0 14px 14px;
+    background: #fbf8f3;
+    border-top: 0;
+}
+#page-orders .purchase-order-detail-content {
+    background: rgba(255,255,255,0.97);
+    border: 1px solid #ebdfd0;
+    border-radius: 12px;
+    padding: 18px 20px;
+    box-shadow: 0 3px 14px rgba(78,52,32,0.07);
+}
+#page-orders .purchase-order-detail-content h5 {
+    margin: 0 0 14px;
+    color: #67432c;
+    font-size: 15px;
+}
+#page-orders .purchase-order-detail-info {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 28px;
+    margin-bottom: 16px;
+}
+#page-orders .purchase-order-detail-field { display: flex; gap: 7px; align-items: baseline; }
+#page-orders .purchase-order-detail-label { color: #8e7c6c; font-size: 13px; }
+#page-orders .purchase-order-detail-value { color: #544232; font-size: 13px; }
+#page-orders .purchase-order-detail-sku {
+    display: block;
+    color: #8c8175;
+    font-size: 12px;
+    margin-top: 3px;
+}
+#page-orders .purchase-order-detail-table-wrap { margin-bottom: 12px; }
+#page-orders .purchase-order-detail-table { width: 100%; }
+#page-orders .purchase-order-detail-number { text-align: right; white-space: nowrap; }
+#page-orders .purchase-order-detail-footer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 10px;
+    color: #69523e;
+    border-top: 1px solid #eddfd2;
+    padding-top: 12px;
+}
+#page-orders .purchase-order-detail-footer strong { color: #985b28; }
+#page-orders .purchase-order-detail-remark { margin: 12px 0 0; color: #7d6756; font-size: 13px; }
+#page-orders .purchase-order-detail-error { color: #a3362b; padding: 14px; }
+@media (max-width: 640px) {
+    #page-orders .purchase-order-detail-content { padding: 12px; }
+    #page-orders .purchase-order-detail-info { gap: 8px 14px; }
+}
+
+
+/* ===================================================
+ * 商品與供應商狀態管理
+ * =================================================== */
+
+/* 商品與供應商狀態管理：配合既有暖米色後台，不改其他模組。 */
+#page-products .management-status-filter,
+#page-suppliers .management-status-filter {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+    font-size: 0.875rem;
+    color: #604638;
+}
+
+#page-products .management-status-filter select,
+#page-suppliers .management-status-filter select {
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid #d9c8b5;
+    background: #fffaf3;
+    color: #49392d;
+    max-width: 230px;
+}
+
+#page-products .management-status-count,
+#page-suppliers .management-status-count {
+    margin: 8px 0 12px;
+    color: #72594a;
+    font-size: 0.875rem;
+}
+
+/* 防止原專案的 .table-responsive / .panel CSS 蓋過 hidden 行為。 */
+#page-products .management-status-view[hidden],
+#page-suppliers .management-status-view[hidden],
+#page-products .table-responsive[hidden],
+#page-suppliers .table-responsive[hidden],
+#page-products .management-status-count[hidden],
+#page-suppliers .management-status-count[hidden] {
+    display: none !important;
+}
+
+#page-products .management-status-actions,
+#page-suppliers .management-status-actions {
+    white-space: nowrap;
+}
+
+#page-products .management-status-actions button,
+#page-suppliers .management-status-actions button {
+    margin: 2px 6px 2px 0;
+}
+
+@media (max-width: 680px) {
+    #page-products .panel-toolbar,
+    #page-suppliers .panel-toolbar {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    #page-products .management-status-filter,
+    #page-suppliers .management-status-filter {
+        width: 100%;
+        margin-left: 0;
+    }
+}
+
+
+/* ===================================================
+ * 七天天氣頁面
+ * =================================================== */
+
+/* =========================================================
+   七天天氣頁：D 溫暖質感風（第一階段）
+   只限 #page-weather，保留既有功能與其他模組 CSS。
+   資料由既有 API 與 weather.js 提供，本檔不改資料邏輯。
+   ========================================================= */
+
+#page-weather {
+    --weather-cream: #fff9f0;
+    --weather-surface: rgba(255, 250, 243, .96);
+    --weather-soft: #f8ecdd;
+    --weather-dark: #452d25;
+    --weather-muted: #80685c;
+    --weather-border: #e8d7c7;
+    --weather-accent: #df7831;
+    --weather-accent-hover: #c96522;
+    --weather-shadow: 0 6px 20px rgba(91, 61, 44, .09);
+    color: var(--weather-dark);
+}
+
+/* 頁面標題與既有查詢面板，採暖白與棕橘色。 */
+#page-weather .section-heading h3 {
+    color: var(--weather-dark);
+    border-left: 5px solid var(--weather-accent);
+    padding-left: 13px;
+}
+
+#page-weather .section-heading p,
+#page-weather .panel p {
+    color: var(--weather-muted);
+}
+
+#page-weather .panel,
+#page-weather .stat-card {
+    background: var(--weather-surface);
+    border: 1px solid var(--weather-border);
+    border-radius: 18px;
+    box-shadow: var(--weather-shadow);
+}
+
+#page-weather .panel h4,
+#page-weather .stat-card strong {
+    color: var(--weather-dark);
+}
+
+#page-weather .form-group label {
+    color: var(--weather-dark);
+}
+
+#page-weather .form-group input,
+#page-weather .form-group select {
+    background: #fffcf8;
+    border-color: #d9c8b8;
+    color: var(--weather-dark);
+}
+
+#page-weather .form-group input:focus,
+#page-weather .form-group select:focus {
+    border-color: var(--weather-accent);
+    box-shadow: 0 0 0 3px rgba(223, 120, 49, .16);
+}
+
+#page-weather .primary-button {
+    background: var(--weather-accent);
+    border-radius: 10px;
+}
+
+#page-weather .primary-button:hover:not(:disabled) {
+    background: var(--weather-accent-hover);
+}
+
+/* 預報資料缺值提醒：使用文字說明，不只依靠色彩辨識。 */
+#page-weather .weather-forecast-note {
+    margin: 0 0 18px;
+    padding: 11px 15px;
+    border: 1px solid #ead6bd;
+    border-radius: 12px;
+    background: rgba(255, 246, 232, .94);
+    color: #75523b;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+#page-weather .weather-forecast-note > span {
+    color: var(--weather-accent);
+    font-weight: 800;
+    margin-right: 6px;
+}
+
+/* 原摘要卡保留原 DOM ID；三張摘要仍可使用原有渲染函式。 */
+#page-weather .weather-summary {
+    margin: 0 0 24px;
+    gap: 15px;
+}
+
+#page-weather .weather-summary .stat-card {
+    padding: 19px 20px;
+    min-width: 0;
+}
+
+#page-weather .weather-summary .stat-card strong {
+    font-size: clamp(23px, 2vw, 29px);
+    font-variant-numeric: tabular-nums;
+}
+
+/* 每日卡片標題及資訊說明。 */
+#page-weather .weather-cards-heading {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+}
+
+#page-weather .weather-cards-heading h4 {
+    margin: 0;
+    color: var(--weather-dark);
+    font-size: 18px;
+    font-weight: 750;
+}
+
+#page-weather .weather-cards-heading p {
+    margin: 3px 0 0;
+    color: var(--weather-muted);
+    font-size: 12px;
+}
+
+#page-weather .weather-cards-heading-hint {
+    border: 1px solid #ecd0b2;
+    border-radius: 999px;
+    padding: 4px 11px;
+    color: #8a512d;
+    background: #fff0dd;
+    font-size: 12px;
+    font-weight: 650;
+}
+
+/*
+   七天卡片自動換行，不在窄螢幕硬塞七欄。
+   1400px 左右含側欄時：四欄；中尺寸三或兩欄；手機單欄。
+*/
+#page-weather .weather-daily-cards {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+#page-weather .weather-daily-cards > .empty-state {
+    grid-column: 1 / -1;
+}
+
+#page-weather .weather-card {
+    position: relative;
+    min-width: 0;
+    padding: 18px 17px 16px;
+    text-align: left;
+    background: var(--weather-surface);
+    border: 1px solid var(--weather-border);
+    border-radius: 18px;
+    box-shadow: var(--weather-shadow);
+    transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+
+#page-weather .weather-card:hover {
+    transform: translateY(-2px);
+    border-color: #dca673;
+    box-shadow: 0 9px 25px rgba(91, 61, 44, .13);
+}
+
+#page-weather .weather-card.is-today {
+    background: linear-gradient(145deg, #fff8ec, #fff0de);
+    border-color: #e7b484;
+}
+
+#page-weather .weather-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+#page-weather .weather-card h4,
+#page-weather .weather-card-date {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 750;
+    color: var(--weather-dark);
+}
+
+#page-weather .weather-card-day-index {
+    border-radius: 999px;
+    padding: 3px 9px;
+    font-size: 11px;
+    font-weight: 750;
+    color: #945a30;
+    background: #f9e6cf;
+    white-space: nowrap;
+}
+
+#page-weather .weather-card.is-today .weather-card-day-index {
+    background: var(--weather-accent);
+    color: #fff;
+}
+
+#page-weather .weather-card-condition {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 17px 0 10px;
+    min-width: 0;
+}
+
+/* icon 用原生 Emoji，若後續改官方氣象圖示僅需調整渲染器。 */
+#page-weather .weather-card .weather-icon {
+    flex: none;
+    margin: 0;
+    font-size: 40px;
+    line-height: 1.25;
+}
+
+#page-weather .weather-card .weather-description {
+    min-width: 0;
+    margin: 0;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--weather-dark);
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+}
+
+#page-weather .weather-card .weather-temperature {
+    margin: 4px 0 12px;
+    color: var(--weather-dark);
+    font-size: 25px;
+    font-weight: 800;
+    line-height: 1.3;
+    font-variant-numeric: tabular-nums;
+}
+
+#page-weather .weather-temperature-label {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--weather-muted);
+    font-size: 11px;
+    font-weight: 550;
+}
+
+#page-weather .weather-card-metrics {
+    border-top: 1px solid #ecdccc;
+    padding-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+#page-weather .weather-card-metric {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 12px;
+}
+
+#page-weather .weather-card-metric-label {
+    color: var(--weather-muted);
+}
+
+#page-weather .weather-card-metric-value {
+    color: var(--weather-dark);
+    font-weight: 750;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+}
+
+#page-weather .weather-card-metric-value.is-unavailable {
+    color: #8a7768;
+    font-weight: 550;
+}
+
+/* 溫度、降雨圖表維持原 ID；只統一外框、座標文字色彩。 */
+#page-weather .chart-grid .panel {
+    min-width: 0;
+}
+
+#page-weather .chart-container {
+    min-height: 255px;
+    max-width: 100%;
+    overflow-x: auto;
+    scrollbar-color: #d8b28f #f7eee4;
+}
+
+#page-weather .chart-container svg {
+    max-width: none;
+}
+
+#page-weather .chart-container svg text {
+    fill: var(--weather-muted);
+}
+
+@media (max-width: 1320px) {
+    #page-weather .weather-daily-cards {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 980px) {
+    #page-weather .weather-daily-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 680px) {
+    #page-weather .weather-summary {
+        grid-template-columns: 1fr;
+    }
+
+    #page-weather .weather-daily-cards {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    #page-weather .weather-card {
+        padding: 16px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #page-weather .weather-card {
+        transition: none;
+    }
+
+    #page-weather .weather-card:hover {
+        transform: none;
+    }
+}

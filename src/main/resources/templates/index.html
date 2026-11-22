@@ -4,51 +4,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>Weather Order Assistant System｜天氣訂貨輔助系統</title>
 
-    <!--
-        Thymeleaf 會解析靜態資源路徑。
-        CSS 與 JavaScript 將在後續步驟逐檔建立。
-    -->
+    <!-- 基礎、管理模組與儀表板三層 CSS；順序不可任意顛倒。 -->
     <link rel="stylesheet" th:href="@{/css/style.css}">
-    <!-- 訂貨建議頁專用樣式，不修改現有全站樣式 -->
-    <link rel="stylesheet" th:href="@{/css/recommendation-enhancements.css}">
-    <!-- 採購單展開明細獨立樣式 -->
-    <link rel="stylesheet" th:href="@{/css/purchase-order-details.css}">
-    <!-- 使用 ES Modules 載入前端系統 -->
-    <!-- app.js 會自動 import 其他功能模組 -->
+    <link rel="stylesheet" th:href="@{/css/modules.css}">
+    <link rel="stylesheet" th:href="@{/css/dashboard.css}">
+
+    <!-- 原本功能模組入口保持不變。 -->
     <script type="module" th:src="@{/js/app.js}"></script>
-    <!-- 訂單明細獨立模組，不改動既有採購單 CRUD -->
     <script type="module" th:src="@{/js/purchase-order-details.js}"></script>
-    <!-- 商品與供應商後台狀態管理 -->
-    <link rel="stylesheet" th:href="@{/css/management-status.css}">
-    <!-- 天氣頁專用：七天圖卡與 D 溫暖質感配色，不影響其餘頁面 -->
-    <link rel="stylesheet" th:href="@{/css/weather-seven-day.css}">
-    <!-- Phase 4：D 溫暖質感共用主題與儀表板視覺。保留原有 JS、API 和 DOM ID。 -->
-    <link rel="stylesheet" th:href="@{/css/warm-dashboard-phase4.css}">
     <script type="module" th:src="@{/js/management-status.js}"></script>
-    <!-- Phase 5：儀表板真實七天天氣與近七日銷售趨勢專用樣式。 -->
-    <link rel="stylesheet" th:href="@{/css/dashboard-overview-phase5.css}">
-    <!-- Phase 5 獨立模組：僅讀取現有 API，不修改各頁 CRUD、訂貨流程。 -->
+
+    <!-- 首頁：七天天氣與氣溫圖／銷售趨勢、訂貨摘要、KPI。 -->
     <script type="module" th:src="@{/js/dashboard-overview.js}"></script>
-    <!-- Phase 6：首頁訂貨摘要為只讀獨立模組，不改動原本的選購與採購流程。 -->
-    <link rel="stylesheet" th:href="@{/css/dashboard-recommendations-phase6.css}">
     <script type="module" th:src="@{/js/dashboard-recommendations.js}"></script>
-    <!-- Phase 7：貨架背景圖層、暖色細節與 RWD；僅為視覺覆寫，無 JS 或 API 變更。 -->
-    <link rel="stylesheet" th:href="@{/css/dashboard-polish-phase7.css}">
-    <!-- Phase 7.1：首頁商品／供應商統計獨立載入，不侵入各功能頁程式。 -->
     <script type="module" th:src="@{/js/dashboard-stats.js}"></script>
-
-    <!-- Phase 8：首頁未來 48 小時氣溫折線圖，資料沿用首頁現有天氣請求。 -->
-    <link rel="stylesheet" th:href="@{/css/dashboard-temperature-phase8.css}">
-    <!-- Phase 9：僅優化首頁營運統計卡；不影響其他管理頁面。 -->
-    <link rel="stylesheet" th:href="@{/css/dashboard-kpi-phase9.css}">
-    <!-- Phase 9：待處理採購單統計；僅讀取採購單清單，不更動採購狀態。 -->
-    <script type="module" th:src="@{/js/dashboard-pending-orders-phase9.js}"></script>
-
-
-    
 </head>
 
 <body>
@@ -199,7 +170,7 @@
             </div>
 
             <!-- ========================================================
-                 Phase 5：首頁兩區改為真實 API 資料概覽。
+                 首頁兩區改為真實 API 資料概覽。
                  各容器 ID 僅供 dashboard-overview.js 使用；
                  原有 data-go-page 仍由 app.js 的導覽邏輯處理。
                  ======================================================== -->
@@ -233,7 +204,7 @@
                     <p id="dashboard-weather-warning" class="dashboard-widget-warning"
                        role="status" hidden></p>
 
-                    <!-- Phase 8：小型 48 小時趨勢圖；使用首頁已取得的天氣 API 資料。 -->
+                    <!-- 小型 48 小時趨勢圖；使用首頁已取得的天氣 API 資料。 -->
                     <section class="dashboard-temperature-section"
                              aria-labelledby="dashboard-temperature-heading">
                         <div class="dashboard-temperature-head">
@@ -307,7 +278,7 @@
             </div>
 
             <!-- ========================================================
-                 Phase 6：真實智慧訂貨建議摘要（只讀）。
+                 真實智慧訂貨建議摘要（只讀）。
                  預設 WEEK 一般建議；天氣情境只改變摘要顯示，不替使用者
                  勾選任何商品，也不建立採購草稿。正式選購需前往原訂貨頁。
                  ======================================================== -->

@@ -1,0 +1,1857 @@
+/* 暖色管理後台與儀表板專用樣式
+ * 此檔已整合舊版多份樣式；保留必要的 CSS cascade 與媒體查詢覆寫。
+ */
+
+
+/* ===================================================
+ * 暖色主題與側邊選單
+ * =================================================== */
+
+/* =============================================================
+   Weather Order Assistant System — D 溫暖質感主題：暖奶油白／奶茶棕／焦糖橘
+
+   本階段只調整共用視覺基礎、側邊欄、頁首與儀表板。
+   原有 DOM ID、表單、功能模組、API 與 JavaScript 均不改動。
+   如需停用此階段，從 index.html 移除此 CSS 引用即可回復外觀。
+   ============================================================= */
+
+:root {
+    /* 與原版 style.css 變數名稱相容，降低覆寫範圍。 */
+    --primary: #DF7831;
+    --primary-hover: #C96522;
+    --primary-light: #FFF0DE;
+    --sidebar-bg: #704B3D;
+    --sidebar-hover: #865A48;
+    --sidebar-text: #FFF9F1;
+    --background: #F7EFE5;
+    --surface: #FFFAF3;
+    --text-primary: #452D25;
+    --text-secondary: #80685C;
+    --border: #E8D7C7;
+    --success: #38834A;
+    --warning: #AF691E;
+    --danger: #C64635;
+    --radius: 16px;
+    --shadow: 0 6px 20px rgba(91, 61, 44, .10);
+    --sidebar-width: 260px;
+
+    /* 新主題的專用色票，後續模組可沿用。 */
+    --warm-panel: rgba(255, 250, 243, .96);
+    --warm-card: #FFF9F0;
+    --warm-soft: #F6E7D7;
+    --warm-border: #E8D7C7;
+    --warm-deep: #452D25;
+    --warm-muted: #80685C;
+    --warm-accent: #DF7831;
+    --warm-shadow: 0 8px 24px rgba(91, 61, 44, .09);
+}
+
+/* 全站保留自然的米白背景與原生字體，不外連字型及 CSS 框架。 */
+body {
+    background: radial-gradient(ellipse at 87% 5%, rgba(253, 212, 164, .34), transparent 40%),
+                radial-gradient(ellipse at 22% 92%, rgba(237, 207, 180, .28), transparent 42%),
+                var(--background);
+    color: var(--text-primary);
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+.nav-item:focus-visible {
+    outline: 3px solid rgba(223, 120, 49, .40);
+    outline-offset: 2px;
+}
+
+/* -------------------------------------------------------------
+   A. 左側導覽：保留所有 [data-page] 與 JS 選單事件。
+   ------------------------------------------------------------- */
+.sidebar {
+    background: linear-gradient(167deg, #79523F 0%, #704B3D 50%, #5F3D32 100%);
+    border-radius: 0 22px 22px 0;
+    box-shadow: 4px 0 28px rgba(58, 33, 21, .14);
+    color: var(--sidebar-text);
+}
+
+.sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 25px 16px 23px;
+    border-bottom: 1px solid rgba(255, 246, 237, .16);
+}
+
+.sidebar-brand-emblem {
+    display: inline-grid;
+    place-items: center;
+    width: 43px;
+    height: 43px;
+    flex: 0 0 43px;
+    border-radius: 14px;
+    color: #9A471D;
+    background: linear-gradient(145deg, #FFF2D7, #FFD5A5);
+    border: 1px solid rgba(255, 255, 255, .6);
+    box-shadow: 0 4px 12px rgba(48, 24, 16, .16);
+    font-size: 25px;
+}
+
+.sidebar-brand-copy {
+    min-width: 0;
+}
+
+.sidebar-brand-copy h1 {
+    margin: 0;
+    color: #FFF9EF;
+    font-size: 16px;
+    font-weight: 750;
+    letter-spacing: .02em;
+    line-height: 1.5;
+}
+
+.sidebar-brand-copy p {
+    margin: 4px 0 0;
+    color: #EFD6C8;
+    font-size: 11px;
+    line-height: 1.4;
+}
+
+.sidebar-nav {
+    gap: 7px;
+    padding: 23px 11px;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    min-height: 46px;
+    padding: 11px 16px;
+    border-radius: 12px;
+    background: transparent;
+    color: #F6E8DE;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.35;
+    white-space: nowrap;
+}
+
+.nav-icon {
+    display: block;
+    flex: 0 0 21px;
+    width: 21px;
+    height: 21px;
+    color: inherit;
+}
+
+.nav-item:hover {
+    color: #FFFDF9;
+    background: rgba(255, 244, 235, .14);
+}
+
+.nav-item.active {
+    background: linear-gradient(130deg, #D66E2B, #F3974E);
+    color: #FFFDF9;
+    box-shadow: 0 6px 15px rgba(57, 27, 15, .16), inset 0 1px rgba(255, 255, 255, .20);
+    font-weight: 750;
+}
+
+.sidebar-footer {
+    border-top-color: rgba(255, 246, 237, .15);
+    color: #DEC8BC;
+}
+
+/* -------------------------------------------------------------
+   B. 主內容與工具列：以高對比暖白底襯托資料。
+   ------------------------------------------------------------- */
+.main-content {
+    max-width: none;
+    min-width: 0;
+    min-height: 100vh;
+    padding: 25px 30px 56px;
+}
+
+.topbar {
+    min-width: 0;
+    margin-bottom: 27px;
+    padding: 20px 24px;
+    background: rgba(255, 250, 243, .95);
+    border: 1px solid var(--warm-border);
+    border-radius: 18px;
+    box-shadow: var(--warm-shadow);
+}
+
+.topbar-title h2 {
+    position: relative;
+    padding-left: 17px;
+    color: var(--warm-deep);
+    font-size: clamp(23px, 2vw, 28px);
+    font-weight: 800;
+    letter-spacing: -.02em;
+}
+
+.topbar-title h2::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 6px;
+    bottom: 5px;
+    width: 5px;
+    border-radius: 99px;
+    background: var(--warm-accent);
+}
+
+.topbar-title p {
+    margin-top: 5px;
+    padding-left: 17px;
+    color: var(--warm-muted);
+    font-size: 13px;
+}
+
+.topbar-status {
+    background: #FFF6EB;
+    border-color: #E8D2BF;
+    color: #76523B;
+    font-size: 12px;
+}
+
+.section-heading h3 {
+    border-left: 5px solid var(--warm-accent);
+    padding-left: 13px;
+    color: var(--warm-deep);
+}
+
+.section-heading p {
+    color: var(--warm-muted);
+}
+
+/* 本階段讓共用按鈕與基礎資料容器跟隨暖色 token。 */
+.primary-button {
+    border-radius: 10px;
+    background: var(--primary);
+    color: #FFFFFF;
+    box-shadow: 0 4px 10px rgba(186, 92, 38, .12);
+}
+
+.primary-button:hover:not(:disabled) {
+    background: var(--primary-hover);
+}
+
+.secondary-button {
+    background: #FFFCF8;
+    border-color: var(--border);
+    color: var(--text-primary);
+    border-radius: 10px;
+}
+
+.secondary-button:hover {
+    background: #F6EBDD;
+}
+
+.panel,
+.stat-card {
+    background: var(--warm-panel);
+    border-color: var(--warm-border);
+    box-shadow: var(--warm-shadow);
+}
+
+.form-group label {
+    color: #654D3F;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    border-color: #D9C6B6;
+    background: #FFFDF9;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(223, 120, 49, .13);
+}
+
+.data-table th {
+    background: #F7E9D9;
+    color: #654333;
+}
+
+.data-table td {
+    border-bottom-color: #F0E6DC;
+}
+
+.data-table tbody tr:hover {
+    background: #FFF6E9;
+}
+
+/* -------------------------------------------------------------
+   C. 儀表板 4 張 KPI 卡：數字仍由 #stat-* 原 ID 提供。
+   未連上資料時保留 --，不使用參考圖中的假數字。
+   ------------------------------------------------------------- */
+#page-dashboard .section-heading {
+    margin-bottom: 20px;
+}
+
+#page-dashboard .dashboard-stats {
+    gap: 18px;
+    margin-bottom: 22px;
+}
+
+#page-dashboard .stat-card {
+    position: relative;
+    isolation: isolate;
+    min-width: 0;
+    min-height: 148px;
+    overflow: hidden;
+    padding: 24px 17px 21px 93px;
+    border-radius: 20px;
+    background: linear-gradient(142deg, rgba(255, 253, 249, .99), rgba(255, 246, 234, .97));
+    border: 1px solid #E9D5C0;
+    box-shadow: 0 6px 18px rgba(92, 56, 39, .09);
+}
+
+#page-dashboard .stat-card::after {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    right: -20px;
+    bottom: -37px;
+    width: 138px;
+    height: 82px;
+    border-radius: 50%;
+    background: rgba(242, 180, 108, .12);
+    transform: rotate(-16deg);
+}
+
+#page-dashboard .dashboard-stat-icon {
+    position: absolute;
+    top: 23px;
+    left: 18px;
+    display: inline-grid;
+    place-items: center;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: #FFE6CC;
+    color: #B85B1D;
+}
+
+#page-dashboard .dashboard-stat-icon svg {
+    width: 29px;
+    height: 29px;
+}
+
+#page-dashboard .stat-card h4 {
+    color: #775443;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.5;
+}
+
+#page-dashboard .stat-card strong {
+    margin: 10px 0 5px;
+    color: var(--warm-deep);
+    font-size: clamp(25px, 2.25vw, 34px);
+    font-weight: 800;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+}
+
+#page-dashboard .stat-card p {
+    color: #947F70;
+    font-size: 12px;
+    margin: 0;
+    line-height: 1.45;
+}
+
+/* -------------------------------------------------------------
+   D. 儀表板兩張功能入口：後續才把真實天氣／銷售曲線接進首頁。
+   目前保留原本 [data-go-page] 按鈕，確保快捷入口可操作。
+   ------------------------------------------------------------- */
+#page-dashboard .dashboard-panels {
+    gap: 19px;
+}
+
+#page-dashboard .dashboard-panels .panel {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 208px;
+    padding: 23px 25px;
+    border: 1px solid #E9D8C5;
+    border-radius: 20px;
+    background: rgba(255, 251, 246, .96);
+    box-shadow: 0 8px 22px rgba(91, 61, 44, .09);
+}
+
+#page-dashboard .dashboard-panel-heading {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+#page-dashboard .dashboard-panel-mark {
+    display: grid;
+    place-items: center;
+    width: 41px;
+    height: 41px;
+    flex: 0 0 41px;
+    border: 1px solid #F2D1B1;
+    border-radius: 13px;
+    background: #FFF0DC;
+    color: #BD6424;
+    font-size: 22px;
+    font-weight: 800;
+}
+
+#page-dashboard .dashboard-panel-heading h4 {
+    margin: 0;
+    color: var(--warm-deep);
+    font-size: 18px;
+    font-weight: 750;
+}
+
+#page-dashboard .dashboard-panels .panel p {
+    min-height: unset;
+    margin: 0 0 20px;
+    color: var(--warm-muted);
+    font-size: 14px;
+    line-height: 1.8;
+}
+
+#page-dashboard .dashboard-panels .panel .primary-button {
+    align-self: flex-start;
+    margin-top: auto;
+}
+
+/* -------------------------------------------------------------
+   E. 響應式：保持既有天氣圖卡、Modal、管理篩選及表格不變。
+   ------------------------------------------------------------- */
+@media (max-width: 1250px) {
+    #page-dashboard .dashboard-stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 900px) {
+    :root { --sidebar-width: 210px; }
+    .sidebar { width: 210px; }
+    .sidebar-brand { padding: 20px 12px; gap: 8px; }
+    .sidebar-brand-emblem { width: 35px; height: 35px; flex-basis: 35px; font-size: 21px; }
+    .sidebar-brand-copy h1 { font-size: 13px; }
+    .sidebar-brand-copy p { font-size: 10px; }
+    .main-content { margin-left: 210px; padding: 23px 20px 45px; }
+    .topbar { padding: 18px 20px; }
+    #page-dashboard .dashboard-panels { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 680px) {
+    .sidebar {
+        position: static;
+        width: 100%;
+        border-radius: 0 0 17px 17px;
+    }
+    .sidebar-brand { padding: 13px 16px; }
+    .sidebar-brand-copy h1 { font-size: 16px; }
+    .sidebar-brand-copy p { font-size: 11px; }
+    .sidebar-nav { gap: 6px; padding: 10px; }
+    .nav-item { width: auto; min-height: 42px; padding: 9px 13px; font-size: 13px; }
+    .nav-icon { width: 18px; height: 18px; flex-basis: 18px; }
+    .main-content { margin-left: 0; padding: 20px 14px 36px; }
+    .topbar { align-items: stretch; gap: 12px; margin-bottom: 22px; padding: 17px; }
+    .topbar-status { align-self: flex-start; }
+    #page-dashboard .dashboard-stats { grid-template-columns: 1fr; gap: 12px; }
+    #page-dashboard .stat-card { min-height: 127px; padding: 21px 20px 20px 97px; }
+    #page-dashboard .dashboard-stat-icon { top: 20px; }
+    #page-dashboard .dashboard-panels .panel { min-height: 188px; padding: 20px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .nav-item, .primary-button, .secondary-button {
+        transition: none;
+    }
+}
+
+/* 商品貨架背景於取得正式可使用的獨立圖片後再加入。
+   不可直接把參考儀表板截圖當背景，也不可使用整層 opacity。 */
+
+
+/* ===================================================
+ * 首頁天氣與銷售趨勢
+ * =================================================== */
+
+/* =============================================================
+   D 溫暖質感儀表板：真實天氣概覽＋七日銷售圖表
+   繼承 暖色 token；所有樣式都限定於 #page-dashboard。
+   不更動任何頁面表單、管理清單或採購確認視窗。
+   ============================================================= */
+
+#page-dashboard .dashboard-overview-grid {
+    display: grid;
+    gap: 18px;
+}
+
+/* 覆寫 的入口卡片高度與內距，改成資訊型面板。 */
+#page-dashboard .dashboard-overview-grid .dashboard-overview-panel {
+    min-height: 448px;
+    padding: 20px 19px 17px;
+    border-radius: 20px;
+    background: rgba(255, 251, 246, .97);
+    border: 1px solid #E6D3BD;
+    box-shadow: 0 8px 24px rgba(91, 61, 44, .08);
+}
+
+#page-dashboard .dashboard-overview-header,
+#page-dashboard .dashboard-overview-footer,
+#page-dashboard .dashboard-overview-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+}
+
+#page-dashboard .dashboard-overview-header {
+    margin-bottom: 13px;
+}
+
+#page-dashboard .dashboard-overview-header .dashboard-panel-heading {
+    margin: 0;
+    min-width: 0;
+}
+
+#page-dashboard .dashboard-overview-header .dashboard-panel-mark {
+    width: 43px;
+    height: 43px;
+    flex-basis: 43px;
+    font-size: 23px;
+}
+
+#page-dashboard .dashboard-overview-header h4 {
+    line-height: 1.35;
+    font-size: 18px;
+}
+
+#page-dashboard .dashboard-overview-subtitle {
+    display: block;
+    color: var(--warm-muted, #80685C);
+    line-height: 1.5;
+}
+
+#page-dashboard .dashboard-icon-button {
+    flex: 0 0 auto;
+    padding: 6px 10px;
+    font-size: 12px;
+    min-height: 34px;
+    white-space: nowrap;
+}
+
+#page-dashboard .dashboard-overview-meta {
+    padding: 8px 10px;
+    border-radius: 10px;
+    color: #74513E;
+    background: #F9EEE1;
+    font-size: 12px;
+}
+
+#page-dashboard .dashboard-weather-status {
+    font-weight: 700;
+    color: #80522F;
+}
+
+#page-dashboard .dashboard-weather-status[data-status="COMPLETE"] { color: #2F7441; }
+#page-dashboard .dashboard-weather-status[data-status="PARTIAL"] { color: #925A22; }
+#page-dashboard .dashboard-weather-status[data-status="UNAVAILABLE"] { color: #B43D30; }
+
+/* 七天皆能直接看到；依面板寬度自動換行，不隱藏第 4～7 天。 */
+#page-dashboard .dashboard-weather-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 126px), 1fr));
+    gap: 9px;
+    margin-bottom: 11px;
+}
+
+#page-dashboard .dashboard-mini-weather {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 170px;
+    padding: 11px 7px 9px;
+    border: 1px solid #EDD9C5;
+    border-radius: 13px;
+    background: linear-gradient(150deg, #FFFDF8, #FFF2E4);
+    box-shadow: 0 3px 8px rgba(89, 55, 36, .045);
+    text-align: center;
+}
+
+#page-dashboard .dashboard-mini-weather:first-child {
+    border-color: #E8B078;
+    background: linear-gradient(145deg, #FFF5E6, #FFE8CB);
+}
+
+#page-dashboard .dashboard-mini-date {
+    color: #6C4936;
+    font-weight: 750;
+    font-size: 12px;
+}
+
+#page-dashboard .dashboard-mini-icon {
+    margin: 5px 0 1px;
+    font-size: 28px;
+    line-height: 1.2;
+}
+
+#page-dashboard .dashboard-mini-description {
+    min-height: 20px;
+    color: #6C4F40;
+    font-size: 11px;
+    line-height: 1.4;
+}
+
+#page-dashboard .dashboard-mini-temperature {
+    font-size: 18px;
+    font-weight: 800;
+    color: #4C3225;
+    line-height: 1.6;
+    font-variant-numeric: tabular-nums;
+}
+
+#page-dashboard .dashboard-mini-metrics {
+    width: 100%;
+    margin-top: auto;
+    border-top: 1px solid #F1E2D2;
+    line-height: 1.55;
+    color: #765D4D;
+}
+
+#page-dashboard .dashboard-mini-metrics span {
+    display: block;
+    white-space: nowrap;
+}
+
+#page-dashboard .dashboard-widget-loading,
+#page-dashboard .dashboard-widget-empty,
+#page-dashboard .dashboard-widget-error {
+    grid-column: 1 / -1;
+    width: 100%;
+    margin: 0;
+    padding: 35px 10px;
+    text-align: center;
+    color: #816B5C;
+    font-size: 13px;
+}
+
+#page-dashboard .dashboard-widget-error {
+    color: #B03B2E;
+}
+
+#page-dashboard .dashboard-overview-grid .panel .dashboard-widget-warning {
+    margin: 0 0 10px;
+    padding: 8px 10px;
+    min-height: 0;
+    border: 1px solid #ECD2A0;
+    border-radius: 9px;
+    background: #FFF3DF;
+    color: #815217;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+#page-dashboard .dashboard-overview-footer {
+    margin-top: auto;
+    padding-top: 12px;
+    border-top: 1px solid #EFE3D6;
+    font-size: 11px;
+    line-height: 1.55;
+    color: #8B7768;
+    flex-wrap: wrap;
+}
+
+#page-dashboard .dashboard-inline-link {
+    padding: 3px 0;
+    border: 0;
+    background: transparent;
+    color: #AA5722;
+    font-weight: 700;
+    text-align: left;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+}
+
+#page-dashboard .dashboard-inline-link:hover {
+    color: #7D3912;
+}
+
+/* 銷售金額與數量合計：不在 HTML 中寫死任何數值。 */
+#page-dashboard .dashboard-sales-totals {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+    padding: 12px 15px 10px;
+    background: #FBF1E7;
+    border: 1px solid #F0DFCF;
+}
+
+#page-dashboard .dashboard-sales-totals > div {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+#page-dashboard .dashboard-sales-totals span {
+    color: #7C6252;
+    font-size: 11px;
+}
+
+#page-dashboard .dashboard-sales-totals strong {
+    margin: 0;
+    color: #653D27;
+    font-size: clamp(17px, 1.7vw, 23px);
+    line-height: 1.3;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+}
+
+#page-dashboard .dashboard-chart-legend {
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin: 12px 0 3px;
+    color: #856954;
+    font-size: 11px;
+}
+
+#page-dashboard .dashboard-chart-legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+}
+
+#page-dashboard .dashboard-legend-bar {
+    display: inline-block;
+    width: 15px;
+    height: 10px;
+    border-radius: 3px;
+    background: #F5BD80;
+}
+
+#page-dashboard .dashboard-legend-line {
+    display: inline-block;
+    width: 17px;
+    border-top: 3px solid #D96828;
+    border-radius: 99px;
+}
+
+#page-dashboard .dashboard-sales-chart {
+    flex: 1 1 auto;
+    min-height: 240px;
+    overflow-x: auto;
+    display: flex;
+    align-items: center;
+}
+
+#page-dashboard .dashboard-sales-chart svg {
+    width: 100%;
+    min-width: 360px;
+    height: auto;
+    display: block;
+    font-family: inherit;
+}
+
+#page-dashboard .dashboard-sales-period {
+    min-height: 0;
+    margin: 2px 0 10px;
+    color: #867163;
+    font-size: 11px;
+    line-height: 1.5;
+    text-align: center;
+}
+
+/* 保留原訂貨建議的快捷入口；資料留待下一階段再嵌入首頁。 */
+#page-dashboard .dashboard-next-action {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 18px;
+    padding: 17px 21px;
+    margin-top: 17px;
+    border-radius: 16px;
+    border: 1px solid #E7D3BD;
+    background: rgba(255, 248, 238, .96);
+    box-shadow: 0 5px 16px rgba(86, 49, 27, .05);
+}
+
+#page-dashboard .dashboard-next-action strong { color: #573925; font-size: 15px; }
+#page-dashboard .dashboard-next-action p {
+    min-height: 0;
+    margin: 3px 0 0;
+    font-size: 12px;
+    color: #8B7060;
+}
+#page-dashboard .dashboard-next-action .primary-button { flex: 0 0 auto; }
+
+/* 特別提升選擇器權重，避免 面板通用 p 規則覆蓋提示內容。 */
+#page-dashboard .dashboard-overview-grid .dashboard-overview-panel p.dashboard-widget-loading,
+#page-dashboard .dashboard-overview-grid .dashboard-overview-panel p.dashboard-widget-empty,
+#page-dashboard .dashboard-overview-grid .dashboard-overview-panel p.dashboard-widget-error {
+    margin: 0;
+    padding: 35px 10px;
+    line-height: 1.6;
+    min-height: 0;
+    font-size: 13px;
+}
+#page-dashboard .dashboard-overview-grid .dashboard-overview-panel p.dashboard-sales-period {
+    margin: 2px 0 10px;
+    min-height: 0;
+    color: #867163;
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+@media (max-width: 1199px) {
+    #page-dashboard .dashboard-overview-grid { grid-template-columns: 1fr; }
+    #page-dashboard .dashboard-overview-grid .dashboard-overview-panel { min-height: 350px; }
+}
+
+@media (max-width: 680px) {
+    #page-dashboard .dashboard-overview-grid { gap: 12px; }
+    #page-dashboard .dashboard-overview-grid .dashboard-overview-panel { padding: 16px 13px; }
+    #page-dashboard .dashboard-overview-header { flex-wrap: wrap; align-items: flex-start; }
+    #page-dashboard .dashboard-overview-header h4 { font-size: 17px; }
+    #page-dashboard .dashboard-weather-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    #page-dashboard .dashboard-mini-weather { min-height: 157px; }
+    #page-dashboard .dashboard-sales-chart svg { min-width: 330px; }
+    #page-dashboard .dashboard-sales-totals { gap: 10px; padding: 11px; }
+    #page-dashboard .dashboard-next-action { flex-direction: column; align-items: flex-start; }
+    #page-dashboard .dashboard-next-action .primary-button { align-self: stretch; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #page-dashboard .dashboard-mini-weather, #page-dashboard .dashboard-inline-link { transition: none; }
+}
+
+
+/* ===================================================
+ * 首頁訂貨建議摘要
+ * =================================================== */
+
+/* =============================================================
+   智慧訂貨建議摘要：D 溫暖質感風
+   限定 #page-dashboard，不覆寫原本訂貨建議 / 採購 Modal / CRUD。
+   保留 、5 全部樣式；此檔只新增首頁底部表格外觀。
+   ============================================================= */
+
+#page-dashboard .dashboard-recommendation-panel {
+    margin: 18px 0 0;
+    padding: 19px 20px 15px;
+    min-width: 0;
+    border-radius: 20px;
+    border: 1px solid #e6d3bd;
+    background: rgba(255, 251, 246, .98);
+    box-shadow: 0 8px 24px rgba(91, 61, 44, .08);
+}
+
+#page-dashboard .dashboard-rec-heading-row,
+#page-dashboard .dashboard-rec-actions,
+#page-dashboard .dashboard-rec-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+#page-dashboard .dashboard-rec-heading-row { align-items: flex-start; margin-bottom: 12px; }
+#page-dashboard .dashboard-rec-heading-row .dashboard-panel-heading { min-width: 0; margin: 0; }
+#page-dashboard .dashboard-rec-heading-row h4 { margin: 0; font-size: 19px; color: #513324; line-height: 1.4; }
+#page-dashboard .dashboard-rec-heading-row .dashboard-panel-mark {
+    width: 43px; height: 43px; flex: 0 0 43px; font-size: 24px;
+}
+#page-dashboard .dashboard-rec-heading-row .dashboard-overview-subtitle { margin-top: 4px; }
+
+#page-dashboard .dashboard-rec-actions { flex-wrap: wrap; justify-content: flex-end; flex: 0 1 auto; }
+#page-dashboard .dashboard-rec-basis-label { font-size: 12px; color: #7a6152; font-weight: 700; white-space: nowrap; }
+#page-dashboard #dashboard-rec-basis {
+    min-height: 36px; padding: 7px 10px;
+    border: 1px solid #d8bfa8; border-radius: 9px;
+    background: #fffaf3; color: #553b2d; font-size: 12px;
+}
+#page-dashboard .dashboard-rec-weather-label {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 6px 10px; background: #f8eadb; border: 1px solid #ead1b9;
+    border-radius: 9px; font-size: 12px; color: #654631; cursor: pointer;
+    white-space: nowrap;
+}
+#page-dashboard #dashboard-rec-use-weather { accent-color: #c36d2f; width: 16px; height: 16px; cursor: pointer; }
+#page-dashboard .dashboard-rec-refresh { padding: 7px 12px; min-height: 36px; font-size: 12px; white-space: nowrap; }
+#page-dashboard .dashboard-rec-actions :focus-visible,
+#page-dashboard .dashboard-rec-footer button:focus-visible,
+#page-dashboard .dashboard-rec-table button:focus-visible { outline: 3px solid #e8a56f; outline-offset: 2px; }
+
+#page-dashboard .dashboard-rec-meta {
+    margin: 0 0 12px; padding: 8px 12px; border-radius: 9px;
+    border: 1px solid #efdecc; background: #f9f1e9;
+    color: #765843; font-size: 12px; line-height: 1.6;
+}
+
+#page-dashboard .dashboard-rec-table-wrap { border-radius: 12px; border: 1px solid #eee0d0; }
+#page-dashboard .dashboard-rec-table {
+    min-width: 960px; width: 100%; white-space: normal;
+    font-variant-numeric: tabular-nums;
+}
+#page-dashboard .dashboard-rec-table th {
+    padding: 12px 11px; font-size: 12px; color: #624636;
+    background: #f5e4d3; border-bottom: 1px solid #e7d0ba; white-space: nowrap;
+}
+#page-dashboard .dashboard-rec-table td {
+    padding: 11px 12px; font-size: 13px; color: #4d3b31;
+    border-bottom: 1px solid #efdfd0; vertical-align: middle;
+}
+#page-dashboard .dashboard-rec-table tbody tr:nth-child(even) { background: #fffbf6; }
+#page-dashboard .dashboard-rec-table tbody tr:hover { background: #fff1e2; }
+#page-dashboard .dashboard-rec-table .dashboard-rec-rank {
+    display: inline-flex; width: 28px; height: 28px;
+    align-items: center; justify-content: center;
+    border-radius: 50%; background: #eee2d6; color: #694832;
+    font-weight: 800; font-size: 13px;
+}
+#page-dashboard .dashboard-rec-table tr:first-child .dashboard-rec-rank {
+    background: #e3a547; color: #56300f;
+}
+#page-dashboard .dashboard-rec-product-name { display: block; color: #462d1e; font-weight: 750; }
+#page-dashboard .dashboard-rec-sku { display: block; color: #8c7567; font-size: 11px; margin-top: 3px; }
+#page-dashboard .dashboard-rec-category {
+    display: inline-block; padding: 4px 9px; border-radius: 999px;
+    background: #e9efd9; color: #4e6b39; font-size: 11px; font-weight: 700;
+}
+#page-dashboard .dashboard-rec-quantity {
+    color: #b94e18; font-size: 18px; font-weight: 800; white-space: nowrap;
+}
+#page-dashboard .dashboard-rec-quantity-note {
+    display: block; font-size: 10px; line-height: 1.4;
+    font-weight: 500; color: #856855;
+}
+#page-dashboard .dashboard-rec-number { white-space: nowrap; }
+#page-dashboard .dashboard-rec-reason { color: #68554a; line-height: 1.5; font-size: 12px; }
+#page-dashboard .dashboard-rec-row-button {
+    min-height: 34px; border-radius: 9px; padding: 6px 11px;
+    border: 1px solid #c26b2c; background: #da7734;
+    color: #fff; white-space: nowrap; font-size: 12px; font-weight: 700;
+}
+#page-dashboard .dashboard-rec-row-button:hover { background: #bc5d20; }
+#page-dashboard .dashboard-rec-table .dashboard-rec-state {
+    text-align: center; white-space: normal; padding: 24px 12px;
+    font-size: 13px; color: #806d5e; line-height: 1.5;
+}
+#page-dashboard .dashboard-rec-table .dashboard-rec-state.error { color: #a5362c; }
+
+/* 說明文字不受 .panel p 全域最小高度影響。 */
+#page-dashboard .dashboard-recommendation-panel .dashboard-rec-warning {
+    min-height: 0; margin: 10px 0 0; padding: 9px 12px;
+    background: #fff1dd; border: 1px solid #ecc798; border-radius: 9px;
+    font-size: 12px; color: #845020; line-height: 1.6;
+}
+#page-dashboard .dashboard-recommendation-panel .dashboard-rec-warning[hidden] { display: none !important; }
+#page-dashboard .dashboard-rec-footer {
+    margin-top: 13px; padding-top: 13px;
+    border-top: 1px solid #eee0d4; align-items: center;
+}
+#page-dashboard .dashboard-rec-footer span { max-width: 880px; font-size: 11px; line-height: 1.6; color: #826a5a; }
+#page-dashboard .dashboard-rec-footer .primary-button { flex: 0 0 auto; white-space: nowrap; }
+
+@media (max-width: 1180px) {
+    #page-dashboard .dashboard-rec-heading-row { flex-direction: column; }
+    #page-dashboard .dashboard-rec-actions { width: 100%; justify-content: flex-start; }
+}
+@media (max-width: 680px) {
+    #page-dashboard .dashboard-recommendation-panel { padding: 14px 12px; margin-top: 13px; }
+    #page-dashboard .dashboard-rec-heading-row h4 { font-size: 17px; }
+    #page-dashboard .dashboard-rec-actions { gap: 8px; }
+    #page-dashboard .dashboard-rec-footer { flex-direction: column; align-items: stretch; }
+    #page-dashboard .dashboard-rec-footer .primary-button { width: 100%; }
+    #page-dashboard .dashboard-rec-table { min-width: 850px; }
+}
+
+
+/* ===================================================
+ * 貨架背景與質感細節
+ * =================================================== */
+
+/* =====================================================================
+   D 溫暖質感儀表板：貨架背景、色彩一致性與閱讀性優化
+
+   安全原則：
+   1. 僅新增一份 CSS，不變更 JS／API／DOM ID／Java。
+   2. 背景照片只套在 .main-content 的獨立偽元素。
+      絕不對 main、卡片或文字本身設定 opacity 或 filter。
+   3. 所有資料表格、卡片維持高不透明度，確保文字易讀。
+   4. 若要關閉照片，將 --shelf-background-opacity 改成 0 即可。
+   ===================================================================== */
+
+:root {
+    /* 可依背景明暗微調的 3 個設定（預設忠於暖色設計規範）。 */
+    --shelf-background-opacity: .13;
+    --shelf-background-blur: 3px;
+    --shelf-background-overlay: rgba(255, 248, 239, .28);
+
+    /* 與 –6 共存，不更名既有 token。 */
+    --warm-text-primary: #452d25;
+    --warm-text-muted: #80685c;
+    --warm-panel-background: rgba(255, 251, 247, .975);
+    --warm-card-border: #e8d5c4;
+    --warm-panel-shadow: 0 10px 26px rgba(90, 58, 39, .095);
+    --warm-accent-deep: #a94d1c;
+}
+
+/* A. 商品貨架背景：背景照片與內容分開疊放，任何按鈕都不會被遮住。 */
+.main-content {
+    position: relative;
+    isolation: isolate;
+    background: #f7efe5;
+}
+
+.main-content::before,
+.main-content::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.main-content::before {
+    z-index: -2;
+    background: url('/images/beverage-shelves-warm-.webp') center top / cover no-repeat;
+    opacity: var(--shelf-background-opacity);
+    filter: blur(var(--shelf-background-blur)) saturate(.65);
+}
+
+.main-content::after {
+    z-index: -1;
+    background: linear-gradient(180deg,
+        rgba(255, 250, 244, .11) 0%,
+        var(--shelf-background-overlay) 45%,
+        rgba(255, 248, 239, .34) 100%);
+}
+
+/*
+   訂貨確認視窗採 position: fixed 且會打開遮罩。
+   視窗開啟時解除 main 的 isolation，避免 sidebar 疊在遮罩上方；
+   同時不對 main 設 overflow，避免截斷任何 Modal／清單。
+*/
+body.rec-modal-open .main-content { isolation: auto; }
+
+/* B. 頂部工具列：微弱玻璃感，維持高對比與溫暖邊框。 */
+.topbar {
+    position: relative;
+    border: 1px solid #e8d7c8;
+    background: rgba(255, 251, 246, .97);
+    box-shadow: 0 6px 24px rgba(82, 54, 37, .085);
+}
+
+.topbar-title h2 {
+    color: var(--warm-text-primary);
+    letter-spacing: -.025em;
+}
+
+.topbar-title h2::before {
+    background: linear-gradient(180deg, #f39c50, #c66b2b);
+}
+
+.topbar-status {
+    border-color: #e4c9b3;
+    background: #fff6ea;
+    color: #6e4932;
+}
+
+/* C. 側邊導覽層次：深奶茶棕為主，橘色只用於目前選取。 */
+.sidebar {
+    background: linear-gradient(162deg, #805643 0%, #714b3b 52%, #603c2f 100%);
+    box-shadow: 5px 0 26px rgba(63, 39, 29, .13);
+}
+
+.sidebar-nav .nav-item {
+    border: 1px solid transparent;
+}
+
+.sidebar-nav .nav-item:hover:not(.active) {
+    border-color: rgba(255, 242, 226, .10);
+    background: rgba(255, 242, 230, .11);
+}
+
+.sidebar-nav .nav-item.active {
+    border-color: rgba(255, 234, 203, .30);
+    background: linear-gradient(135deg, #be5f23 0%, #c97031 65%, #ad501c 100%);
+    box-shadow: 0 5px 16px rgba(66, 34, 22, .20), inset 0 1px rgba(255, 255, 255, .18);
+}
+
+/* D. 主內容區的表單／表格，避免貨架圖穿透小字。 */
+.main-content .panel,
+.main-content .stat-card,
+.main-content .table-panel {
+    background-color: var(--warm-panel-background);
+    border-color: var(--warm-card-border);
+}
+
+/* 只優化儀表板，不覆寫其他 CRUD 版面和遮罩視窗。 */
+#page-dashboard .section-heading {
+    margin-bottom: 21px;
+}
+
+#page-dashboard .section-heading h3 {
+    border-left: 5px solid #d56f2f;
+    padding-left: 15px;
+    font-size: clamp(21px, 1.8vw, 26px);
+    line-height: 1.35;
+    color: var(--warm-text-primary);
+}
+
+#page-dashboard .section-heading p {
+    color: #785d4d;
+    font-size: 13px;
+    margin-top: 7px;
+}
+
+/* 四張 KPI 卡保留原本 API 動態 ID；增加一致的光感與暖色線條。 */
+#page-dashboard .stat-card {
+    background: linear-gradient(140deg,
+        rgba(255, 253, 249, .99),
+        rgba(255, 247, 237, .98));
+    border: 1px solid #e8d6c6;
+    box-shadow: var(--warm-panel-shadow);
+}
+
+#page-dashboard .stat-card::before {
+    content: "";
+    position: absolute;
+    right: -28px;
+    bottom: -25px;
+    width: 155px;
+    height: 72px;
+    border-radius: 50%;
+    background: rgba(237, 171, 91, .13);
+    transform: rotate(-18deg);
+    pointer-events: none;
+    z-index: -1;
+}
+
+#page-dashboard .dashboard-stat-icon {
+    background: linear-gradient(145deg, #ffecd6, #ffdfbd);
+    color: #a64c18;
+    border: 1px solid rgba(230, 155, 83, .23);
+}
+
+#page-dashboard .stat-card strong {
+    color: #432a1f;
+    font-variant-numeric: tabular-nums;
+}
+
+#page-dashboard .stat-card p {
+    color: #80695a;
+}
+
+/* 中間兩張資訊面板：背景不能搶過真實數據及圖表。 */
+#page-dashboard .dashboard-overview-grid .dashboard-overview-panel,
+#page-dashboard .dashboard-recommendation-panel {
+    background: rgba(255, 252, 247, .975);
+    border: 1px solid #e5d4c4;
+    box-shadow: var(--warm-panel-shadow);
+}
+
+#page-dashboard .dashboard-panel-mark {
+    border: 1px solid #efd0ad;
+    background: linear-gradient(145deg, #fff0dd, #ffe8cd);
+    color: #af521e;
+}
+
+#page-dashboard .dashboard-overview-meta,
+#page-dashboard .dashboard-rec-meta {
+    background: rgba(250, 239, 225, .94);
+    border: 1px solid #ecdcc9;
+    color: #654c3d;
+}
+
+#page-dashboard .dashboard-mini-weather {
+    background: linear-gradient(145deg, rgba(255, 254, 250, .99), rgba(255, 242, 225, .97));
+    border-color: #e9d8c8;
+}
+
+#page-dashboard .dashboard-mini-weather:first-child {
+    border-color: #dfa570;
+    background: linear-gradient(145deg, #fff5e6, #ffead0);
+}
+
+#page-dashboard .dashboard-sales-totals {
+    border-color: #ead9c7;
+    background: rgba(251, 241, 231, .97);
+}
+
+#page-dashboard .dashboard-rec-table-wrap {
+    background: #fffcf8;
+    border-color: #e9d8c8;
+}
+
+#page-dashboard .dashboard-rec-table th {
+    background: #f4e3d2;
+    color: #5b4235;
+}
+
+#page-dashboard .dashboard-rec-table td {
+    background-color: rgba(255, 253, 248, .96);
+    color: #46372e;
+}
+
+#page-dashboard .dashboard-rec-table tbody tr:nth-child(even) td {
+    background-color: #fbf5ee;
+}
+
+#page-dashboard .dashboard-rec-table tbody tr:hover td {
+    background-color: #fff0de;
+}
+
+/* 操作按鈕強調區分：一般按鈕用深焦糖色確保小字對比。 */
+#page-dashboard .dashboard-rec-row-button,
+#page-dashboard .dashboard-rec-footer .primary-button,
+#page-dashboard .dashboard-rec-refresh,
+#page-dashboard .dashboard-next-action .primary-button {
+    border-color: #a94d1c;
+    background: #ad521d;
+    color: #fff;
+    box-shadow: 0 3px 10px rgba(123, 60, 27, .15);
+}
+
+#page-dashboard .dashboard-rec-row-button:hover:not(:disabled),
+#page-dashboard .dashboard-rec-footer .primary-button:hover:not(:disabled),
+#page-dashboard .dashboard-rec-refresh:hover:not(:disabled),
+#page-dashboard .dashboard-next-action .primary-button:hover:not(:disabled) {
+    background: #8e3e16;
+}
+
+#page-dashboard .dashboard-inline-link,
+#page-dashboard .dashboard-rec-quantity {
+    color: var(--warm-accent-deep);
+}
+
+/* E. 尺寸響應：維持原本 CSS 的斷點，只微調間距與背景。 */
+@media (min-width: 1480px) {
+    .main-content { padding: 28px 35px 65px; }
+    #page-dashboard .dashboard-overview-grid { gap: 20px; }
+    #page-dashboard .dashboard-stats { gap: 20px; }
+}
+
+@media (max-width: 1200px) {
+    .main-content { padding-inline: 21px; }
+    #page-dashboard .dashboard-overview-grid { gap: 16px; }
+}
+
+@media (max-width: 900px) {
+    .main-content { padding-inline: 18px; }
+    #page-dashboard .stat-card { padding-right: 13px; }
+}
+
+@media (max-width: 680px) {
+    .main-content { padding: 18px 13px 38px; }
+    .main-content::before { opacity: .045; filter: blur(5px) saturate(.55); }
+    .main-content::after { background: rgba(255, 248, 239, .50); }
+    .topbar { border-radius: 15px; padding: 16px 15px; }
+    #page-dashboard .section-heading { margin-bottom: 16px; }
+    #page-dashboard .dashboard-overview-grid .dashboard-overview-panel,
+    #page-dashboard .dashboard-recommendation-panel { border-radius: 16px; }
+}
+
+/* 對動態文字的對比保護與列印模式。 */
+@media print {
+    .main-content::before,
+    .main-content::after { display: none !important; }
+    .main-content { background: #fff !important; overflow: visible; }
+    .sidebar { display: none; }
+    .main-content { margin-left: 0; }
+}
+
+
+/* ===================================================
+ * 首頁氣溫時間軸
+ * =================================================== */
+
+/* =====================================================================
+   首頁未來 48 小時氣溫趨勢（僅 #page-dashboard 範圍）。
+   使用獨立檔案覆蓋版面，不影響天氣詳細頁或其他管理功能。
+   ===================================================================== */
+#page-dashboard .dashboard-temperature-section {
+    margin: 13px 0 15px;
+    padding: 15px 12px 10px;
+    border: 1px solid #EAD7C5;
+    border-radius: 15px;
+    background: linear-gradient(155deg, rgba(255,251,245,.99), rgba(255,243,230,.98));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.75);
+    min-width: 0;
+}
+#page-dashboard .dashboard-temperature-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+#page-dashboard .dashboard-temperature-head h5 {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.5;
+    font-weight: 800;
+    color: #56382B;
+}
+#page-dashboard .dashboard-temperature-head p {
+    margin: 2px 0 0;
+    color: #826A5C;
+    font-size: 11px;
+    line-height: 1.6;
+}
+#page-dashboard .dashboard-temperature-period {
+    flex-shrink: 0;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .025em;
+    white-space: nowrap;
+    padding: 5px 9px;
+    border: 1px solid #EFCDA8;
+    border-radius: 999px;
+    color: #AD591F;
+    background: #FFF3E4;
+}
+#page-dashboard .dashboard-temperature-timeline {
+    min-width: 0;
+    width: 100%;
+}
+#page-dashboard .dashboard-temperature-scroller {
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: #D7AE8A transparent;
+    border-radius: 8px;
+}
+#page-dashboard .dashboard-temperature-scroller:focus-visible {
+    outline: 2px solid #C66B2B;
+    outline-offset: 2px;
+}
+#page-dashboard .dashboard-temperature-scroller svg {
+    display: block;
+    height: auto;
+    max-height: 327px;
+    overflow: visible;
+    font-family: inherit;
+}
+#page-dashboard .dashboard-temperature-message {
+    margin: 0;
+    padding: 25px 10px;
+    font-size: 12px;
+    text-align: center;
+    color: #76594A;
+}
+#page-dashboard .dashboard-temperature-error { color: #B14B37; }
+#page-dashboard .dashboard-temperature-note {
+    margin: 8px 2px 0;
+    font-size: 10px;
+    line-height: 1.6;
+    color: #826F63;
+}
+@media (max-width: 680px) {
+    #page-dashboard .dashboard-temperature-section { padding: 13px 9px 9px; }
+    #page-dashboard .dashboard-temperature-head { align-items: flex-start; }
+    #page-dashboard .dashboard-temperature-scroller svg { max-height: 280px; }
+}
+
+
+/* ===================================================
+ * 首頁營運指標
+ * =================================================== */
+
+/* =====================================================================
+   營運 KPI 完整化與資訊層次微調
+   只作用於系統儀表板，不覆寫其他功能頁、Modal 或表單。
+   ===================================================================== */
+
+/* 四張指標卡的高度與間距保持一致，避免動態狀態訊息導致視覺跳動。 */
+#page-dashboard .dashboard-stats {
+    gap: clamp(12px, 1.25vw, 20px);
+    margin-bottom: 21px;
+}
+
+#page-dashboard .dashboard-stats .stat-card {
+    min-height: 154px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-top: 20px;
+    padding-bottom: 19px;
+    transition: border-color .18s ease, box-shadow .18s ease;
+}
+
+#page-dashboard .dashboard-stats .stat-card:hover {
+    border-color: #dcb48e;
+    box-shadow: 0 11px 26px rgba(90, 58, 39, .12);
+}
+
+#page-dashboard .dashboard-stats .stat-card strong {
+    font-size: clamp(24px, 2.1vw, 34px);
+    letter-spacing: -.025em;
+    margin: 7px 0 6px;
+    line-height: 1.15;
+}
+
+#page-dashboard .dashboard-stats .stat-card p {
+    min-height: 30px;
+    line-height: 1.45;
+    color: #7a5a46;
+    overflow-wrap: anywhere;
+}
+
+/* 新增的統計數值沿用原有 #stat-reorder、#stat-orders，不另建假資料卡。 */
+#page-dashboard #stat-reorder,
+#page-dashboard #stat-orders {
+    color: #a75320;
+}
+
+/* 讓首頁資訊區更接近原定暖白參考稿；只改視覺密度。 */
+#page-dashboard .dashboard-overview-grid {
+    gap: clamp(13px, 1.3vw, 20px);
+}
+
+#page-dashboard .dashboard-recommendation-panel {
+    margin-top: 18px;
+}
+
+@media (max-width: 900px) {
+    #page-dashboard .dashboard-stats .stat-card {
+        min-height: 141px;
+    }
+}
+
+@media (max-width: 680px) {
+    #page-dashboard .dashboard-stats .stat-card {
+        min-height: 128px;
+        padding-top: 16px;
+        padding-bottom: 15px;
+    }
+    #page-dashboard .dashboard-stats .stat-card p { min-height: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #page-dashboard .dashboard-stats .stat-card { transition: none; }
+}
+
+
+/* ===================================================
+ * 首頁間距與響應式優化
+ * =================================================== */
+
+/* =====================================================================
+   D 溫暖質感儀表板・版面比例與資訊密度精修
+
+   改動範圍：僅首頁 #page-dashboard 的視覺排版，以及貨架照片透明度。
+   - 不新增 API，不修改 JS、後端、資料庫、採購流程或真實統計數字。
+   - 原有 DOM ID / data-go-page / 表單 / modal 完全不動。
+   - 若需回復 ，移除 index.html 中此 CSS 的引用即可。
+   ===================================================================== */
+
+:root {
+    /* 比原本 10% 稍微清楚；不對前景容器套用 opacity/filter。 */
+
+    /* 首頁統一尺寸與字色：只供本 CSS 使用，避免影響其他功能頁。 */
+    --dashboard-card-edge: #e6d4c2;
+    --dashboard-card-shadow: 0 8px 24px rgba(88, 55, 36, .075);
+    --dashboard-heading-color: #4b3024;
+    --dashboard-description-color: #80665a;
+    --dashboard-panel-gap: clamp(13px, 1.35vw, 19px);
+}
+
+/* ── A. 首頁標題：比原本更接近參考圖的精簡段落 ─────── */
+#page-dashboard {
+    min-width: 0;
+    color: var(--dashboard-heading-color);
+}
+
+#page-dashboard .section-heading {
+    margin-bottom: 16px;
+}
+#page-dashboard .section-heading h3 {
+    margin: 0;
+    padding-left: 14px;
+    font-size: clamp(21px, 1.7vw, 25px);
+    line-height: 1.34;
+    letter-spacing: -.025em;
+}
+#page-dashboard .section-heading p {
+    margin: 5px 0 0;
+    font-size: 12px;
+    line-height: 1.55;
+    color: var(--dashboard-description-color);
+}
+
+/* ── B. 四張 KPI：縮減空白、放大數值的閱讀優先順序 ─────── */
+#page-dashboard .dashboard-stats {
+    gap: var(--dashboard-panel-gap);
+    margin-bottom: var(--dashboard-panel-gap);
+    align-items: stretch;
+}
+#page-dashboard .dashboard-stats .stat-card {
+    min-height: 139px;
+    padding: 17px 12px 15px 80px;
+    border: 1px solid var(--dashboard-card-edge);
+    border-radius: 18px;
+    box-shadow: var(--dashboard-card-shadow);
+}
+#page-dashboard .dashboard-stats .dashboard-stat-icon {
+    top: 20px;
+    left: 15px;
+    width: 51px;
+    height: 51px;
+}
+#page-dashboard .dashboard-stats .dashboard-stat-icon svg {
+    width: 26px;
+    height: 26px;
+}
+#page-dashboard .dashboard-stats .stat-card h4 {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.45;
+    color: #664332;
+}
+#page-dashboard .dashboard-stats .stat-card strong {
+    display: block;
+    margin: 5px 0 4px;
+    line-height: 1.18;
+    font-size: clamp(25px, 2.2vw, 34px);
+    font-variant-numeric: tabular-nums;
+}
+#page-dashboard .dashboard-stats .stat-card p {
+    min-height: 0;
+    margin: 0;
+    line-height: 1.5;
+    font-size: 11px;
+    color: #826859;
+}
+
+/* ── C. 天氣與銷售：統一內容外距、標題、資訊條 ─────── */
+#page-dashboard .dashboard-overview-grid {
+    gap: var(--dashboard-panel-gap);
+    grid-template-columns: minmax(0, 1.06fr) minmax(0, .94fr);
+    align-items: stretch;
+}
+#page-dashboard .dashboard-overview-grid .dashboard-overview-panel {
+    min-width: 0;
+    padding: 17px 17px 15px;
+    border-radius: 19px;
+    border-color: var(--dashboard-card-edge);
+    box-shadow: var(--dashboard-card-shadow);
+}
+#page-dashboard .dashboard-overview-header {
+    gap: 12px;
+    margin-bottom: 11px;
+}
+#page-dashboard .dashboard-panel-heading {
+    min-width: 0;
+    gap: 10px;
+}
+#page-dashboard .dashboard-overview-grid .dashboard-panel-mark,
+#page-dashboard .dashboard-rec-heading-row .dashboard-panel-mark {
+    width: 40px;
+    height: 40px;
+    flex: 0 0 40px;
+    font-size: 21px;
+    border-radius: 12px;
+}
+#page-dashboard .dashboard-overview-header h4,
+#page-dashboard .dashboard-rec-heading-row h4 {
+    font-size: clamp(16px, 1.3vw, 19px);
+    line-height: 1.36;
+    color: var(--dashboard-heading-color);
+}
+#page-dashboard .dashboard-overview-subtitle {
+    margin-top: 3px;
+    font-size: 11px;
+    color: #80685b;
+}
+#page-dashboard .dashboard-overview-meta {
+    margin-bottom: 10px;
+    padding: 7px 10px;
+    font-size: 11px;
+}
+#page-dashboard .dashboard-icon-button,
+#page-dashboard .dashboard-rec-refresh {
+    min-height: 34px;
+    border-radius: 10px;
+}
+
+/* 七天天氣：桌機的並排區域能放四張、下排三張，避免三列造成過長。 */
+#page-dashboard .dashboard-weather-cards {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 109px), 1fr));
+    gap: 8px;
+    margin-bottom: 10px;
+}
+#page-dashboard .dashboard-mini-weather {
+    min-width: 0;
+    min-height: 151px;
+    padding: 9px 5px 8px;
+    border-radius: 12px;
+}
+#page-dashboard .dashboard-mini-date { font-size: 11px; }
+#page-dashboard .dashboard-mini-icon {
+    margin: 4px 0 1px;
+    font-size: 26px;
+}
+#page-dashboard .dashboard-mini-description {
+    min-height: 17px;
+    font-size: 10.5px;
+    line-height: 1.45;
+}
+#page-dashboard .dashboard-mini-temperature {
+    font-size: 17px;
+    line-height: 1.5;
+    white-space: nowrap;
+}
+#page-dashboard .dashboard-mini-metrics {
+    padding-top: 5px;
+    font-size: 10px;
+    line-height: 1.5;
+}
+
+/* 48 小時圖：保留完整真實時間軸，只減少垂直占用。 */
+#page-dashboard .dashboard-temperature-section {
+    margin: 10px 0 12px;
+    padding: 12px 11px 10px;
+    border-radius: 14px;
+}
+#page-dashboard .dashboard-temperature-head {
+    margin-bottom: 6px;
+}
+#page-dashboard .dashboard-temperature-head h5 { font-size: 13px; }
+#page-dashboard .dashboard-temperature-head p {
+    font-size: 10px;
+    line-height: 1.5;
+}
+#page-dashboard .dashboard-temperature-scroller {
+    overscroll-behavior-inline: contain;
+}
+#page-dashboard .dashboard-temperature-scroller svg {
+    max-height: 265px;
+}
+#page-dashboard .dashboard-temperature-note {
+    margin-top: 5px;
+}
+
+/* 銷售：兩個合計數字與圖表明確區分，禁止金額換行造成溢出。 */
+#page-dashboard .dashboard-sales-totals {
+    padding: 11px 13px;
+    gap: 12px;
+    border-radius: 12px;
+}
+#page-dashboard .dashboard-sales-totals strong {
+    font-size: clamp(18px, 1.8vw, 24px);
+    line-height: 1.24;
+    overflow-wrap: anywhere;
+}
+#page-dashboard .dashboard-chart-legend {
+    margin-top: 11px;
+    gap: 13px;
+}
+#page-dashboard .dashboard-sales-chart {
+    min-width: 0;
+    min-height: 255px;
+    max-width: 100%;
+    scrollbar-width: thin;
+    scrollbar-color: #d5ae8c transparent;
+}
+#page-dashboard .dashboard-sales-chart svg {
+    max-width: none;
+}
+#page-dashboard .dashboard-overview-footer {
+    gap: 8px 12px;
+    padding-top: 10px;
+    font-size: 10.5px;
+}
+#page-dashboard .dashboard-inline-link {
+    font-size: 12px;
+}
+
+/* ── D. 智慧訂貨摘要：標題清楚、控制項易用、表格更緊湊 ─── */
+#page-dashboard .dashboard-recommendation-panel {
+    margin-top: var(--dashboard-panel-gap);
+    padding: 17px 18px 15px;
+    border-radius: 19px;
+    border-color: var(--dashboard-card-edge);
+    box-shadow: var(--dashboard-card-shadow);
+}
+#page-dashboard .dashboard-rec-heading-row {
+    gap: 12px 20px;
+    margin-bottom: 11px;
+}
+#page-dashboard .dashboard-rec-actions {
+    gap: 8px;
+}
+#page-dashboard #dashboard-rec-basis,
+#page-dashboard .dashboard-rec-weather-label {
+    min-height: 35px;
+}
+#page-dashboard .dashboard-rec-meta {
+    margin-bottom: 10px;
+    padding: 8px 11px;
+    font-size: 11px;
+}
+#page-dashboard .dashboard-rec-table-wrap {
+    overflow-x: auto;
+    max-width: 100%;
+    border-radius: 12px;
+    scrollbar-width: thin;
+    scrollbar-color: #d5ae8c transparent;
+}
+#page-dashboard .dashboard-rec-table {
+    min-width: 920px;
+    border-collapse: collapse;
+}
+#page-dashboard .dashboard-rec-table th {
+    padding: 11px 10px;
+    font-size: 11px;
+    letter-spacing: .01em;
+    line-height: 1.45;
+}
+#page-dashboard .dashboard-rec-table td {
+    padding: 10px 10px;
+    font-size: 12px;
+    line-height: 1.48;
+}
+#page-dashboard .dashboard-rec-table th:nth-child(4),
+#page-dashboard .dashboard-rec-table th:nth-child(5),
+#page-dashboard .dashboard-rec-table td:nth-child(4),
+#page-dashboard .dashboard-rec-table td:nth-child(5) {
+    text-align: center;
+}
+#page-dashboard .dashboard-rec-table .dashboard-rec-rank {
+    width: 27px;
+    height: 27px;
+    font-size: 12px;
+}
+#page-dashboard .dashboard-rec-table .dashboard-rec-quantity {
+    font-size: 17px;
+}
+#page-dashboard .dashboard-rec-table .dashboard-rec-reason {
+    font-size: 11.5px;
+    line-height: 1.55;
+}
+/* 前三名使用穩重的金、銀、銅色，資料排名順序仍由 API 決定。 */
+#page-dashboard .dashboard-rec-table tr:nth-child(2) .dashboard-rec-rank {
+    background: #e5e3df;
+    color: #5a5750;
+}
+#page-dashboard .dashboard-rec-table tr:nth-child(3) .dashboard-rec-rank {
+    background: #ebc3a2;
+    color: #71421e;
+}
+#page-dashboard .dashboard-rec-row-button {
+    min-height: 34px;
+    border-radius: 10px;
+}
+#page-dashboard .dashboard-rec-footer {
+    margin-top: 10px;
+    padding-top: 11px;
+    gap: 10px 14px;
+}
+#page-dashboard .dashboard-rec-footer span {
+    font-size: 10.5px;
+    line-height: 1.55;
+}
+
+/* ── E. 自適應布局：手機不顯示整頁橫向捲軸 ──────────── */
+@media (max-width: 1250px) {
+    /* 單欄邏輯由 1199px 提早到 1250px，避免狹窄欄位擠壓圖卡。 */
+    #page-dashboard .dashboard-overview-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+@media (max-width: 900px) {
+    #page-dashboard .dashboard-stats .stat-card {
+        min-height: 134px;
+    }
+    #page-dashboard .dashboard-rec-heading-row {
+        align-items: flex-start;
+        flex-wrap: wrap;
+    }
+    #page-dashboard .dashboard-rec-actions {
+        justify-content: flex-start;
+    }
+}
+@media (max-width: 680px) {
+    #page-dashboard .section-heading { margin-bottom: 13px; }
+    #page-dashboard .dashboard-stats { gap: 11px; }
+    #page-dashboard .dashboard-stats .stat-card {
+        min-height: 118px;
+        padding: 13px 12px 12px 71px;
+        border-radius: 16px;
+    }
+    #page-dashboard .dashboard-stats .dashboard-stat-icon {
+        top: 18px;
+        left: 13px;
+        width: 46px;
+        height: 46px;
+    }
+    #page-dashboard .dashboard-stats .dashboard-stat-icon svg {
+        width: 23px;
+        height: 23px;
+    }
+    #page-dashboard .dashboard-stats .stat-card strong {
+        font-size: 27px;
+    }
+    #page-dashboard .dashboard-overview-grid .dashboard-overview-panel {
+        padding: 14px 12px;
+        border-radius: 16px;
+    }
+    #page-dashboard .dashboard-weather-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+    }
+    #page-dashboard .dashboard-mini-weather {
+        min-height: 143px;
+        padding-inline: 7px;
+    }
+    #page-dashboard .dashboard-temperature-section {
+        padding: 11px 8px 9px;
+    }
+    #page-dashboard .dashboard-temperature-scroller svg {
+        max-height: 230px;
+    }
+    #page-dashboard .dashboard-sales-chart { min-height: 220px; }
+    #page-dashboard .dashboard-recommendation-panel {
+        padding: 14px 12px;
+        border-radius: 16px;
+    }
+    #page-dashboard .dashboard-rec-table { min-width: 825px; }
+    #page-dashboard .dashboard-rec-footer { align-items: stretch; }
+    #page-dashboard .dashboard-rec-footer .primary-button { width: 100%; }
+}
+@media (max-width: 380px) {
+    #page-dashboard .dashboard-overview-header { flex-wrap: wrap; }
+    #page-dashboard .dashboard-mini-temperature { font-size: 16px; }
+    #page-dashboard .dashboard-rec-actions { width: 100%; }
+    #page-dashboard #dashboard-rec-basis { max-width: 100%; }
+}
+
+/* ── F. 鍵盤、動態效果及列印：只補視覺安全性 ─────── */
+#page-dashboard :is(button, select, input):focus-visible {
+    outline: 3px solid rgba(207, 108, 37, .46);
+    outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+    #page-dashboard .stat-card,
+    #page-dashboard .dashboard-mini-weather,
+    #page-dashboard button {
+        transition: none !important;
+    }
+}
+@media print {
+    #page-dashboard .dashboard-rec-table-wrap,
+    #page-dashboard .dashboard-temperature-scroller { overflow: visible; }
+    #page-dashboard .dashboard-stats .stat-card,
+    #page-dashboard .dashboard-overview-panel,
+    #page-dashboard .dashboard-recommendation-panel { box-shadow: none !important; }
+}

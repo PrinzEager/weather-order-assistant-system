@@ -1,7 +1,7 @@
 "use strict";
 
 /**
- * Phase 6｜儀表板智慧訂貨建議摘要（只讀）。
+ * 儀表板智慧訂貨建議摘要（只讀）。
  *
  * 1. 使用新版 GET /api/order-recommendation-options，不能誤用舊 /api/order-recommendations。
  * 2. 直接採用後端 normalRecommendedQuantity / weatherRecommendedQuantity，絕不重算採購公式。
@@ -43,7 +43,7 @@ function quantityFor(item, useWeather) {
 
 
 /**
- * Phase 9｜首頁「需要補貨商品」KPI，直接共用 Phase 6 訂貨摘要已取得的資料。
+ * 首頁「需要補貨商品」KPI，直接共用 訂貨摘要已取得的資料。
  * 只讀取後端 normalRecommendedQuantity／weatherRecommendedQuantity，絕不重算建議公式。
  * 數量缺值時不擅自當成 0，避免顯示錯誤的商品總數。
  */
@@ -96,7 +96,7 @@ export function pickDashboardSuggestions(items, useWeather, maxPreview = MAX_PRE
 }
 
 function getLocation() {
-    // 延用天氣模組的縣市／鄉鎮選擇，與 Phase 5 首頁天氣摘要一致。
+    // 延用天氣模組的縣市／鄉鎮選擇，與 首頁天氣摘要一致。
     return {
         city: el("weather-city")?.value?.trim() || "高雄市",
         district: el("weather-district")?.value?.trim() || "路竹區"
