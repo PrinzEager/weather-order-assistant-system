@@ -1,6 +1,8 @@
 /* 天氣模組：由原 app.js 分離，保留既有功能。 */
-import { API, byId, makeElement, clearElement, showEmpty, showMessage, hideMessage, setButtonLoading, displayValue, formatNumber, getSearchParameters, apiGet, createStatCard } from "./common.js";
+import { API, byId, clearElement, showEmpty, showMessage, hideMessage, setButtonLoading, displayValue, formatNumber, getSearchParameters, apiGet, createStatCard } from "./common.js";
 import { initLocationDropdown } from "./taiwan-districts.js";
+// 七天天氣每日卡片：使用同一次 API 回傳資料，不新增請求。
+import { renderSevenDayWeatherCards } from "./weather-seven-day-cards.js";
 
 let weatherLoaded = false;
 
@@ -10,7 +12,7 @@ export function initWeather() {
     // 一、初始化縣市與鄉鎮市區連動下拉選單
     // =====================================================
 
-    // 三天天氣預報頁面
+    // 七天天氣預報頁面
     initLocationDropdown("weather");
 
     // 天氣訂貨建議頁面
@@ -30,33 +32,6 @@ export function initWeather() {
 
 export function enterWeatherPage() {
     if (!weatherLoaded) loadWeather();
-}
-
-function getWeatherIcon(code, description = "") {
-    const weatherCode = String(code ?? "").padStart(2, "0");
-    const text = String(description);
-
-    if (text.includes("雷")) return "⛈️";
-    if (text.includes("雪")) return "❄️";
-
-    if (text.includes("雨") ||
-        ["08", "09", "10", "11", "12",
-         "13", "14", "15", "16", "17",
-         "18", "19", "20", "21", "22"].includes(weatherCode)) {
-        return "🌧️";
-    }
-
-    if (weatherCode === "01" || text === "晴") {
-        return "☀️";
-    }
-
-    if (weatherCode === "02" ||
-        weatherCode === "03" ||
-        text.includes("晴時多雲")) {
-        return "🌤️";
-    }
-
-    return "☁️";
 }
 
 async function loadWeather() {
@@ -84,7 +59,8 @@ async function loadWeather() {
         }
 
         renderWeatherSummary(data);
-        renderDailyWeather(data.dailyForecasts);
+        // 七天日卡及濕度／降雨缺值顯示交給獨立模組。
+        renderSevenDayWeatherCards(data);
         renderWeatherCharts(data);
 
         // 顯示後端回傳的資料完整性警告。
@@ -165,55 +141,6 @@ function renderWeatherSummary(data) {
     );
 }
 
-function renderDailyWeather(dailyForecasts) {
-    const container = byId("weather-daily-cards");
-    clearElement(container);
-
-    if (dailyForecasts.length === 0) {
-        showEmpty(container, "目前沒有每日天氣資料");
-        return;
-    }
-
-    dailyForecasts.forEach(day => {
-        const card = makeElement("article", null, "weather-card");
-
-        // 兼容每日 DTO 常見日期命名。
-        const date = day.date ?? day.forecastDate;
-
-        const weather = day.weather ?? "";
-        const icon = getWeatherIcon(day.weatherCode, weather);
-
-        const max = day.maxTemperature;
-        const min = day.minTemperature;
-
-        card.appendChild(
-            makeElement("h4", displayValue(date, "預報日期"))
-        );
-
-        card.appendChild(
-            makeElement("div", icon, "weather-icon")
-        );
-
-        card.appendChild(
-            makeElement(
-                "div",
-                `${displayValue(max)}° / ${displayValue(min)}°`,
-                "weather-temperature"
-            )
-        );
-
-        card.appendChild(
-            makeElement(
-                "div",
-                displayValue(weather, "無天氣描述"),
-                "weather-description"
-            )
-        );
-
-        container.appendChild(card);
-    });
-}
-
 function formatChartTime(value) {
     if (!value) return "--";
 
@@ -247,7 +174,8 @@ function renderLineChart(container, items, color, suffix) {
         return;
     }
 
-    const width = Math.max(600, points.length * 55);
+    // 七天可能含大量時段資料；限制最大寬度，避免數千像素橫向捲軸。
+    const width = Math.max(600, Math.min(1200, points.length * 18));
     const height = 230;
     const padding = 40;
 
@@ -339,7 +267,7 @@ function renderLineChart(container, items, color, suffix) {
             label.setAttribute("y", height - 10);
             label.setAttribute("font-size", "10");
             label.setAttribute("text-anchor", "middle");
-            label.setAttribute("fill", "#64748b");
+            label.setAttribute("fill", "#80685c");
 
             label.textContent = point.label;
 
@@ -365,7 +293,7 @@ function renderWeatherCharts(data) {
             label: formatChartTime(item.dataTime),
             value: item.temperature
         })),
-        "#2563eb",
+        "#c96522",
         "°C"
     );
 
@@ -375,7 +303,7 @@ function renderWeatherCharts(data) {
             label: formatChartTime(item.startTime),
             value: item.precipitationProbability
         })),
-        "#0891b2",
+        "#5d9dc7",
         "%"
     );
 }

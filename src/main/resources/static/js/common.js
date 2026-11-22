@@ -137,26 +137,34 @@ export function addDays(dateString, days) {
     return date.toISOString().slice(0, 10);
 }
 
+// =========================================================
+// 七天預報日期範圍：含當日共七天（今天至今天 + 6 天）。
+// 舊版以今天 + 2 天當上限，會阻擋已完成的七天天氣 API。
+// 訂貨建議的「預設三天」仍保留，避免改變使用者既有操作習慣；
+// 但兩個模組都可自行選擇最多七天，與新版後端規則一致。
+// =========================================================
 export function initializeDates() {
     const today = getTaiwanToday();
-    const endDate = addDays(today, 2);
+    const lastDay = addDays(today, 6);
+    const recommendationDefaultEnd = addDays(today, 2);
 
     [
         ["weather-start-date", today],
-        ["weather-end-date", endDate],
+        ["weather-end-date", lastDay],
         ["recommendation-start-date", today],
-        ["recommendation-end-date", endDate]
+        ["recommendation-end-date", recommendationDefaultEnd]
     ].forEach(([id, value]) => {
         const input = byId(id);
+        if (!input) return;
         input.value = value;
         input.min = today;
-        input.max = endDate;
+        input.max = lastDay;
     });
 }
 
 export function validateDateRange(startDate, endDate) {
     const today = getTaiwanToday();
-    const lastDay = addDays(today, 2);
+    const lastDay = addDays(today, 6);
 
     if (!startDate || !endDate) {
         throw new Error("請選擇起始日期與結束日期");
@@ -167,7 +175,7 @@ export function validateDateRange(startDate, endDate) {
     }
 
     if (startDate < today || endDate > lastDay) {
-        throw new Error("目前僅支援今天至後天的天氣預報");
+        throw new Error("目前僅支援台灣當天至第七天（含起迄日）的天氣預報");
     }
 }
 

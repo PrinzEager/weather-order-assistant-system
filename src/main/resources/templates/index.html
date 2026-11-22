@@ -23,6 +23,8 @@
     <script type="module" th:src="@{/js/purchase-order-details.js}"></script>
     <!-- 商品與供應商後台狀態管理 -->
     <link rel="stylesheet" th:href="@{/css/management-status.css}">
+    <!-- 天氣頁專用：七天圖卡與 D 溫暖質感配色，不影響其餘頁面 -->
+    <link rel="stylesheet" th:href="@{/css/weather-seven-day.css}">
     <script type="module" th:src="@{/js/management-status.js}"></script>
     
 </head>
@@ -49,7 +51,7 @@
 
             <button type="button" class="nav-item"
                     data-page="weather">
-                三天天氣預報
+                七天天氣預報
             </button>
 
             <button type="button" class="nav-item"
@@ -163,7 +165,7 @@
                 <article class="panel">
                     <h4>天氣資訊</h4>
                     <p>
-                        查看未來三天的天氣、溫度及降雨機率，
+                        查看未來七天的天氣、溫度及降雨機率，
                         作為訂貨需求評估的輔助資訊。
                     </p>
 
@@ -193,13 +195,13 @@
         </section>
 
         <!-- =================================================
-             2. 三天天氣預報
+             2. 七天天氣預報
              ================================================= -->
         <section id="page-weather" class="page-section" hidden>
 
             <div class="section-heading">
-                <h3>未來三天天氣預報</h3>
-                <p>資料來源：中央氣象署公開氣象資料。</p>
+                <h3>未來七天天氣預報</h3>
+                <p>資料來源：中央氣象署公開氣象資料。可查詢台灣今日起最多七天的預報，起迄日期皆包含。</p>
             </div>
 
             <div class="panel">
@@ -244,19 +246,35 @@
 
             </div>
 
-            <!-- 天氣摘要 -->
+            <!--
+                每日卡片只依後端實際資料顯示。
+                遠期降雨資料可能缺少，沒有資料時標示「未提供」，不可當成 0%。
+            -->
+            <p class="weather-forecast-note">
+                <span aria-hidden="true">ⓘ</span>
+                官方部分遠期時段未提供降雨機率時，將顯示「未提供」，不代表降雨機率為零。
+            </p>
+
+            <!-- 天氣摘要：維持原有容器 ID 與後端資料來源 -->
             <div id="weather-summary" class="weather-summary"></div>
 
-            <!-- 未來三天每日天氣卡片 -->
+            <!-- 七天天氣卡片：依 API 查詢日期動態產生，保留原有容器 ID -->
+            <div class="weather-cards-heading">
+                <div>
+                    <h4>每日天氣概覽</h4>
+                    <p>日期、天氣現象、最高／最低溫、降雨機率及相對濕度</p>
+                </div>
+                <span class="weather-cards-heading-hint">最多 7 天</span>
+            </div>
             <div id="weather-daily-cards"
-                 class="weather-daily-cards">
+                 class="weather-daily-cards" aria-live="polite">
             </div>
 
             <!-- 溫度及降雨機率圖表 -->
             <div class="chart-grid">
 
                 <article class="panel">
-                    <h4>溫度變化</h4>
+                    <h4>各時段溫度變化</h4>
                     <div id="temperature-chart"
                          class="chart-container">
                         <p class="empty-state">尚未載入溫度資料</p>
@@ -264,7 +282,7 @@
                 </article>
 
                 <article class="panel">
-                    <h4>降雨機率</h4>
+                    <h4>各時段降雨機率</h4>
                     <div id="precipitation-chart"
                          class="chart-container">
                         <p class="empty-state">尚未載入降雨資料</p>

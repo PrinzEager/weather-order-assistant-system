@@ -1,0 +1,336 @@
+/* =========================================================
+   七天天氣頁：D 溫暖質感風（第一階段）
+   只限 #page-weather，保留既有功能與其他模組 CSS。
+   資料由既有 API 與 weather.js 提供，本檔不改資料邏輯。
+   ========================================================= */
+
+#page-weather {
+    --weather-cream: #fff9f0;
+    --weather-surface: rgba(255, 250, 243, .96);
+    --weather-soft: #f8ecdd;
+    --weather-dark: #452d25;
+    --weather-muted: #80685c;
+    --weather-border: #e8d7c7;
+    --weather-accent: #df7831;
+    --weather-accent-hover: #c96522;
+    --weather-shadow: 0 6px 20px rgba(91, 61, 44, .09);
+    color: var(--weather-dark);
+}
+
+/* 頁面標題與既有查詢面板，採暖白與棕橘色。 */
+#page-weather .section-heading h3 {
+    color: var(--weather-dark);
+    border-left: 5px solid var(--weather-accent);
+    padding-left: 13px;
+}
+
+#page-weather .section-heading p,
+#page-weather .panel p {
+    color: var(--weather-muted);
+}
+
+#page-weather .panel,
+#page-weather .stat-card {
+    background: var(--weather-surface);
+    border: 1px solid var(--weather-border);
+    border-radius: 18px;
+    box-shadow: var(--weather-shadow);
+}
+
+#page-weather .panel h4,
+#page-weather .stat-card strong {
+    color: var(--weather-dark);
+}
+
+#page-weather .form-group label {
+    color: var(--weather-dark);
+}
+
+#page-weather .form-group input,
+#page-weather .form-group select {
+    background: #fffcf8;
+    border-color: #d9c8b8;
+    color: var(--weather-dark);
+}
+
+#page-weather .form-group input:focus,
+#page-weather .form-group select:focus {
+    border-color: var(--weather-accent);
+    box-shadow: 0 0 0 3px rgba(223, 120, 49, .16);
+}
+
+#page-weather .primary-button {
+    background: var(--weather-accent);
+    border-radius: 10px;
+}
+
+#page-weather .primary-button:hover:not(:disabled) {
+    background: var(--weather-accent-hover);
+}
+
+/* 預報資料缺值提醒：使用文字說明，不只依靠色彩辨識。 */
+#page-weather .weather-forecast-note {
+    margin: 0 0 18px;
+    padding: 11px 15px;
+    border: 1px solid #ead6bd;
+    border-radius: 12px;
+    background: rgba(255, 246, 232, .94);
+    color: #75523b;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+#page-weather .weather-forecast-note > span {
+    color: var(--weather-accent);
+    font-weight: 800;
+    margin-right: 6px;
+}
+
+/* 原摘要卡保留原 DOM ID；三張摘要仍可使用原有渲染函式。 */
+#page-weather .weather-summary {
+    margin: 0 0 24px;
+    gap: 15px;
+}
+
+#page-weather .weather-summary .stat-card {
+    padding: 19px 20px;
+    min-width: 0;
+}
+
+#page-weather .weather-summary .stat-card strong {
+    font-size: clamp(23px, 2vw, 29px);
+    font-variant-numeric: tabular-nums;
+}
+
+/* 每日卡片標題及資訊說明。 */
+#page-weather .weather-cards-heading {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+}
+
+#page-weather .weather-cards-heading h4 {
+    margin: 0;
+    color: var(--weather-dark);
+    font-size: 18px;
+    font-weight: 750;
+}
+
+#page-weather .weather-cards-heading p {
+    margin: 3px 0 0;
+    color: var(--weather-muted);
+    font-size: 12px;
+}
+
+#page-weather .weather-cards-heading-hint {
+    border: 1px solid #ecd0b2;
+    border-radius: 999px;
+    padding: 4px 11px;
+    color: #8a512d;
+    background: #fff0dd;
+    font-size: 12px;
+    font-weight: 650;
+}
+
+/*
+   七天卡片自動換行，不在窄螢幕硬塞七欄。
+   1400px 左右含側欄時：四欄；中尺寸三或兩欄；手機單欄。
+*/
+#page-weather .weather-daily-cards {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+#page-weather .weather-daily-cards > .empty-state {
+    grid-column: 1 / -1;
+}
+
+#page-weather .weather-card {
+    position: relative;
+    min-width: 0;
+    padding: 18px 17px 16px;
+    text-align: left;
+    background: var(--weather-surface);
+    border: 1px solid var(--weather-border);
+    border-radius: 18px;
+    box-shadow: var(--weather-shadow);
+    transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+
+#page-weather .weather-card:hover {
+    transform: translateY(-2px);
+    border-color: #dca673;
+    box-shadow: 0 9px 25px rgba(91, 61, 44, .13);
+}
+
+#page-weather .weather-card.is-today {
+    background: linear-gradient(145deg, #fff8ec, #fff0de);
+    border-color: #e7b484;
+}
+
+#page-weather .weather-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+#page-weather .weather-card h4,
+#page-weather .weather-card-date {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 750;
+    color: var(--weather-dark);
+}
+
+#page-weather .weather-card-day-index {
+    border-radius: 999px;
+    padding: 3px 9px;
+    font-size: 11px;
+    font-weight: 750;
+    color: #945a30;
+    background: #f9e6cf;
+    white-space: nowrap;
+}
+
+#page-weather .weather-card.is-today .weather-card-day-index {
+    background: var(--weather-accent);
+    color: #fff;
+}
+
+#page-weather .weather-card-condition {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 17px 0 10px;
+    min-width: 0;
+}
+
+/* icon 用原生 Emoji，若後續改官方氣象圖示僅需調整渲染器。 */
+#page-weather .weather-card .weather-icon {
+    flex: none;
+    margin: 0;
+    font-size: 40px;
+    line-height: 1.25;
+}
+
+#page-weather .weather-card .weather-description {
+    min-width: 0;
+    margin: 0;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--weather-dark);
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+}
+
+#page-weather .weather-card .weather-temperature {
+    margin: 4px 0 12px;
+    color: var(--weather-dark);
+    font-size: 25px;
+    font-weight: 800;
+    line-height: 1.3;
+    font-variant-numeric: tabular-nums;
+}
+
+#page-weather .weather-temperature-label {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--weather-muted);
+    font-size: 11px;
+    font-weight: 550;
+}
+
+#page-weather .weather-card-metrics {
+    border-top: 1px solid #ecdccc;
+    padding-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+#page-weather .weather-card-metric {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 12px;
+}
+
+#page-weather .weather-card-metric-label {
+    color: var(--weather-muted);
+}
+
+#page-weather .weather-card-metric-value {
+    color: var(--weather-dark);
+    font-weight: 750;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+}
+
+#page-weather .weather-card-metric-value.is-unavailable {
+    color: #8a7768;
+    font-weight: 550;
+}
+
+/* 溫度、降雨圖表維持原 ID；只統一外框、座標文字色彩。 */
+#page-weather .chart-grid .panel {
+    min-width: 0;
+}
+
+#page-weather .chart-container {
+    min-height: 255px;
+    max-width: 100%;
+    overflow-x: auto;
+    scrollbar-color: #d8b28f #f7eee4;
+}
+
+#page-weather .chart-container svg {
+    max-width: none;
+}
+
+#page-weather .chart-container svg text {
+    fill: var(--weather-muted);
+}
+
+@media (max-width: 1320px) {
+    #page-weather .weather-daily-cards {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 980px) {
+    #page-weather .weather-daily-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 680px) {
+    #page-weather .weather-summary {
+        grid-template-columns: 1fr;
+    }
+
+    #page-weather .weather-daily-cards {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    #page-weather .weather-card {
+        padding: 16px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #page-weather .weather-card {
+        transition: none;
+    }
+
+    #page-weather .weather-card:hover {
+        transform: none;
+    }
+}
