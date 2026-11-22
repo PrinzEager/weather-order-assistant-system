@@ -27,7 +27,7 @@ async function loadCategories() {
 
         // 確認回傳資料為陣列。
         if (!Array.isArray(categories)) {
-            throw new Error("商品分類 API 回傳格式不正確");
+            throw new Error("商品分類回傳格式不正確");
         }
 
         // 保存最新分類資料，提供新增分類表單使用。

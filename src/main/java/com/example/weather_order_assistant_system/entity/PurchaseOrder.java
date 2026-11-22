@@ -30,14 +30,14 @@ import lombok.Setter;
 @Table(name = "purchase_orders")
 public class PurchaseOrder {
 
-    // 訂貨單編號（主鍵）
+    // 訂單編號（主鍵）
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     private Long id;
 
-    // 訂貨單所屬供應商
-    // 使用 LAZY 避免查詢訂貨單時自動載入所有供應商資料
+    // 訂單所屬供應商
+    // 使用 LAZY 避免查詢訂單時自動載入所有供應商資料
     // 即使供應商日後停用或軟刪除，也保留原本的關聯
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(
@@ -50,12 +50,12 @@ public class PurchaseOrder {
     // =====================================================
     // 供應商歷史資訊快照
     // =====================================================
-    // 建立訂貨單時，由 Service 複製當下的供應商基本資料
+    // 建立訂單時，由 Service 複製當下的供應商基本資料
     // 之後供應商修改名稱、聯絡方式、停用或軟刪除，
-    // 都不應修改既有訂貨單內保存的快照。
+    // 都不應修改既有訂單內保存的快照。
     //
     // 這些欄位允許 NULL，以兼容 Migration 前的歷史資料。
-    // 新訂貨單的 supplierNameSnapshot 必須由 Service 填入。
+    // 新訂單的 supplierNameSnapshot 必須由 Service 填入。
     // =====================================================
 
     // 下單當時的供應商名稱
@@ -87,7 +87,7 @@ public class PurchaseOrder {
     @Column(name = "expected_delivery_date")
     private LocalDate expectedDeliveryDate;
 
-    // 訂貨單狀態
+    // 訂單狀態
     // DRAFT：草稿
     // SUBMITTED：已送出
     // RECEIVED：已到貨
@@ -96,7 +96,7 @@ public class PurchaseOrder {
     @Column(name = "order_status", nullable = false, length = 20)
     private String orderStatus = "DRAFT";
 
-    // 訂貨單總金額
+    // 訂單總金額
     // 由 Service 將所有明細小計加總
     @Column(
         name = "total_amount",
@@ -119,24 +119,24 @@ public class PurchaseOrder {
     private LocalDateTime updatedAt;
 
     // 軟刪除時間
-    // NULL 代表訂貨單尚未刪除
-    // 有值代表訂貨單已軟刪除
+    // NULL 代表訂單尚未刪除
+    // 有值代表訂單已軟刪除
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
     // =====================================================
-    // 訂貨單與訂貨明細的一對多關聯
+    // 訂單與訂貨明細的一對多關聯
     // =====================================================
-    // 一張訂貨單可以包含多筆商品明細
+    // 一張訂單可以包含多筆商品明細
     //
     // mappedBy = "purchaseOrder"
     // 表示外鍵由 PurchaseOrderItem 的 purchaseOrder 欄位管理
     //
     // CascadeType.PERSIST：
-    // 新增訂貨單時，可一起新增所屬明細
+    // 新增訂單時，可一起新增所屬明細
     //
     // CascadeType.MERGE：
-    // 更新訂貨單時，可一併更新所屬明細
+    // 更新訂單時，可一併更新所屬明細
     //
     // 不使用 REMOVE，避免誤刪除歷史採購明細
     // =====================================================
@@ -149,7 +149,7 @@ public class PurchaseOrder {
     )
     private List<PurchaseOrderItem> items = new ArrayList<>();
 
-    // 新增訂貨單前執行
+    // 新增訂單前執行
     @PrePersist
     public void prePersist() {
 
@@ -181,11 +181,11 @@ public class PurchaseOrder {
         }
     }
 
-    // 修改訂貨單前執行
+    // 修改訂單前執行
     @PreUpdate
     public void preUpdate() {
 
-        // 每次更新訂貨單時，自動更新最後修改時間
+        // 每次更新訂單時，自動更新最後修改時間
         updatedAt = LocalDateTime.now();
     }
 }

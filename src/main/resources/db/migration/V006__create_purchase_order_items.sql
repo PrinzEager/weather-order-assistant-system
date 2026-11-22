@@ -1,7 +1,7 @@
--- 訂貨單商品明細：每張訂貨單的同一商品僅允許一筆明細
+-- 訂單商品明細：每張訂單的同一商品僅允許一筆明細
 CREATE TABLE purchase_order_items (
     id BIGINT NOT NULL AUTO_INCREMENT COMMENT '訂貨明細編號',
-    purchase_order_id BIGINT NOT NULL COMMENT '訂貨單編號',
+    purchase_order_id BIGINT NOT NULL COMMENT '訂單編號',
     product_id BIGINT NOT NULL COMMENT '商品編號',
     quantity INT NOT NULL COMMENT '訂貨數量',
     unit_price DECIMAL(10, 2) NOT NULL COMMENT '訂貨當下單價',
@@ -15,4 +15,4 @@ CREATE TABLE purchase_order_items (
 ) ENGINE=InnoDB
   DEFAULT CHARSET=utf8mb4
   COLLATE=utf8mb4_unicode_ci
-  COMMENT='訂貨單商品明細表';
+  COMMENT='訂單商品明細表';

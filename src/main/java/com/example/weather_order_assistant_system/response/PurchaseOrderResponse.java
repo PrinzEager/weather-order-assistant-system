@@ -76,13 +76,13 @@ public class PurchaseOrderResponse {
     // 訂貨日期與狀態
     // =====================================================
 
-    // 實際建立訂貨單的日期時間
+    // 實際建立訂單的日期時間
     private LocalDateTime orderDate;
 
     // 預計到貨日期
     private LocalDate expectedDeliveryDate;
 
-    // 訂貨單狀態
+    // 訂單狀態
     // DRAFT：草稿
     // SUBMITTED：已送出
     // RECEIVED：已到貨
@@ -93,7 +93,7 @@ public class PurchaseOrderResponse {
     // 訂貨金額與備註
     // =====================================================
 
-    // 訂貨單總金額
+    // 訂單總金額
     // 由所有商品明細 subtotal 加總
     private BigDecimal totalAmount;
 

@@ -3,18 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>後台登入｜天氣訂貨助手</title>
+    <title>後台登入｜天氣 x 財氣 訂貨助手</title>
     <link rel="stylesheet" th:href="@{/css/security.css}">
 </head>
 <body class="login-page">
     <main class="login-card">
         <div class="login-brand" aria-hidden="true">☀</div>
-        <h1>天氣訂貨助手</h1>
+        <h1>天氣 x 財氣 訂貨助手</h1>
         <p class="login-subtitle">商店後台管理系統</p>
 
         <!-- 失敗原因僅顯示必要訊息，避免洩漏帳號是否存在。 -->
         <p class="login-alert" th:if="${param.error}" role="alert">帳號或密碼不正確，或此帳號已停用。</p>
-        <p class="login-alert" th:if="${param.occupied}" role="alert">此帳號已在其他裝置登入。請先在原裝置登出，或等待 Session 逾時。</p>
+        <p class="login-alert" th:if="${param.occupied}" role="alert">此帳號已在其他裝置登入。請先在原裝置登出，或等待連線逾時。</p>
         <p class="login-success" th:if="${param.logout}" role="status">已安全登出，可以重新登入。</p>
         <p class="login-success" th:if="${param.passwordChanged}" role="status">密碼已更新，請使用新密碼重新登入。</p>
         <p class="login-alert" th:if="${param.expired}" role="alert">登入已逾時，請重新登入。</p>

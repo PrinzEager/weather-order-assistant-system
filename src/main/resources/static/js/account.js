@@ -101,8 +101,8 @@ async function submitChangePassword(event) {
         showFormMessage("新密碼至少需要 12 個字元");
         return;
     }
-    if (new TextEncoder().encode(newPassword).length > 72) {
-        showFormMessage("新密碼 UTF-8 編碼長度不可超過 72 bytes");
+    if (new TextEncoder().encode(newPassword).length > 20) {
+        showFormMessage("新密碼限制 20 個字元以內");
         return;
     }
     if (newPassword === currentPassword) {

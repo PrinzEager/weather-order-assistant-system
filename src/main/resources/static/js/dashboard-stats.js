@@ -94,7 +94,7 @@ const { refreshDashboardPendingOrders, countPendingOrders, getCompleteOrderList 
 "use strict";
 
 /**
- * 首頁待處理訂貨單數量。
+ * 首頁待處理訂單數量。
  *
  * 只讀取 GET /api/purchase-orders，不建立或更新訂單，也不改動既有採購頁。
  * 本統計包含 DRAFT（待送出）與 SUBMITTED（已送出、待到貨）。
@@ -112,7 +112,7 @@ let loadingPromise = null;
 function getCompleteOrderList(data) {
     if (Array.isArray(data)) return data;
     if (!data || !Array.isArray(data.content)) {
-        throw new Error("採購單 API 回傳格式不是清單");
+        throw new Error("採購單回傳格式不是清單");
     }
     const total = data.totalElements ?? data.page?.totalElements;
     if (Number.isSafeInteger(total) && total >= 0 && total === data.content.length) {
@@ -154,8 +154,8 @@ function refreshDashboardPendingOrders() {
             const orders = await requestJson(API.purchaseOrders);
             setOrderKpi(countPendingOrders(orders), "待送出草稿＋已送出未到貨");
         } catch (error) {
-            setOrderKpi(null, "訂貨單統計無法取得");
-            console.error("首頁待處理訂貨單讀取失敗：", error);
+            setOrderKpi(null, "訂單統計無法取得");
+            console.error("首頁待處理訂單讀取失敗：", error);
         }
     })();
     loadingPromise = pending.finally(() => { loadingPromise = null; });

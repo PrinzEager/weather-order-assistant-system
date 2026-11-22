@@ -23,7 +23,7 @@ const PAGE_INFO = {
     products: ["商品管理", "管理商品資訊與庫存"],
     suppliers: ["供應商管理", "管理合作供應商"],
     sales: ["銷售紀錄", "查詢及維護商品銷售紀錄"],
-    orders: ["採購訂貨單", "管理採購草稿及訂貨狀態"]
+    orders: ["採購訂單", "管理採購草稿及訂貨狀態"]
 };
 
 function switchPage(page) {

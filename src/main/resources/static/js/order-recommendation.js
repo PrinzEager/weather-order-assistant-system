@@ -15,8 +15,11 @@ import {
 import {
     initDraftConfirmation, openDraftConfirmation, closeDraftConfirmation
 } from "./recommendation-order-draft.js";
+import {
+    setWeatherFactorExplanation
+} from "./help-dialogs.js";
 
-const OPTION_API = "/api/order-recommendation-options";
+const OPTION_API = "/api/order-recommendation-options/with-weather-details";
 const PAGE_SIZE = 10;
 const MAX_QUANTITY = 2147483647;
 
@@ -32,6 +35,20 @@ let productStates = new Map();
 let listPage = 1;
 
 export function initRecommendations() {
+    // 沒有成功查詢前先顯示操作提示，切勿把教學範例當成真實倍率。
+    setWeatherFactorExplanation(null);
+
+    // 查詢條件改變後，舊明細不可繼續宣稱屬於「本次查詢」。
+    for (const id of [
+        "recommendation-city", "recommendation-district",
+        "recommendation-start-date", "recommendation-end-date",
+        "recommendation-history-basis"
+    ]) {
+        byId(id).addEventListener("change", () => {
+            setWeatherFactorExplanation(null, "查詢條件已變更，請重新產生訂貨建議以查看對應的天氣倍率。");
+        });
+    }
+
     // 即使共用工具仍保留三天限制，也讓訂貨建議日期可以選擇未來七天。
     const today = getTaiwanToday();
     const lastDay = addDays(today, 6);
@@ -122,6 +139,7 @@ async function loadRecommendations() {
     productStates.clear();
     listPage = 1;
     closeDraftConfirmation();
+    setWeatherFactorExplanation(null, "正在計算訂貨建議，取得資料後即可查看每日倍率。");
     resetFilters();
     updateCreateButtonState();
     clearElement(byId("recommendation-summary"));
@@ -134,16 +152,20 @@ async function loadRecommendations() {
 
         // 一次取得全部有效商品的兩種建議量、分類、商品關聯。
         // 查天氣的呼叫只會發生在後端訂貨建議服務內，不為每個商品重複查天氣。
-        const [options, categoryResponse, productResponse] = await Promise.all([
+        const [detailResponse, categoryResponse, productResponse] = await Promise.all([
             apiGet(OPTION_API, params),
             apiGet(API.categories, {}),
             apiGet(API.products, {})
         ]);
+        const options = detailResponse?.recommendations;
         const productList = Array.isArray(productResponse)
             ? productResponse : productResponse?.content;
-        if (!Array.isArray(options) || !Array.isArray(categoryResponse)
+        if (!Array.isArray(options) ||
+                !Array.isArray(detailResponse?.dailyWeatherFactors) ||
+                detailResponse?.weatherFactor == null ||
+                !Array.isArray(categoryResponse)
                 || !Array.isArray(productList)) {
-            throw new Error("訂貨建議、商品或分類 API 回傳格式不正確");
+            throw new Error("訂貨建議、商品或分類回傳格式不正確");
         }
         // 避免 API 版本不符時，把缺少的建議數量誤當成 0 件。
         const incomplete = options.find(item =>
@@ -154,12 +176,12 @@ async function loadRecommendations() {
             item.weatherFactor == null
         );
         if (incomplete) {
-            throw new Error("訂貨建議 API 缺少一般／天氣建議量或歷史淨銷量，請檢查後端版本");
+            throw new Error("訂貨建議缺少一般／天氣建議量或歷史淨銷量，請檢查後端版本");
         }
         // 如果 Product API 改成分頁，只拿第一頁可能造成部分商品找不到分類。
         if (!Array.isArray(productResponse) &&
                 Number(productResponse?.totalElements) > productList.length) {
-            throw new Error("商品 API 已啟用後端分頁，請先取得完整商品分類對應資料");
+            throw new Error("商品已啟用分頁，請先取得完整商品分類對應資料");
         }
 
         recommendationData = options;
@@ -168,6 +190,8 @@ async function loadRecommendations() {
             .filter(p => p.id != null && p.categoryId != null)
             .map(p => [Number(p.id), Number(p.categoryId)]));
         recommendationLoaded = true;
+        // 這份說明與商品建議來自同一次後端計算，開啟視窗不會重查 API。
+        setWeatherFactorExplanation(detailResponse);
         populateParentCategories();
         renderRecommendationTable();
         renderRecommendationSummary();
@@ -177,7 +201,8 @@ async function loadRecommendations() {
         recommendationData = [];
         categories = [];
         productStates.clear();
-        showTableMessage("訂貨建議載入失敗，請檢查後端 API");
+        setWeatherFactorExplanation(null, "訂貨建議查詢失敗，請重新產生後再查看實際天氣倍率。");
+        showTableMessage("訂貨建議載入失敗，請檢查後端資料");
         byId("stat-reorder").textContent = "--";
         showMessage(error.message, "error");
         console.error("訂貨建議查詢失敗：", error);

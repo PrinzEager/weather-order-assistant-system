@@ -49,3 +49,55 @@
 .sales-entry-total strong { font-size:19px; }
 .sales-entry-hint { margin:5px 0 10px; color:#8a725b; font-size:12px; }
 @media(max-width:750px) { .sales-entry-line { grid-template-columns:1fr 1fr; } .sales-entry-line .form-group:first-child { grid-column:span 2; } .guidance-dialog-content{padding:17px;} .guidance-dialog-header{padding:18px;} .sales-report-actions{width:100%;} }
+
+
+/* =========================================================
+   天氣係數說明視窗：維持暖米白與焦糖橘，桌機及手機皆可閱讀。
+   僅作用於 .guidance-factor-dialog，不影響操作手冊或銷售頁。
+   ========================================================= */
+.guidance-factor-dialog { width:min(910px,calc(100% - 26px)); }
+.guidance-factor-dialog[open] { display:flex; flex-direction:column; }
+.guidance-factor-dialog .guidance-dialog-content { min-height:0; overflow-y:auto; overscroll-behavior:contain; }
+.guidance-factor-dialog .guidance-dialog-header { flex-shrink:0; }
+.guidance-factor-hero { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:14px; padding:18px 20px; background:linear-gradient(120deg,#fff0dd,#f6e6d2); border:1px solid #e8c9a7; border-radius:14px; }
+.guidance-factor-hero > div:first-child { display:flex; flex-direction:column; gap:5px; }
+.guidance-factor-eyebrow { font-size:12px; color:#8b6447; }
+.guidance-factor-hero strong { color:#663f28; }
+.guidance-factor-hero #guidance-factor-location { font-size:17px; }
+.guidance-factor-hero #guidance-factor-date-range { font-size:13px; color:#795d47; }
+.guidance-factor-number { text-align:center; min-width:120px; }
+.guidance-factor-number #guidance-factor-value { display:block; font-size:32px; line-height:1.2; letter-spacing:.4px; color:#a65521; }
+.guidance-factor-number #guidance-factor-change { font-size:12px; color:#805d43; }
+.guidance-factor-status { padding:9px 12px; border:1px solid #e9d7bf; border-radius:9px; background:#fffdf9; font-size:13px; color:#795740; }
+.guidance-factor-status[data-state="warning"] { background:#fff1d8; border-color:#e6c187; color:#855212; }
+.guidance-factor-details { border:1px solid #e8d4be; border-radius:12px; margin:13px 0; background:#fffdfa; overflow:hidden; }
+.guidance-factor-details summary,.guidance-factor-example summary { padding:12px 15px; cursor:pointer; font-weight:700; color:#83512b; background:#faecdc; }
+.guidance-factor-details summary:focus-visible,.guidance-factor-example summary:focus-visible { outline:2px solid #be6e32; outline-offset:-2px; }
+.guidance-factor-table-wrap { overflow-x:auto; margin:12px 12px 6px; }
+.guidance-factor-table { min-width:735px; border-collapse:collapse; width:100%; font-size:13px; }
+.guidance-factor-table caption { padding:0 3px 9px; text-align:left; color:#846a53; font-size:12px; }
+.guidance-factor-table th,.guidance-factor-table td { text-align:right; padding:9px 10px; white-space:nowrap; border-bottom:1px solid #f0e1d3; }
+.guidance-factor-table th:first-child,.guidance-factor-table td:first-child { text-align:left; }
+.guidance-factor-table thead { background:#f7ebdc; color:#694428; }
+.guidance-factor-table tbody tr:nth-child(even) { background:#fff8ef; }
+.guidance-factor-table tbody td:last-child { font-weight:700; color:#a45629; }
+.guidance-factor-table .guidance-factor-unavailable { color:#9b7560; font-size:12px; }
+.guidance-factor-calculation { padding:13px 15px; background:#fcf2e7; color:#67462e; border-top:1px solid #efdbc4; overflow-wrap:anywhere; }
+.guidance-factor-calculation strong { font-size:13px; }
+.guidance-factor-equation { margin:7px 0 2px; font-size:13px; font-variant-numeric:tabular-nums; }
+.guidance-factor-rounding { font-weight:700; margin:2px 0 0; }
+.guidance-factor-note { margin:10px 15px 14px; font-size:12px; color:#8c603f; }
+.guidance-factor-footnote { color:#846d58; font-size:12px; margin:9px 0 15px; }
+.guidance-factor-rules { display:grid; gap:8px; }
+.guidance-factor-rules > div { display:grid; grid-template-columns:minmax(105px,145px) 1fr; gap:12px; padding:10px 13px; border-radius:9px; background:#fff8ee; border:1px solid #f0e3d4; font-size:13px; }
+.guidance-factor-rules strong { color:#86522d; }
+.guidance-factor-example { border:1px solid #ead6c1; border-radius:10px; overflow:hidden; margin:14px 0; }
+.guidance-factor-example .guidance-example-grid { padding:13px; }
+.guidance-factor-example > p { padding:0 13px; }
+.guidance-factor-details[hidden],.guidance-factor-note[hidden] { display:none!important; }
+@media(max-width:620px) {
+    .guidance-factor-dialog .guidance-dialog-header h2 { font-size:19px; }
+    .guidance-factor-number { text-align:left; }
+    .guidance-factor-rules > div { grid-template-columns:1fr; gap:2px; }
+    .guidance-factor-hero { padding:13px; }
+}

@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.weather_order_assistant_system.response.OrderRecommendationOptionResponse;
+import com.example.weather_order_assistant_system.response.OrderRecommendationExplanationResponse;
 import com.example.weather_order_assistant_system.service.OrderRecommendationService;
 
 import lombok.RequiredArgsConstructor;
@@ -45,6 +46,25 @@ public class OrderRecommendationOptionsController {
 
         return ResponseEntity.ok(
                 orderRecommendationService.getAllRecommendationOptions(
+                        city, district, startDate, endDate, basis));
+    }
+
+    /**
+     * 新版前端使用：一次取得所有商品建議及每日天氣倍率明細。
+     * 保留既有 GET /api/order-recommendation-options 的 List 格式。
+     */
+    @GetMapping("/with-weather-details")
+    public ResponseEntity<OrderRecommendationExplanationResponse> getAllWithWeatherDetails(
+            @RequestParam String city,
+            @RequestParam String district,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate endDate,
+            @RequestParam(defaultValue = "MONTH") String basis) {
+
+        return ResponseEntity.ok(
+                orderRecommendationService.getRecommendationOptionsWithDetails(
                         city, district, startDate, endDate, basis));
     }
 

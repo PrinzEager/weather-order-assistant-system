@@ -338,7 +338,7 @@ async function submitDrafts(event) {
         isSubmitting = false;
         closeDraftConfirmation();
         if (typeof onCreated === "function") onCreated(result);
-        showMessage(`成功建立 ${count} 張 DRAFT 草稿${ids ? `（${ids}）` : ""}，總金額 NT$ ${amount}。請至採購訂貨單頁面確認。`, "success");
+        showMessage(`成功建立 ${count} 張 DRAFT 草稿${ids ? `（${ids}）` : ""}，總金額 NT$ ${amount}。請至採購訂單頁面確認。`, "success");
     } catch (error) {
         submitError = error.message;
         showMessage(error.message, "error");

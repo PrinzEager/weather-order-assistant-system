@@ -286,7 +286,7 @@ public class PurchaseOrderService {
 
             // 取得商品目前售價
             // 新版專案尚未設計進貨成本欄位，
-            // 目前暫時使用 Product.price 作為訂貨單價。
+            // 目前暫時使用 Product.price 作為訂單價。
             BigDecimal unitPrice = product.getPrice();
 
             // 確認商品價格有效

@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.GetMapping;
  *
  * 負責處理 Thymeleaf 頁面導覽。
  * 與既有 REST API Controller 分開，
- * 避免影響商品、銷售、訂貨單及天氣等 API。
+ * 避免影響商品、銷售、訂單及天氣等 API。
  */
 @Controller
 public class HomeController {

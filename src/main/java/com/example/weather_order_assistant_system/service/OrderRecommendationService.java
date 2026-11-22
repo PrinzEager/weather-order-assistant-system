@@ -21,6 +21,8 @@ import com.example.weather_order_assistant_system.repository.PurchaseOrderReposi
 import com.example.weather_order_assistant_system.repository.SalesRecordRepository;
 import com.example.weather_order_assistant_system.response.OrderRecommendationResponse;
 import com.example.weather_order_assistant_system.response.OrderRecommendationOptionResponse;
+import com.example.weather_order_assistant_system.response.OrderRecommendationExplanationResponse;
+import com.example.weather_order_assistant_system.response.WeatherDailyFactorResponse;
 import java.util.Locale;
 import com.example.weather_order_assistant_system.response.WeatherForecastResponse;
 
@@ -39,7 +41,7 @@ import lombok.RequiredArgsConstructor;
  * max(0, ceil(歷史銷售量 × 天氣倍率)
  *        + 安全庫存 - 目前庫存 - 尚未到貨量)
  *
- * 本服務只產生建議，不直接建立訂貨單。
+ * 本服務只產生建議，不直接建立訂單。
  */
 @Service
 @RequiredArgsConstructor
@@ -52,7 +54,7 @@ public class OrderRecommendationService {
     // 歷史銷售數量統計
     private final SalesRecordRepository salesRecordRepository;
 
-    // 尚未到貨的訂貨單查詢
+    // 尚未到貨的訂單查詢
     private final PurchaseOrderRepository purchaseOrderRepository;
 
     // 已完成的天氣預報服務
@@ -61,7 +63,7 @@ public class OrderRecommendationService {
     // 商品啟用狀態
     private static final Integer ACTIVE_STATUS = 1;
 
-    // 已提交但尚未到貨的訂貨單狀態
+    // 已提交但尚未到貨的訂單狀態
     private static final String SUBMITTED = "SUBMITTED";
 
     // 天氣 API 無法使用時的預設倍率
@@ -98,7 +100,7 @@ public class OrderRecommendationService {
         WeatherInfo weather = loadWeather(
                 city, district, startDate, endDate);
 
-        // 取得目前已提交、尚未到貨的訂貨單
+        // 取得目前已提交、尚未到貨的訂單
         List<PurchaseOrder> submittedOrders =
                 purchaseOrderRepository
                         .findByOrderStatusAndDeletedAtIsNull(SUBMITTED);
@@ -134,7 +136,7 @@ public class OrderRecommendationService {
         WeatherInfo weather = loadWeather(
                 city, district, startDate, endDate);
 
-        // 一次取得所有已提交但尚未到貨的訂貨單
+        // 一次取得所有已提交但尚未到貨的訂單
         List<PurchaseOrder> submittedOrders =
                 purchaseOrderRepository
                         .findByOrderStatusAndDeletedAtIsNull(SUBMITTED);
@@ -142,7 +144,7 @@ public class OrderRecommendationService {
         List<OrderRecommendationResponse> result =
                 new ArrayList<>();
 
-        // 所有商品共用同一份天氣資料及訂貨單資料
+        // 所有商品共用同一份天氣資料及訂單資料
         for (Product product : products) {
 
             result.add(buildRecommendation(
@@ -171,12 +173,59 @@ public class OrderRecommendationService {
             LocalDate endDate,
             String basis) {
 
+        // 維持舊 API 的 List 回傳格式，不影響已存在的呼叫端。
+        return calculateAllRecommendationOptions(
+                city, district, startDate, endDate, basis).recommendations();
+    }
+
+    /**
+     * 供「訂貨建議＋天氣倍率說明」頁面使用的整合資料。
+     *
+     * 同一次只取得一份中央氣象署預報，並以同一個 WeatherInfo
+     * 同時計算所有商品建議量與每日天氣係數，避免兩個 API 分開查詢
+     * 造成說明視窗與商品清單的倍率不一致。
+     */
+    public OrderRecommendationExplanationResponse getRecommendationOptionsWithDetails(
+            String city,
+            String district,
+            LocalDate startDate,
+            LocalDate endDate,
+            String basis) {
+
+        RecommendationOptionsCalculation calculation = calculateAllRecommendationOptions(
+                city, district, startDate, endDate, basis);
+        WeatherInfo weather = calculation.weather();
+
+        OrderRecommendationExplanationResponse response =
+                new OrderRecommendationExplanationResponse();
+        response.setCity(city);
+        response.setDistrict(district);
+        response.setStartDate(startDate);
+        response.setEndDate(endDate);
+        response.setWeatherFactor(weather.factor());
+        response.setForecastStatus(weather.status());
+        response.setWarning(weather.warning());
+        response.setDailyWeatherFactors(weather.dailyFactors());
+        response.setRecommendations(calculation.recommendations());
+        return response;
+    }
+
+    /**
+     * 共用查詢計算；不在每件商品的迴圈中重新呼叫天氣 API。
+     */
+    private RecommendationOptionsCalculation calculateAllRecommendationOptions(
+            String city,
+            String district,
+            LocalDate startDate,
+            LocalDate endDate,
+            String basis) {
+
         String selectedBasis = validateHistoricalBasis(basis);
 
         List<Product> products = productRepository
                 .findByStatusAndDeletedAtIsNullOrderByIdAsc(ACTIVE_STATUS);
 
-        // 同一次查詢中的全部商品共用一份天氣資料。
+        // 同一次查詢中的全部商品共用一份天氣資料與每日明細。
         WeatherInfo weather = loadWeather(city, district, startDate, endDate);
         List<PurchaseOrder> submittedOrders = purchaseOrderRepository
                 .findByOrderStatusAndDeletedAtIsNull(SUBMITTED);
@@ -187,7 +236,7 @@ public class OrderRecommendationService {
                     product, startDate, endDate, selectedBasis,
                     weather, submittedOrders));
         }
-        return results;
+        return new RecommendationOptionsCalculation(results, weather);
     }
 
     /**
@@ -352,7 +401,9 @@ public class OrderRecommendationService {
             return new WeatherInfo(
                     factor,
                     forecast.getForecastStatus(),
-                    forecast.getWarning());
+                    forecast.getWarning(),
+                    forecast.getDailyWeatherFactors() == null
+                            ? List.of() : forecast.getDailyWeatherFactors());
 
         } catch (ResponseStatusException ex) {
 
@@ -368,7 +419,8 @@ public class OrderRecommendationService {
                     DEFAULT_FACTOR,
                     "UNAVAILABLE",
                     "中央氣象署服務暫時無法使用，"
-                            + "已使用天氣倍率 1.00 產生訂貨建議");
+                            + "已使用天氣倍率 1.00 產生訂貨建議",
+                    List.of());
         }
     }
 
@@ -486,7 +538,7 @@ public class OrderRecommendationService {
     /**
      * 計算指定商品尚未到貨的訂貨數量。
      *
-     * 只統計 SUBMITTED 且未軟刪除的訂貨單。
+     * 只統計 SUBMITTED 且未軟刪除的訂單。
      *
      * 目前透過 PurchaseOrder.getItems() 取得明細，
      * 並利用外層唯讀交易處理 LAZY 關聯。
@@ -529,6 +581,13 @@ public class OrderRecommendationService {
     private record WeatherInfo(
             BigDecimal factor,
             String status,
-            String warning) {
+            String warning,
+            List<WeatherDailyFactorResponse> dailyFactors) {
+    }
+
+    // 僅內部傳遞，確保商品建議及每天的倍率來自相同預報結果。
+    private record RecommendationOptionsCalculation(
+            List<OrderRecommendationOptionResponse> recommendations,
+            WeatherInfo weather) {
     }
 }

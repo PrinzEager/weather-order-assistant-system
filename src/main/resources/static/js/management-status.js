@@ -166,7 +166,7 @@ async function loadManagementRows(view) {
         );
         // 避免快速切換篩選時，舊請求覆寫目前畫面。
         if (view.version !== version || view.filter.value !== status) return;
-        if (!Array.isArray(data)) throw new Error("後台管理 API 回傳格式不正確");
+        if (!Array.isArray(data)) throw new Error("後台管理回傳格式不正確");
         renderManagementRows(view, data);
         return true;
     } catch (error) {

@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Weather Order Assistant System｜天氣訂貨輔助系統</title>
+    <title>天氣 × 財氣 訂貨助手｜Weather Order Assistant System</title>
 
     <!-- 由伺服器產生 CSRF Token，供現有 fetch POST/PUT/DELETE 呼叫使用。 -->
     <meta name="_csrf" th:content="${_csrf.token}">
@@ -50,7 +50,7 @@
         <div class="sidebar-brand">
             <span class="sidebar-brand-emblem" aria-hidden="true">☀</span>
             <div class="sidebar-brand-copy">
-                <h1>飲品 × 天氣訂貨助手</h1>
+                <h1>天氣 × 財氣 訂貨助手</h1>
                 <p>後台管理系統 · Weather Order</p>
             </div>
         </div>
@@ -102,7 +102,7 @@
             <button type="button" class="nav-item"
                     data-page="orders">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="5" y="4" width="14" height="18" rx="2"/><path d="M9 4.5V3h6v1.5M9 10h6M9 14h6M9 18h4"/></svg>
-                採購訂貨單
+                採購訂單
             </button>
 
         </nav>
@@ -188,7 +188,7 @@
 
                 <article class="stat-card">
                     <span class="dashboard-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 3v2h6V3M8 10h8M8 14h8M8 18h5"/></svg></span>
-                    <h4>待處理訂貨單</h4>
+                    <h4>待處理訂單</h4>
                     <strong id="stat-orders">--</strong>
                     <p>待送出草稿＋已送出未到貨</p>
                 </article>
@@ -1231,21 +1231,21 @@
         </section>
 
         <!-- =================================================
-             8. 採購訂貨單
+             8. 採購訂單
              ================================================= -->
         <section id="page-orders"
                  class="page-section"
                  hidden>
 
             <div class="section-heading">
-                <h3>採購訂貨單</h3>
+                <h3>採購訂單</h3>
                 <p>管理採購草稿、送出、收貨及取消狀態。</p>
             </div>
 
             <div class="panel">
 
                 <div class="panel-toolbar">
-                    <h4>採購訂貨單清單</h4>
+                    <h4>採購訂單清單</h4>
 
                     <button type="button"
                             id="add-order-button"
@@ -1260,7 +1260,7 @@
 
                         <thead>
                             <tr>
-                                <th>訂貨單編號</th>
+                                <th>訂單編號</th>
                                 <th>供應商</th>
                                 <th>訂貨日期</th>
                                 <th>預計到貨日期</th>
@@ -1273,7 +1273,7 @@
                         <tbody id="order-table-body">
                             <tr>
                                 <td colspan="7" class="empty-state">
-                                    尚未載入訂貨單
+                                    尚未載入訂單
                                 </td>
                             </tr>
                         </tbody>
@@ -1340,32 +1340,106 @@
     </dialog>
 
 
-    <!-- 訂貨公式對話框：公式與數值範例需與 OrderRecommendationQuantityCalculator 一致。 -->
-    <dialog id="recommendation-formula-dialog" class="guidance-dialog" aria-labelledby="recommendation-formula-title">
+    <!-- =========================================================
+         訂貨倍率說明：真實數值來自與建議清單相同的後端 API 回應。
+         沒有查詢成功前不展示任何假設倍率為「本次數據」。
+         ========================================================= -->
+    <dialog id="recommendation-formula-dialog" class="guidance-dialog guidance-factor-dialog"
+            aria-labelledby="recommendation-formula-title">
         <div class="guidance-dialog-header">
-            <div><h2 id="recommendation-formula-title">天氣訂貨建議怎麼算？</h2>
-                <p>用一個簡單範例理解歷史銷售、庫存與天氣係數。</p></div>
-            <button type="button" id="recommendation-formula-close" class="guidance-dialog-close" aria-label="關閉公式說明">×</button>
+            <div>
+                <h2 id="recommendation-formula-title">天氣訂貨建議怎麼算？</h2>
+                <p>先看本次實際倍率，再了解每天的天氣調整與訂貨公式。</p>
+            </div>
+            <button type="button" id="recommendation-formula-close" class="guidance-dialog-close"
+                    aria-label="關閉公式說明">×</button>
         </div>
         <div class="guidance-dialog-content">
-            <h3>① 一般訂貨建議</h3>
-            <div class="guidance-formula">max(0, 歷史淨銷量 ＋ 安全庫存 − 目前庫存 − 未到貨量)</div>
-            <h3>② 勾選套用天氣後</h3>
-            <div class="guidance-formula">max(0, ceil(歷史淨銷量 × 天氣倍率) ＋ 安全庫存 − 目前庫存 − 未到貨量)</div>
-            <p>其中 <strong>ceil</strong> 表示小數無條件進位；<strong>max(0, …)</strong> 表示不會建議負數訂貨。</p>
-            <h3>③ 實際計算範例</h3>
-            <div class="guidance-example-grid">
-                <span>歷史淨銷量 <strong>80 件</strong></span>
-                <span>安全庫存 <strong>20 件</strong></span>
-                <span>目前庫存 <strong>35 件</strong></span>
-                <span>未到貨量 <strong>10 件</strong></span>
-                <span>天氣倍率 <strong>1.25 倍</strong></span>
-            </div>
-            <p>一般建議：max(0, 80 + 20 − 35 − 10) = <strong>55 件</strong></p>
-            <p>套用天氣：max(0, ceil(80 × 1.25) + 20 − 35 − 10) = <strong>75 件</strong></p>
-            <p class="guidance-tip">歷史基準可選「上週同期」或「上月同期（相同天數）」；以淨銷量（已扣退貨）為準。
-                天氣倍率依選定期間預報計算，若預報不足可能顯示警告，沒有涵蓋的時段以 1.00 倍計算。
-                訂貨選取與是否套用天氣為兩個獨立操作；供應商價格於建立採購草稿時另外計算。</p>
+            <section aria-labelledby="factor-live-heading">
+                <h3 id="factor-live-heading">① 本次實際天氣倍率</h3>
+                <div class="guidance-factor-hero">
+                    <div>
+                        <span class="guidance-factor-eyebrow">目前已產生訂貨建議的期間</span>
+                        <strong id="guidance-factor-location">尚未產生訂貨建議</strong>
+                        <span id="guidance-factor-date-range">請先選擇地區、日期，再按「產生訂貨建議」</span>
+                    </div>
+                    <div class="guidance-factor-number">
+                        <strong id="guidance-factor-value">--</strong>
+                        <span id="guidance-factor-change">等待計算結果</span>
+                    </div>
+                </div>
+                <p id="guidance-factor-status" class="guidance-factor-status" role="status" aria-live="polite">
+                    尚未查詢，這裡不會把教學範例當成實際倍率。
+                </p>
+
+                <details id="guidance-factor-details" class="guidance-factor-details" hidden>
+                    <summary>查看每日天氣係數如何加總</summary>
+                    <div class="guidance-factor-table-wrap" tabindex="0" role="region" aria-label="每日天氣係數明細，可左右捲動">
+                        <table class="guidance-factor-table">
+                            <caption>每日係數 = 1.00 ＋ 氣溫調整 ＋ 濕度調整 ＋ 降雨調整</caption>
+                            <thead>
+                                <tr>
+                                    <th scope="col">日期</th>
+                                    <th scope="col">最高溫</th>
+                                    <th scope="col">平均濕度</th>
+                                    <th scope="col">降雨機率</th>
+                                    <th scope="col">氣溫調整</th>
+                                    <th scope="col">濕度調整</th>
+                                    <th scope="col">降雨調整</th>
+                                    <th scope="col">每日倍率</th>
+                                </tr>
+                            </thead>
+                            <tbody id="guidance-factor-rows"></tbody>
+                        </table>
+                    </div>
+                    <div class="guidance-factor-calculation">
+                        <strong>期間平均的加總過程</strong>
+                        <p id="guidance-factor-equation" class="guidance-factor-equation"></p>
+                        <p id="guidance-factor-rounding" class="guidance-factor-rounding"></p>
+                    </div>
+                    <p id="guidance-factor-missing" class="guidance-factor-note" hidden></p>
+                </details>
+                <p class="guidance-factor-footnote">
+                    本倍率是系統以冷飲需求情境設定的商業假設，並非中央氣象署公布的訂貨倍率。
+                    只有商品勾選「套用天氣」時，才使用這個倍率調整歷史淨銷量。
+                </p>
+            </section>
+
+            <section aria-labelledby="factor-rule-heading">
+                <h3 id="factor-rule-heading">② 天氣係數調整規則</h3>
+                <p>每天從 1.00 倍出發，各項調整是<strong>相加</strong>，不是相乘；最後將每天的倍率取算術平均。</p>
+                <div class="guidance-factor-rules">
+                    <div><strong>最高氣溫</strong><span>低於 25°C：+0.00；25～29°C：+0.05；30～31°C：+0.10；32～33°C：+0.15；34°C 以上：+0.20</span></div>
+                    <div><strong>高溫且高濕</strong><span>當日最高溫 ≥ 30°C 且平均相對濕度 ≥ 60%：額外 +0.05</span></div>
+                    <div><strong>高降雨機率</strong><span>當日最高有效降雨機率 ≥ 60%：−0.05</span></div>
+                    <div><strong>資料不足</strong><span>缺少某項指標時該項調整為 0；缺值不表示氣象數值等於 0</span></div>
+                </div>
+            </section>
+
+            <section aria-labelledby="factor-order-heading">
+                <h3 id="factor-order-heading">③ 訂貨建議如何套用？</h3>
+                <p>不勾選套用天氣時：</p>
+                <div class="guidance-formula">max(0, 歷史淨銷量 ＋ 安全庫存 − 目前庫存 − 未到貨量)</div>
+                <p>勾選套用天氣時：</p>
+                <div class="guidance-formula">max(0, ceil(歷史淨銷量 × 本次天氣倍率) ＋ 安全庫存 − 目前庫存 − 未到貨量)</div>
+                <p><strong>ceil</strong>：小數無條件進位；<strong>max(0, …)</strong>：不會建議負數訂貨。
+                    倍率先依每日平均四捨五入到小數第二位，再用於商品的建議量計算。</p>
+
+                <details class="guidance-factor-example">
+                    <summary>展開固定教學範例（不是本次實際資料）</summary>
+                    <div class="guidance-example-grid">
+                        <span>歷史淨銷量 <strong>80 件</strong></span>
+                        <span>安全庫存 <strong>20 件</strong></span>
+                        <span>目前庫存 <strong>35 件</strong></span>
+                        <span>未到貨量 <strong>10 件</strong></span>
+                        <span>假設天氣倍率 <strong>1.25 倍</strong></span>
+                    </div>
+                    <p>一般建議：max(0, 80 + 20 − 35 − 10) = <strong>55 件</strong></p>
+                    <p>套用天氣：max(0, ceil(80 × 1.25) + 20 − 35 − 10) = <strong>75 件</strong></p>
+                </details>
+                <p class="guidance-tip">歷史比較依據可切換「上週同期」與「上月同期（相同天數）」，計算以已扣除退貨的淨銷量為準。
+                    供應商價格會在建立採購草稿時另外計算；本視窗只解釋需求與訂貨數量。</p>
+            </section>
         </div>
     </dialog>
 
@@ -1385,7 +1459,7 @@
                 <li><strong>商品管理</strong>：新增商品、調整庫存及狀態；停用商品不會出現在有效商品的銷售與訂貨選擇中。</li>
                 <li><strong>供應商管理</strong>：管理供應商、狀態與供貨商品；停用後歷史採購單仍可查閱。</li>
                 <li><strong>銷售紀錄</strong>：新增時可一次選多項商品；銷售成功自動扣庫存；列表按箭頭展開逐項明細，再依商品辦理退貨。上方可選日期查看圖表、下載 CSV 或列印成 PDF。</li>
-                <li><strong>採購訂貨單</strong>：可新增草稿、展開明細、提交、收貨或取消；草稿需依當天的訂貨日期規則處理。</li>
+                <li><strong>採購訂單</strong>：可新增草稿、展開明細、提交、收貨或取消；草稿需依當天的訂貨日期規則處理。</li>
                 <li><strong>我的帳號</strong>：在右上角查看帳號資料及修改密碼；修改後需重新登入。</li>
             </ol>
             <p class="guidance-tip">操作不確定時可隨時從左側「操作說明」重新開啟。按右上角 × 或 Esc 即可關閉。</p>

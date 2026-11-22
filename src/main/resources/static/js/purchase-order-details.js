@@ -182,7 +182,7 @@ function decorateOrderRow(row) {
             const order = await requestJson(`${API.purchaseOrders}/${orderId}`);
             if (!detailsRow.isConnected) return;
             if (!order || typeof order !== "object" || Array.isArray(order)) {
-                throw new Error("採購單明細 API 回傳格式不正確");
+                throw new Error("採購單明細回傳格式不正確");
             }
             detailsCell.replaceChildren(buildDetails(order));
             detailLoaded = true;

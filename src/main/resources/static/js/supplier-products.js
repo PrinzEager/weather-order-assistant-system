@@ -89,7 +89,7 @@ export async function openSupplierProductsEditor(supplierId = null) {
         ]);
         if (version !== loadVersion) return;
         if (!Array.isArray(productList) || !Array.isArray(offerList)) {
-            throw new Error("商品或供貨關聯 API 回傳格式不正確");
+            throw new Error("商品或供貨關聯回傳格式不正確");
         }
         products = productList.filter(p => p.status === 1);
         entries = offerList.map(o => ({

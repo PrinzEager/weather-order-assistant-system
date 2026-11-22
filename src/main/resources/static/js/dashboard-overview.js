@@ -151,7 +151,7 @@ function renderDashboardTemperatureTimeline(data) {
 
     if (points.length === 0) {
         setDashboardTemperatureState("未來 48 小時內沒有可繪製的氣溫時間點", true);
-        if (note) note.textContent = "目前 API 沒有此時段的有效溫度資料；不會以假資料補線。";
+        if (note) note.textContent = "目前沒有此時段的有效溫度資料；不會以假資料補線。";
         return;
     }
 
@@ -358,7 +358,7 @@ async function loadDashboardWeather() {
             status.textContent = "讀取失敗";
             status.dataset.status = "UNAVAILABLE";
             renderState(cards, `天氣載入失敗：${error.message}`, "dashboard-widget-error");
-            setDashboardTemperatureState("天氣 API 讀取失敗，無法顯示氣溫趨勢", true);
+            setDashboardTemperatureState("天氣資訊讀取失敗，無法顯示氣溫趨勢", true);
             console.error("儀表板天氣摘要載入失敗：", error);
         } finally {
             cards.setAttribute("aria-busy", "false");
@@ -470,7 +470,7 @@ async function loadDashboardSales() {
     salesRequest = (async () => {
         try {
             const records = await requestJson(API.salesRecords);
-            if (!Array.isArray(records)) throw new Error("銷售紀錄 API 回傳格式不正確");
+            if (!Array.isArray(records)) throw new Error("銷售紀錄回傳格式不正確");
             const result = aggregateSales(records, dates);
             total.textContent = money(result.totalCents / 100);
             quantity.textContent = `${result.totalQuantity.toLocaleString("zh-TW")} 單位`;
