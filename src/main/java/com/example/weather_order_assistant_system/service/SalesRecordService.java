@@ -1,14 +1,14 @@
 package com.example.weather_order_assistant_system.service;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.HashSet;
-import java.util.Comparator;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
@@ -22,8 +22,8 @@ import com.example.weather_order_assistant_system.entity.SalesReturn;
 import com.example.weather_order_assistant_system.repository.ProductRepository;
 import com.example.weather_order_assistant_system.repository.SalesRecordRepository;
 import com.example.weather_order_assistant_system.repository.SalesReturnRepository;
-import com.example.weather_order_assistant_system.request.SalesRecordRequest;
 import com.example.weather_order_assistant_system.request.SalesBatchRequest;
+import com.example.weather_order_assistant_system.request.SalesRecordRequest;
 import com.example.weather_order_assistant_system.request.SalesReturnRequest;
 import com.example.weather_order_assistant_system.response.SalesRecordResponse;
 import com.example.weather_order_assistant_system.response.SalesReturnResponse;

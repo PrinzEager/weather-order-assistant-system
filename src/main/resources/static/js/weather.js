@@ -1,15 +1,27 @@
 /* 天氣模組：由原 app.js 分離，保留既有功能。 */
-import { API, byId, clearElement, showEmpty, showMessage, hideMessage, setButtonLoading, displayValue, formatNumber, getSearchParameters, apiGet, createStatCard } from "./common.js";
+import {
+    API,
+    byId,
+    clearElement,
+    showEmpty,
+    showMessage,
+    hideMessage,
+    setButtonLoading,
+    displayValue,
+    formatNumber,
+    getSearchParameters,
+    apiGet,
+    createStatCard
+} from "./common.js";
+
 import { initLocationDropdown } from "./taiwan-districts.js";
 
 let weatherLoaded = false;
 
 export function initWeather() {
-
     // =====================================================
     // 一、初始化縣市與鄉鎮市區連動下拉選單
     // =====================================================
-
     // 七天天氣預報頁面
     initLocationDropdown("weather");
 
@@ -20,16 +32,15 @@ export function initWeather() {
     // =====================================================
     // 二、保留原本天氣查詢事件
     // =====================================================
-
     byId("weather-search-form").addEventListener("submit", event => {
         event.preventDefault();
         loadWeather();
     });
 }
 
-
 export function enterWeatherPage() {
-    if (!weatherLoaded) loadWeather();
+    if (!weatherLoaded)
+        loadWeather();
 }
 
 async function loadWeather() {
@@ -53,7 +64,7 @@ async function loadWeather() {
         const data = await apiGet(API.weather, parameters);
 
         if (!data || !Array.isArray(data.dailyForecasts)) {
-            throw new Error("天氣 API 回傳格式不正確");
+            throw new Error("天氣資料暫時無法顯示，請稍後重新查詢");
         }
 
         renderWeatherSummary(data);
@@ -65,37 +76,33 @@ async function loadWeather() {
         if (data.warning) {
             warning.textContent = data.warning;
             warning.hidden = false;
-        } else if (data.forecastStatus === "UNAVAILABLE") {
+        }
+        else if (data.forecastStatus === "UNAVAILABLE") {
             warning.textContent = "目前無法取得完整天氣預報";
             warning.hidden = false;
-        } else if (data.forecastStatus === "PARTIAL") {
+        }
+        else if (data.forecastStatus === "PARTIAL") {
             warning.textContent = "部分天氣資料不足，請留意預報完整性";
             warning.hidden = false;
         }
 
         weatherLoaded = true;
-
-    } catch (error) {
+    }
+    catch (error) {
         weatherLoaded = false;
 
         showEmpty(cards, "無法載入天氣預報");
         clearElement(summary);
 
-        showEmpty(
-            byId("temperature-chart"),
-            "尚無可顯示的溫度資料"
-        );
+        showEmpty(byId("temperature-chart"), "尚無可顯示的溫度資料");
 
-        showEmpty(
-            byId("precipitation-chart"),
-            "尚無可顯示的降雨資料"
-        );
+        showEmpty(byId("precipitation-chart"), "尚無可顯示的降雨資料");
 
         showMessage(error.message, "error");
 
         console.error("Weather API 錯誤：", error);
-
-    } finally {
+    }
+    finally {
         setButtonLoading(button, false);
     }
 }
@@ -108,44 +115,25 @@ function renderWeatherSummary(data) {
     const precipitation = data.maxPrecipitationProbability;
     const factor = data.weatherFactor;
 
-    container.appendChild(
-        createStatCard(
-            "預報最高溫",
-            maxTemperature == null
-                ? "--"
-                : `${formatNumber(maxTemperature)}°C`,
-            "查詢期間"
-        )
-    );
+    container.appendChild(createStatCard("預報最高溫", maxTemperature == null
+        ? "--"
+        : `${formatNumber(maxTemperature)}°C`, "查詢期間"));
 
-    container.appendChild(
-        createStatCard(
-            "最高降雨機率",
-            precipitation == null
-                ? "--"
-                : `${formatNumber(precipitation)}%`,
-            "查詢期間"
-        )
-    );
+    container.appendChild(createStatCard("最高降雨機率", precipitation == null
+        ? "--"
+        : `${formatNumber(precipitation)}%`, "查詢期間"));
 
-    container.appendChild(
-        createStatCard(
-            "天氣需求倍率",
-            factor == null
-                ? "--"
-                : `${Number(factor).toFixed(2)} ×`,
-            displayValue(data.forecastStatus)
-        )
-    );
+    container.appendChild(createStatCard("天氣需求倍率", factor == null
+        ? "--"
+        : `${Number(factor).toFixed(2)} ×`, displayValue(data.forecastStatus)));
 }
 
 function formatChartTime(value) {
-    if (!value) return "--";
+    if (!value)
+        return "--";
 
     // ISO 日期時間：取月/日與小時。
-    const match = String(value).match(
-        /(\d{2})-(\d{2})T(\d{2}):/
-    );
+    const match = String(value).match(/(\d{2})-(\d{2})T(\d{2}):/);
 
     return match
         ? `${match[1]}/${match[2]} ${match[3]}時`
@@ -157,15 +145,13 @@ function renderLineChart(container, items, color, suffix) {
 
     const points = items
         .map(item => ({
-            label: item.label,
-            value: item.value == null
-                ? null
-                : Number(item.value)
-        }))
-        .filter(item =>
-            item.value !== null &&
-            Number.isFinite(item.value)
-        );
+        label: item.label,
+        value: item.value == null
+            ? null
+            : Number(item.value)
+    }))
+        .filter(item => item.value !== null &&
+        Number.isFinite(item.value));
 
     if (points.length === 0) {
         showEmpty(container, "目前沒有可顯示的圖表資料");
@@ -183,10 +169,7 @@ function renderLineChart(container, items, color, suffix) {
     const max = Math.max(...values);
     const range = Math.max(max - min, 1);
 
-    const svg = document.createElementNS(
-        "http://www.w3.org/2000/svg",
-        "svg"
-    );
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
 
     svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
     svg.setAttribute("width", width);
@@ -197,25 +180,19 @@ function renderLineChart(container, items, color, suffix) {
     const coordinates = points.map((point, index) => {
         const x = padding +
             index * (width - padding * 2) /
-            Math.max(points.length - 1, 1);
+                Math.max(points.length - 1, 1);
 
         const y = height - padding -
             (point.value - min) / range *
-            (height - padding * 2);
+                (height - padding * 2);
 
         return { x, y, ...point };
     });
 
     // 繪製資料折線。
-    const polyline = document.createElementNS(
-        "http://www.w3.org/2000/svg",
-        "polyline"
-    );
+    const polyline = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
 
-    polyline.setAttribute(
-        "points",
-        coordinates.map(p => `${p.x},${p.y}`).join(" ")
-    );
+    polyline.setAttribute("points", coordinates.map(p => `${p.x},${p.y}`).join(" "));
 
     polyline.setAttribute("fill", "none");
     polyline.setAttribute("stroke", color);
@@ -226,20 +203,14 @@ function renderLineChart(container, items, color, suffix) {
     svg.appendChild(polyline);
 
     coordinates.forEach((point, index) => {
-        const circle = document.createElementNS(
-            "http://www.w3.org/2000/svg",
-            "circle"
-        );
+        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
 
         circle.setAttribute("cx", point.x);
         circle.setAttribute("cy", point.y);
         circle.setAttribute("r", "4");
         circle.setAttribute("fill", color);
 
-        const tooltip = document.createElementNS(
-            "http://www.w3.org/2000/svg",
-            "title"
-        );
+        const tooltip = document.createElementNS("http://www.w3.org/2000/svg", "title");
 
         tooltip.textContent =
             `${point.label}：${point.value}${suffix}`;
@@ -248,18 +219,11 @@ function renderLineChart(container, items, color, suffix) {
         svg.appendChild(circle);
 
         // 控制標籤數量，避免三天每小時資料擠在一起。
-        const labelInterval = Math.max(
-            1,
-            Math.ceil(points.length / 7)
-        );
+        const labelInterval = Math.max(1, Math.ceil(points.length / 7));
 
         if (index % labelInterval === 0 ||
             index === points.length - 1) {
-
-            const label = document.createElementNS(
-                "http://www.w3.org/2000/svg",
-                "text"
-            );
+            const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
 
             label.setAttribute("x", point.x);
             label.setAttribute("y", height - 10);
@@ -285,27 +249,16 @@ function renderWeatherCharts(data) {
         ? data.precipitationForecasts
         : [];
 
-    renderLineChart(
-        byId("temperature-chart"),
-        temperature.map(item => ({
-            label: formatChartTime(item.dataTime),
-            value: item.temperature
-        })),
-        "#c96522",
-        "°C"
-    );
+    renderLineChart(byId("temperature-chart"), temperature.map(item => ({
+        label: formatChartTime(item.dataTime),
+        value: item.temperature
+    })), "#c96522", "°C");
 
-    renderLineChart(
-        byId("precipitation-chart"),
-        precipitation.map(item => ({
-            label: formatChartTime(item.startTime),
-            value: item.precipitationProbability
-        })),
-        "#5d9dc7",
-        "%"
-    );
+    renderLineChart(byId("precipitation-chart"), precipitation.map(item => ({
+        label: formatChartTime(item.startTime),
+        value: item.precipitationProbability
+    })), "#5d9dc7", "%");
 }
-
 
 // ===== 每日預報圖卡（原獨立視圖模組） =====
 /* =========================================================
@@ -315,7 +268,6 @@ function renderWeatherCharts(data) {
    - 與 weather.js 放在同一模組內，取得 data 後呼叫。
    - 注意：正式整合前仍需比對使用者本機最新版 weather.js。
    ========================================================= */
-
 /**
  * 轉換 API 的數字欄位。null／空字串代表沒有資料，絕對不可視為 0。
  * 為了防止顯示 NaN，只有有限數值才算有效。
@@ -390,8 +342,10 @@ function getWeatherIcon(code, description) {
     const text = String(description ?? "");
     const numericCode = readNumber(code);
 
-    if (text.includes("雷")) return "⛈️";
-    if (text.includes("雪")) return "❄️";
+    if (text.includes("雷"))
+        return "⛈️";
+    if (text.includes("雪"))
+        return "❄️";
     if (text.includes("雨") || (numericCode !== null && numericCode >= 8)) {
         return "🌧️";
     }
@@ -399,8 +353,10 @@ function getWeatherIcon(code, description) {
         numericCode === 6 || numericCode === 7) {
         return "☁️";
     }
-    if (text.includes("晴") && text.includes("雲")) return "🌤️";
-    if (text.includes("晴") || numericCode === 1) return "☀️";
+    if (text.includes("晴") && text.includes("雲"))
+        return "🌤️";
+    if (text.includes("晴") || numericCode === 1)
+        return "☀️";
     if (text.includes("雲") || (numericCode !== null && numericCode >= 2 && numericCode <= 5)) {
         return "🌤️";
     }
@@ -412,16 +368,19 @@ function getWeatherIcon(code, description) {
  * 使用左閉右開 [startTime, endTime) 的規則，避免跨日重複判定邊界。
  */
 function overlapsTaiwanDay(period, isoDay) {
-    if (!period || !isoDay) return false;
+    if (!period || !isoDay)
+        return false;
 
     const start = period.startTime ?? period.dataTime;
     const end = period.endTime;
-    if (!start) return false;
+    if (!start)
+        return false;
 
     const dayStart = Date.parse(`${isoDay}T00:00:00+08:00`);
     const dayEnd = dayStart + 24 * 60 * 60 * 1000;
     const startMillis = Date.parse(start);
-    if (Number.isNaN(startMillis)) return false;
+    if (Number.isNaN(startMillis))
+        return false;
 
     if (end == null) {
         return startMillis >= dayStart && startMillis < dayEnd;
@@ -436,10 +395,9 @@ function overlapsTaiwanDay(period, isoDay) {
  * 取出該日「有值」的最大值；全部缺失時回傳 null（不是 0）。
  */
 function getDayMaxRain(day, data, date) {
-    const direct = readPercentage(
-        day.maxPrecipitationProbability ?? day.precipitationProbability
-    );
-    if (direct !== null) return direct;
+    const direct = readPercentage(day.maxPrecipitationProbability ?? day.precipitationProbability);
+    if (direct !== null)
+        return direct;
 
     const periods = Array.isArray(data.precipitationForecasts)
         ? data.precipitationForecasts
@@ -465,27 +423,26 @@ function getDayMaxRain(day, data, date) {
  * 也不拿其他日期資料補值；沒有有效數字時保留 null。
  */
 function getDayHumidity(day, data, date) {
-    const direct = readPercentage(
-        day.averageRelativeHumidity ?? day.relativeHumidity ?? day.avgRelativeHumidity
-    );
+    const direct = readPercentage(day.averageRelativeHumidity ?? day.relativeHumidity ?? day.avgRelativeHumidity);
 
-    if (direct !== null) return direct;
+    if (direct !== null)
+        return direct;
 
     const dailyFactors = Array.isArray(data?.dailyWeatherFactors)
         ? data.dailyWeatherFactors
         : [];
 
-    const matched = dailyFactors.find(item =>
-        String(item?.date ?? "").slice(0, 10) === date
-    );
+    const matched = dailyFactors.find(item => String(item?.date ?? "").slice(0, 10) === date);
 
     return readPercentage(matched?.averageRelativeHumidity);
 }
 
 function makeElement(tagName, className, value) {
     const element = document.createElement(tagName);
-    if (className) element.className = className;
-    if (value !== undefined && value !== null) element.textContent = String(value);
+    if (className)
+        element.className = className;
+    if (value !== undefined && value !== null)
+        element.textContent = String(value);
     return element;
 }
 
@@ -493,11 +450,7 @@ function addMetric(container, label, value) {
     const row = makeElement("div", "weather-card-metric");
     row.appendChild(makeElement("span", "weather-card-metric-label", label));
 
-    const result = makeElement(
-        "strong",
-        `weather-card-metric-value${value === null ? " is-unavailable" : ""}`,
-        value === null ? "未提供" : `${Number(value).toLocaleString("zh-TW")}%`
-    );
+    const result = makeElement("strong", `weather-card-metric-value${value === null ? " is-unavailable" : ""}`, value === null ? "未提供" : `${Number(value).toLocaleString("zh-TW")}%`);
 
     row.appendChild(result);
     container.appendChild(row);
@@ -510,7 +463,8 @@ function addMetric(container, label, value) {
  */
 export function renderSevenDayWeatherCards(data) {
     const container = document.getElementById("weather-daily-cards");
-    if (!container) return;
+    if (!container)
+        return;
     container.replaceChildren();
 
     const days = Array.isArray(data?.dailyForecasts) ? data.dailyForecasts : [];
@@ -536,9 +490,7 @@ export function renderSevenDayWeatherCards(data) {
 
         const header = makeElement("div", "weather-card-header");
         header.appendChild(makeElement("h4", "weather-card-date", date.label));
-        header.appendChild(makeElement(
-            "span", "weather-card-day-index", isToday ? "今天" : `第 ${index + 1} 天`
-        ));
+        header.appendChild(makeElement("span", "weather-card-day-index", isToday ? "今天" : `第 ${index + 1} 天`));
         card.appendChild(header);
 
         const condition = makeElement("div", "weather-card-condition");
@@ -549,11 +501,7 @@ export function renderSevenDayWeatherCards(data) {
         card.appendChild(condition);
 
         card.appendChild(makeElement("span", "weather-temperature-label", "最高／最低氣溫"));
-        card.appendChild(makeElement(
-            "div",
-            "weather-temperature",
-            `${max === null ? "--" : max}° / ${min === null ? "--" : min}°C`
-        ));
+        card.appendChild(makeElement("div", "weather-temperature", `${max === null ? "--" : max}° / ${min === null ? "--" : min}°C`));
 
         const metrics = makeElement("div", "weather-card-metrics");
         addMetric(metrics, "最高降雨機率", rain);

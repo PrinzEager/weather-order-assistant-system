@@ -2,12 +2,12 @@
  * 此檔已整合舊版多份樣式；保留必要的 CSS cascade 與媒體查詢覆寫。
  */
 
-
 /* ===================================================
  * 訂貨建議管理
  * =================================================== */
 
 /* 天氣訂貨建議專用樣式。只限定 recommendation 頁，避免影響其它管理模組。 */
+
 #page-recommendations .recommendation-filter-row {
     display: flex;
     flex-wrap: wrap;
@@ -15,8 +15,18 @@
     align-items: end;
     margin: 16px 0;
 }
-#page-recommendations .recommendation-filter-row .form-group { flex: 1 1 210px; min-width: 180px; }
-#page-recommendations .recommendation-filter-row label { display: block; margin-bottom: 6px; font-weight: 600; }
+
+#page-recommendations .recommendation-filter-row .form-group {
+    flex: 1 1 210px;
+    min-width: 180px;
+}
+
+#page-recommendations .recommendation-filter-row label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+
 #page-recommendations .recommendation-filter-row select,
 #page-recommendations .recommendation-filter-row input,
 #page-recommendations .recommendation-filter-row textarea {
@@ -28,16 +38,30 @@
     background: #fffefa;
     color: #4f3928;
 }
-#page-recommendations .recommendation-filter-row select:disabled { background: #f2eee6; cursor: not-allowed; }
-#page-recommendations .rec-small-hint { color: #786454; font-size: .88rem; line-height: 1.5; }
+
+#page-recommendations .recommendation-filter-row select:disabled {
+    background: #f2eee6;
+    cursor: not-allowed;
+}
+
+#page-recommendations .rec-small-hint {
+    color: #786454;
+    font-size: .88rem;
+    line-height: 1.5;
+}
+
 #page-recommendations .recommendation-data-table th,
-#page-recommendations .recommendation-preview-table th { white-space: nowrap; }
+#page-recommendations .recommendation-preview-table th {
+    white-space: nowrap;
+}
+
 #page-recommendations .recommendation-data-table input[type="checkbox"] {
     accent-color: #b86d36;
     width: 18px;
     height: 18px;
     cursor: pointer;
 }
+
 #page-recommendations .actual-order-quantity,
 #page-recommendations .recommendation-preview-quantity {
     box-sizing: border-box;
@@ -49,6 +73,7 @@
     background: #fffefa;
     color: #4f3928;
 }
+
 #page-recommendations .recommendation-pagination {
     display: flex;
     align-items: center;
@@ -57,12 +82,30 @@
     padding: 14px 6px 6px;
     color: #5d4736;
 }
-#page-recommendations .recommendation-pagination[hidden] { display: none; }
-#page-recommendations .recommendation-pagination button:disabled { opacity: .42; cursor: not-allowed; }
-#page-recommendations .rec-select-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+
+#page-recommendations .recommendation-pagination[hidden] {
+    display: none;
+}
+
+#page-recommendations .recommendation-pagination button:disabled {
+    opacity: .42;
+    cursor: not-allowed;
+}
+
+#page-recommendations .rec-select-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
 
 /* 採購草稿使用真正的遮罩視窗；背景表單不被覆蓋或重新排版。 */
-body.rec-modal-open { overflow: hidden; }
+
+body.rec-modal-open {
+    overflow: hidden;
+}
+
 #page-recommendations .recommendation-modal {
     position: fixed;
     inset: 0;
@@ -75,7 +118,11 @@ body.rec-modal-open { overflow: hidden; }
     background: rgba(42, 29, 18, .57);
     backdrop-filter: blur(4px);
 }
-#page-recommendations .recommendation-modal[hidden] { display: none !important; }
+
+#page-recommendations .recommendation-modal[hidden] {
+    display: none !important;
+}
+
 #page-recommendations .recommendation-modal-card {
     width: min(1100px, 100%);
     max-height: min(90vh, 940px);
@@ -88,6 +135,7 @@ body.rec-modal-open { overflow: hidden; }
     box-sizing: border-box;
     color: #4f3928;
 }
+
 #page-recommendations .recommendation-modal-header {
     display: flex;
     align-items: start;
@@ -96,9 +144,20 @@ body.rec-modal-open { overflow: hidden; }
     border-bottom: 1px solid #e8dccd;
     padding-bottom: 12px;
 }
-#page-recommendations .recommendation-modal-header h4 { margin: 0 0 6px; color: #51351e; }
-#page-recommendations .recommendation-modal-header p { margin: 0; }
-#page-recommendations .rec-remark-group { flex-grow: 2; }
+
+#page-recommendations .recommendation-modal-header h4 {
+    margin: 0 0 6px;
+    color: #51351e;
+}
+
+#page-recommendations .recommendation-modal-header p {
+    margin: 0;
+}
+
+#page-recommendations .rec-remark-group {
+    flex-grow: 2;
+}
+
 #page-recommendations .recommendation-preview-table select {
     min-width: 160px;
     max-width: 260px;
@@ -109,8 +168,13 @@ body.rec-modal-open { overflow: hidden; }
     background: #fffefa;
     color: #4f3928;
 }
+
 #page-recommendations .rec-price,
-#page-recommendations .rec-subtotal { white-space: nowrap; font-variant-numeric: tabular-nums; }
+#page-recommendations .rec-subtotal {
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
 #page-recommendations .recommendation-order-summary {
     display: flex;
     justify-content: space-between;
@@ -122,21 +186,43 @@ body.rec-modal-open { overflow: hidden; }
     background: #f6eee3;
     color: #593d24;
 }
-#page-recommendations .rec-warning { color: #a34d1e; min-height: 1.3em; font-size: .92rem; }
-#page-recommendations .rec-modal-actions { display: flex; justify-content: flex-end; gap: 12px; }
-@media (max-width: 700px) {
-    #page-recommendations .recommendation-modal { padding: 8px; align-items: stretch; }
-    #page-recommendations .recommendation-modal-card { padding: 14px; max-height: 100%; border-radius: 10px; }
-    #page-recommendations .recommendation-modal-header { align-items: center; }
-    #page-recommendations .rec-select-toolbar { justify-content: flex-start; }
+
+#page-recommendations .rec-warning {
+    color: #a34d1e;
+    min-height: 1.3em;
+    font-size: .92rem;
 }
 
+#page-recommendations .rec-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+@media (max-width: 700px) {
+    #page-recommendations .recommendation-modal {
+        padding: 8px;
+        align-items: stretch;
+    }
+    #page-recommendations .recommendation-modal-card {
+        padding: 14px;
+        max-height: 100%;
+        border-radius: 10px;
+    }
+    #page-recommendations .recommendation-modal-header {
+        align-items: center;
+    }
+    #page-recommendations .rec-select-toolbar {
+        justify-content: flex-start;
+    }
+}
 
 /* ===================================================
  * 採購單明細
  * =================================================== */
 
 /* 採購單展開明細：僅影響採購單頁面，沿用暖米白／奶茶棕／焦糖色。 */
+
 #page-orders .purchase-order-detail-toggle {
     border: 1px solid #dfcfbc;
     border-radius: 7px;
@@ -150,18 +236,28 @@ body.rec-modal-open { overflow: hidden; }
     line-height: 1;
     vertical-align: middle;
 }
+
 #page-orders .purchase-order-detail-toggle:hover,
 #page-orders .purchase-order-detail-toggle:focus-visible {
     background: #f2e1cd;
     outline-color: #bd7c3e;
 }
-#page-orders .purchase-order-detail-toggle:disabled { opacity: 0.55; cursor: wait; }
-#page-orders .purchase-order-detail-row[hidden] { display: none !important; }
+
+#page-orders .purchase-order-detail-toggle:disabled {
+    opacity: 0.55;
+    cursor: wait;
+}
+
+#page-orders .purchase-order-detail-row[hidden] {
+    display: none !important;
+}
+
 #page-orders .purchase-order-detail-row > td {
     padding: 0 14px 14px;
     background: #fbf8f3;
     border-top: 0;
 }
+
 #page-orders .purchase-order-detail-content {
     background: rgba(255,255,255,0.97);
     border: 1px solid #ebdfd0;
@@ -169,29 +265,56 @@ body.rec-modal-open { overflow: hidden; }
     padding: 18px 20px;
     box-shadow: 0 3px 14px rgba(78,52,32,0.07);
 }
+
 #page-orders .purchase-order-detail-content h5 {
     margin: 0 0 14px;
     color: #67432c;
     font-size: 15px;
 }
+
 #page-orders .purchase-order-detail-info {
     display: flex;
     flex-wrap: wrap;
     gap: 12px 28px;
     margin-bottom: 16px;
 }
-#page-orders .purchase-order-detail-field { display: flex; gap: 7px; align-items: baseline; }
-#page-orders .purchase-order-detail-label { color: #8e7c6c; font-size: 13px; }
-#page-orders .purchase-order-detail-value { color: #544232; font-size: 13px; }
+
+#page-orders .purchase-order-detail-field {
+    display: flex;
+    gap: 7px;
+    align-items: baseline;
+}
+
+#page-orders .purchase-order-detail-label {
+    color: #8e7c6c;
+    font-size: 13px;
+}
+
+#page-orders .purchase-order-detail-value {
+    color: #544232;
+    font-size: 13px;
+}
+
 #page-orders .purchase-order-detail-sku {
     display: block;
     color: #8c8175;
     font-size: 12px;
     margin-top: 3px;
 }
-#page-orders .purchase-order-detail-table-wrap { margin-bottom: 12px; }
-#page-orders .purchase-order-detail-table { width: 100%; }
-#page-orders .purchase-order-detail-number { text-align: right; white-space: nowrap; }
+
+#page-orders .purchase-order-detail-table-wrap {
+    margin-bottom: 12px;
+}
+
+#page-orders .purchase-order-detail-table {
+    width: 100%;
+}
+
+#page-orders .purchase-order-detail-number {
+    text-align: right;
+    white-space: nowrap;
+}
+
 #page-orders .purchase-order-detail-footer {
     display: flex;
     flex-wrap: wrap;
@@ -201,20 +324,37 @@ body.rec-modal-open { overflow: hidden; }
     border-top: 1px solid #eddfd2;
     padding-top: 12px;
 }
-#page-orders .purchase-order-detail-footer strong { color: #985b28; }
-#page-orders .purchase-order-detail-remark { margin: 12px 0 0; color: #7d6756; font-size: 13px; }
-#page-orders .purchase-order-detail-error { color: #a3362b; padding: 14px; }
-@media (max-width: 640px) {
-    #page-orders .purchase-order-detail-content { padding: 12px; }
-    #page-orders .purchase-order-detail-info { gap: 8px 14px; }
+
+#page-orders .purchase-order-detail-footer strong {
+    color: #985b28;
 }
 
+#page-orders .purchase-order-detail-remark {
+    margin: 12px 0 0;
+    color: #7d6756;
+    font-size: 13px;
+}
+
+#page-orders .purchase-order-detail-error {
+    color: #a3362b;
+    padding: 14px;
+}
+
+@media (max-width: 640px) {
+    #page-orders .purchase-order-detail-content {
+        padding: 12px;
+    }
+    #page-orders .purchase-order-detail-info {
+        gap: 8px 14px;
+    }
+}
 
 /* ===================================================
  * 商品與供應商狀態管理
  * =================================================== */
 
 /* 商品與供應商狀態管理：配合既有暖米色後台，不改其他模組。 */
+
 #page-products .management-status-filter,
 #page-suppliers .management-status-filter {
     display: flex;
@@ -243,6 +383,7 @@ body.rec-modal-open { overflow: hidden; }
 }
 
 /* 防止原專案的 .table-responsive / .panel CSS 蓋過 hidden 行為。 */
+
 #page-products .management-status-view[hidden],
 #page-suppliers .management-status-view[hidden],
 #page-products .table-responsive[hidden],
@@ -275,7 +416,6 @@ body.rec-modal-open { overflow: hidden; }
     }
 }
 
-
 /* ===================================================
  * 七天天氣頁面
  * =================================================== */
@@ -300,6 +440,7 @@ body.rec-modal-open { overflow: hidden; }
 }
 
 /* 頁面標題與既有查詢面板，採暖白與棕橘色。 */
+
 #page-weather .section-heading h3 {
     color: var(--weather-dark);
     border-left: 5px solid var(--weather-accent);
@@ -351,6 +492,7 @@ body.rec-modal-open { overflow: hidden; }
 }
 
 /* 預報資料缺值提醒：使用文字說明，不只依靠色彩辨識。 */
+
 #page-weather .weather-forecast-note {
     margin: 0 0 18px;
     padding: 11px 15px;
@@ -369,6 +511,7 @@ body.rec-modal-open { overflow: hidden; }
 }
 
 /* 原摘要卡保留原 DOM ID；三張摘要仍可使用原有渲染函式。 */
+
 #page-weather .weather-summary {
     margin: 0 0 24px;
     gap: 15px;
@@ -385,6 +528,7 @@ body.rec-modal-open { overflow: hidden; }
 }
 
 /* 每日卡片標題及資訊說明。 */
+
 #page-weather .weather-cards-heading {
     display: flex;
     align-items: flex-end;
@@ -421,6 +565,7 @@ body.rec-modal-open { overflow: hidden; }
    七天卡片自動換行，不在窄螢幕硬塞七欄。
    1400px 左右含側欄時：四欄；中尺寸三或兩欄；手機單欄。
 */
+
 #page-weather .weather-daily-cards {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -494,6 +639,7 @@ body.rec-modal-open { overflow: hidden; }
 }
 
 /* icon 用原生 Emoji，若後續改官方氣象圖示僅需調整渲染器。 */
+
 #page-weather .weather-card .weather-icon {
     flex: none;
     margin: 0;
@@ -561,6 +707,7 @@ body.rec-modal-open { overflow: hidden; }
 }
 
 /* 溫度、降雨圖表維持原 ID；只統一外框、座標文字色彩。 */
+
 #page-weather .chart-grid .panel {
     min-width: 0;
 }
@@ -596,12 +743,10 @@ body.rec-modal-open { overflow: hidden; }
     #page-weather .weather-summary {
         grid-template-columns: 1fr;
     }
-
     #page-weather .weather-daily-cards {
         grid-template-columns: 1fr;
         gap: 12px;
     }
-
     #page-weather .weather-card {
         padding: 16px;
     }
@@ -611,7 +756,6 @@ body.rec-modal-open { overflow: hidden; }
     #page-weather .weather-card {
         transition: none;
     }
-
     #page-weather .weather-card:hover {
         transform: none;
     }

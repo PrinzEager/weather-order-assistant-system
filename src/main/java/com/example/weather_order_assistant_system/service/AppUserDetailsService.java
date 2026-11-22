@@ -1,14 +1,16 @@
 package com.example.weather_order_assistant_system.service;
 
-import com.example.weather_order_assistant_system.entity.AppUser;
-import com.example.weather_order_assistant_system.repository.AppUserRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.example.weather_order_assistant_system.entity.AppUser;
+import com.example.weather_order_assistant_system.repository.AppUserRepository;
+
+import lombok.RequiredArgsConstructor;
 
 /**
  * 由 app_users 讀取登入帳號，交由 Spring Security 比對 BCrypt 密碼雜湊。

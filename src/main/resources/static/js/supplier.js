@@ -2,17 +2,28 @@
 
 /* 供應商管理：對應 SupplierController 與 SupplierRequest。 */
 import {
-    API, byId, makeElement, showMessage, hideMessage,
-    setButtonLoading, displayValue, requestJson
+    API,
+    byId,
+    makeElement,
+    showMessage,
+    hideMessage,
+    setButtonLoading,
+    displayValue,
+    requestJson
 } from "./common.js";
+
 import {
-    installSupplierProductsEditor, openSupplierProductsEditor,
-    closeSupplierProductsEditor, validateSupplierProductsEditor,
+    installSupplierProductsEditor,
+    openSupplierProductsEditor,
+    closeSupplierProductsEditor,
+    validateSupplierProductsEditor,
     saveSupplierProducts
 } from "./supplier-products.js";
 
 let suppliersLoaded = false;
+
 let supplierFormVersion = 0;
+
 let supplierFormSaving = false;
 
 export function initSuppliers() {
@@ -25,7 +36,8 @@ export function initSuppliers() {
 }
 
 export function enterSuppliersPage() {
-    if (!suppliersLoaded) void refreshSuppliers();
+    if (!suppliersLoaded)
+        void refreshSuppliers();
 }
 
 export async function refreshSuppliers() {
@@ -33,11 +45,13 @@ export async function refreshSuppliers() {
     try {
         hideMessage();
         const suppliers = await requestJson(API.suppliers);
-        if (!Array.isArray(suppliers)) throw new Error("供應商清單回傳格式不正確");
+        if (!Array.isArray(suppliers))
+            throw new Error("供應商清單回傳格式不正確");
         renderSuppliers(suppliers);
         suppliersLoaded = true;
         return true;
-    } catch (error) {
+    }
+    catch (error) {
         suppliersLoaded = false;
         renderMessageRow("無法載入供應商資料");
         showMessage(error.message, "error");
@@ -60,11 +74,7 @@ function renderSuppliers(suppliers) {
             .forEach(value => row.appendChild(makeElement("td", displayValue(value))));
 
         const statusCell = makeElement("td");
-        statusCell.appendChild(makeElement(
-            "span",
-            supplier.status === 1 ? "啟用" : "停用",
-            supplier.status === 1 ? "status-badge success" : "status-badge danger"
-        ));
+        statusCell.appendChild(makeElement("span", supplier.status === 1 ? "啟用" : "停用", supplier.status === 1 ? "status-badge success" : "status-badge danger"));
         row.appendChild(statusCell);
 
         const actions = makeElement("td");
@@ -80,7 +90,8 @@ function renderSuppliers(suppliers) {
 
 // 原始 HTML 只有列表，因此由模組補上與商品分類相同用途的編輯面板。
 function installSupplierForm() {
-    if (byId("supplier-form")) return;
+    if (byId("supplier-form"))
+        return;
     const panel = makeElement("div", null, "panel");
     panel.id = "supplier-form-panel";
     panel.hidden = true;
@@ -136,7 +147,8 @@ function installSupplierForm() {
 }
 
 async function openSupplierForm(supplier = null) {
-    if (supplierFormSaving) return;
+    if (supplierFormSaving)
+        return;
     const version = ++supplierFormVersion;
     byId("supplier-form").reset();
     byId("supplier-id").value = supplier?.id ?? "";
@@ -154,18 +166,23 @@ async function openSupplierForm(supplier = null) {
     try {
         // 開啟表單時同步取得可供貨商品及既有報價。
         await openSupplierProductsEditor(supplier?.id ?? null);
-    } catch (error) {
+    }
+    catch (error) {
         showMessage(error.message, "error");
         return;
-    } finally {
-        // 舊視窗的非同步請求不得將新視窗的按鈕提前啟用。
-        if (version === supplierFormVersion) submit.disabled = false;
     }
-    if (version === supplierFormVersion) byId("supplier-name").focus();
+    finally {
+        // 舊視窗的非同步請求不得將新視窗的按鈕提前啟用。
+        if (version === supplierFormVersion)
+            submit.disabled = false;
+    }
+    if (version === supplierFormVersion)
+        byId("supplier-name").focus();
 }
 
 function closeSupplierForm(force = false) {
-    if (supplierFormSaving && !force) return;
+    if (supplierFormSaving && !force)
+        return;
     supplierFormVersion++;
     closeSupplierProductsEditor();
     byId("supplier-form-panel").hidden = true;
@@ -175,7 +192,8 @@ function closeSupplierForm(force = false) {
 
 async function submitSupplierForm(event) {
     event.preventDefault();
-    if (supplierFormSaving) return;
+    if (supplierFormSaving)
+        return;
     const originalId = byId("supplier-id").value;
     const valueOrNull = id => byId(id).value.trim() || null;
     const payload = {
@@ -193,7 +211,8 @@ async function submitSupplierForm(event) {
     // 先驗證供貨設定，避免供應商基本資料已儲存才發現價格有誤。
     try {
         validateSupplierProductsEditor();
-    } catch (error) {
+    }
+    catch (error) {
         showMessage(error.message, "error");
         return;
     }
@@ -207,14 +226,10 @@ async function submitSupplierForm(event) {
         setButtonLoading(submit, true, "儲存中...");
 
         // 現有 Supplier API 先建立／修改基本資料，維持原本 CRUD 行為。
-        const saved = await requestJson(
-            originalId ? `${API.suppliers}/${originalId}` : API.suppliers,
-            originalId ? "PUT" : "POST",
-            payload
-        );
+        const saved = await requestJson(originalId ? `${API.suppliers}/${originalId}` : API.suppliers, originalId ? "PUT" : "POST", payload);
         savedId = Number(saved?.id ?? savedId);
         if (!Number.isSafeInteger(savedId) || savedId <= 0) {
-            throw new Error("後端未回傳有效供應商 ID，請查詢供應商清單後再重試");
+            throw new Error("無法確認供應商資料，請重新查詢供應商清單後再試");
         }
         basicSaved = true;
 
@@ -226,15 +241,18 @@ async function submitSupplierForm(event) {
         closeSupplierForm(true);
         await refreshSuppliers();
         showMessage(`供應商及供貨商品已${originalId ? "更新" : "新增"}`, "success");
-    } catch (error) {
+    }
+    catch (error) {
         if (basicSaved) {
             byId("supplier-form-title").textContent = "編輯供應商與供貨商品";
             await refreshSuppliers();
             showMessage(`供應商基本資料已儲存（ID：${savedId}），但供貨商品尚未全部完成：${error.message}。請修正後再次按儲存，系統會比對已成功的資料。`, "error");
-        } else {
+        }
+        else {
             showMessage(error.message, "error");
         }
-    } finally {
+    }
+    finally {
         supplierFormSaving = false;
         setButtonLoading(submit, false);
     }
@@ -243,23 +261,27 @@ async function submitSupplierForm(event) {
 async function updateStatus(supplier) {
     const status = supplier.status === 1 ? 0 : 1;
     const action = status === 1 ? "啟用" : "停用";
-    if (!window.confirm(`確定要${action}供應商「${supplier.name}」？`)) return;
+    if (!window.confirm(`確定要${action}供應商「${supplier.name}」？`))
+        return;
     try {
         await requestJson(`${API.suppliers}/${supplier.id}/status?status=${status}`, "PATCH");
         await refreshSuppliers();
         showMessage(`供應商已${action}`, "success");
-    } catch (error) {
+    }
+    catch (error) {
         showMessage(error.message, "error");
     }
 }
 
 async function deleteSupplier(supplier) {
-    if (!window.confirm(`確定要刪除供應商「${supplier.name}」？`)) return;
+    if (!window.confirm(`確定要刪除供應商「${supplier.name}」？`))
+        return;
     try {
         await requestJson(`${API.suppliers}/${supplier.id}`, "DELETE");
         await refreshSuppliers();
         showMessage("供應商已刪除", "success");
-    } catch (error) {
+    }
+    catch (error) {
         showMessage(error.message, "error");
     }
 }

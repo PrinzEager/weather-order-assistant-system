@@ -2,19 +2,32 @@
 
 /* 銷售管理：多商品批次、展開明細；保留原有逐商品退貨與庫存規則。 */
 import {
-    API, byId, makeElement, showMessage, hideMessage,
-    setButtonLoading, displayValue, formatNumber, requestJson
+    API,
+    byId,
+    makeElement,
+    showMessage,
+    hideMessage,
+    setButtonLoading,
+    displayValue,
+    formatNumber,
+    requestJson
 } from "./common.js";
+
 import { refreshProducts } from "./product.js";
+
 import { initSalesReport, updateSalesReport } from "./sales-report.js";
 
 let salesLoaded = false;
+
 let formProducts = [];
+
 let saleLineSequence = 0;
+
 let saleSubmitting = false;
 
 // 目前正在查看／退貨的銷售紀錄 ID。
 let activeReturnSalesId = null;
+
 let returnSubmitting = false;
 
 export function initSales() {
@@ -33,7 +46,8 @@ export function initSales() {
 }
 
 export function enterSalesPage() {
-    if (!salesLoaded) void refreshSales();
+    if (!salesLoaded)
+        void refreshSales();
 }
 
 export async function refreshSales() {
@@ -41,11 +55,13 @@ export async function refreshSales() {
     try {
         hideMessage();
         const records = await requestJson(API.salesRecords);
-        if (!Array.isArray(records)) throw new Error("銷售紀錄回傳格式不正確");
+        if (!Array.isArray(records))
+            throw new Error("銷售紀錄回傳格式不正確");
         updateSalesReport(records);
         salesLoaded = true;
         return true;
-    } catch (error) {
+    }
+    catch (error) {
         salesLoaded = false;
         renderMessageRow("無法載入銷售紀錄");
         showMessage(error.message, "error");
@@ -57,6 +73,7 @@ export async function refreshSales() {
 function money(cents) {
     return (cents / 100).toLocaleString("zh-TW", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
+
 function cents(value) { return Math.round(Number(value ?? 0) * 100); }
 
 /**
@@ -67,7 +84,8 @@ function groupSales(records) {
     const groups = new Map();
     records.forEach(record => {
         const key = record.batchId || `single:${record.id}`;
-        if (!groups.has(key)) groups.set(key, []);
+        if (!groups.has(key))
+            groups.set(key, []);
         groups.get(key).push(record);
     });
     return [...groups.values()].sort((a, b) => String(b[0].dateTime ?? "").localeCompare(String(a[0].dateTime ?? "")));
@@ -114,7 +132,7 @@ function renderSales(records) {
         group.forEach(record => {
             const line = makeElement("tr");
             const remaining = getRemainingQuantity(record);
-            [ `${displayValue(record.productName)}（${displayValue(record.sku)}）`,
+            [`${displayValue(record.productName)}（${displayValue(record.sku)}）`,
                 `${record.quantity} 件`, `${record.returnedQuantity ?? 0} 件`, `${remaining} 件`,
                 `NT$ ${money(cents(record.unitPrice))}`, `NT$ ${money(cents(record.totalAmount))}`]
                 .forEach(value => line.appendChild(makeElement("td", value)));
@@ -149,7 +167,8 @@ function renderSales(records) {
 }
 
 function installSalesForm() {
-    if (byId("sale-form")) return;
+    if (byId("sale-form"))
+        return;
     const panel = makeElement("div", null, "panel");
     panel.id = "sale-form-panel";
     panel.hidden = true;
@@ -194,7 +213,8 @@ function formField(id, labelText, type, attributes = {}) {
     label.htmlFor = id;
     input.id = id;
     input.required = true;
-    if (type !== "select") input.type = type;
+    if (type !== "select")
+        input.type = type;
     Object.entries(attributes).forEach(([name, value]) => input.setAttribute(name, value));
     group.append(label, input);
     return group;
@@ -218,10 +238,9 @@ function addSalesLine() {
     const productField = formField(`sale-product-${seq}`, "商品 *", "select");
     const select = productField.querySelector("select");
     select.appendChild(createOption("", "請選擇商品"));
-    formProducts.forEach(product => select.appendChild(createOption(product.id,
-        `${product.name}（${product.sku}，庫存 ${product.currentStock}）`)));
-    const qtyField = formField(`sale-quantity-${seq}`, "數量 *", "number", { min:"1", step:"1", value:"1" });
-    const priceField = formField(`sale-price-${seq}`, "單價（NT$）*", "number", { min:"0", step:"0.01", max:"99999999.99" });
+    formProducts.forEach(product => select.appendChild(createOption(product.id, `${product.name}（${product.sku}，庫存 ${product.currentStock}）`)));
+    const qtyField = formField(`sale-quantity-${seq}`, "數量 *", "number", { min: "1", step: "1", value: "1" });
+    const priceField = formField(`sale-price-${seq}`, "單價（NT$）*", "number", { min: "0", step: "0.01", max: "99999999.99" });
     const price = priceField.querySelector("input");
     const qty = qtyField.querySelector("input");
     select.addEventListener("change", () => {
@@ -234,7 +253,10 @@ function addSalesLine() {
     const remove = makeElement("button", "移除", "secondary-button sales-entry-remove");
     remove.type = "button";
     remove.addEventListener("click", () => {
-        if (container.children.length <= 1) { showMessage("至少需保留一項商品", "error"); return; }
+        if (container.children.length <= 1) {
+            showMessage("至少需保留一項商品", "error");
+            return;
+        }
         line.remove();
         updateSalesPreview();
     });
@@ -253,6 +275,7 @@ function readSalesLines() {
         };
     });
 }
+
 function updateSalesPreview() {
     const items = readSalesLines();
     const quantity = items.reduce((sum, item) => sum + (Number.isSafeInteger(item.quantity) && item.quantity > 0 ? item.quantity : 0), 0);
@@ -264,42 +287,56 @@ function updateSalesPreview() {
 async function openSalesForm() {
     try {
         const products = await requestJson(API.products);
-        if (!Array.isArray(products)) throw new Error("商品清單回傳格式不正確");
+        if (!Array.isArray(products))
+            throw new Error("商品清單回傳格式不正確");
         formProducts = products;
-        if (!products.length) { showMessage("目前沒有可銷售的啟用商品", "error"); return; }
+        if (!products.length) {
+            showMessage("目前沒有可銷售的啟用商品", "error");
+            return;
+        }
         byId("sale-form").reset();
         byId("sale-line-items").replaceChildren();
         addSalesLine();
         byId("sale-form-panel").hidden = false;
-        byId("sale-form-panel").scrollIntoView({ behavior:"smooth", block:"start" });
-    } catch (error) { showMessage(error.message, "error"); }
+        byId("sale-form-panel").scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    catch (error) {
+        showMessage(error.message, "error");
+    }
 }
+
 function closeSalesForm() {
-    if (saleSubmitting) return;
+    if (saleSubmitting)
+        return;
     byId("sale-form-panel").hidden = true;
     byId("sale-form").reset();
 }
 
 async function submitSalesForm(event) {
     event.preventDefault();
-    if (saleSubmitting) return;
+    if (saleSubmitting)
+        return;
     const items = readSalesLines();
     const seen = new Set();
     for (const item of items) {
         if (!Number.isSafeInteger(item.productId) || item.productId <= 0 ||
             !Number.isSafeInteger(item.quantity) || item.quantity <= 0) {
-            showMessage("每項銷售都需要選擇商品與正整數數量", "error"); return;
+            showMessage("每項銷售都需要選擇商品與正整數數量", "error");
+            return;
         }
         if (seen.has(item.productId)) {
-            showMessage("同次銷售不可重複選擇商品，請合併數量", "error"); return;
+            showMessage("同次銷售不可重複選擇商品，請合併數量", "error");
+            return;
         }
         seen.add(item.productId);
         if (!/^\d{1,8}(\.\d{1,2})?$/.test(item.unitPriceText)) {
-            showMessage("單價最多 8 位整數及 2 位小數", "error"); return;
+            showMessage("單價最多 8 位整數及 2 位小數", "error");
+            return;
         }
     }
     if (!items.length || items.length > 50) {
-        showMessage("一次銷售請選擇 1 至 50 項商品", "error"); return;
+        showMessage("一次銷售請選擇 1 至 50 項商品", "error");
+        return;
     }
     const submit = byId("sale-form-submit");
     saleSubmitting = true;
@@ -308,7 +345,7 @@ async function submitSalesForm(event) {
         // 多筆銷售只送一次後端 API，由 Service 同一交易扣庫存，避免部分成功。
         await requestJson(`${API.salesRecords}/batch`, "POST", {
             items: items.map(item => ({
-                productId:item.productId, quantity:item.quantity, unitPrice:Number(item.unitPriceText)
+                productId: item.productId, quantity: item.quantity, unitPrice: Number(item.unitPriceText)
             }))
         });
         // 建立成功後先關閉，以免後續刷新失敗導致誤操作重複提交。
@@ -318,23 +355,30 @@ async function submitSalesForm(event) {
             const salesOk = await refreshSales();
             await refreshProducts();
             refreshed = salesOk;
-        } catch (refreshError) {
+        }
+        catch (refreshError) {
             refreshed = false;
             console.error("銷售已建立，但部分資料刷新失敗", refreshError);
         }
         showMessage(refreshed
             ? `銷售建立成功，共 ${items.length} 項商品，庫存已扣除`
-            : "銷售已建立並扣除庫存，但部分畫面刷新失敗，請重新整理確認",
-            refreshed ? "success" : "error");
-    } catch (error) { showMessage(error.message, "error"); }
-    finally { saleSubmitting = false; setButtonLoading(submit, false); }
+            : "銷售已建立並扣除庫存，但部分畫面刷新失敗，請重新整理確認", refreshed ? "success" : "error");
+    }
+    catch (error) {
+        showMessage(error.message, "error");
+    }
+    finally {
+        saleSubmitting = false;
+        setButtonLoading(submit, false);
+    }
 }
 
 // =====================================================
 // 部分退貨：動態新增表單與退貨歷史，不必修改 index.html。
 // =====================================================
 function installReturnPanel() {
-    if (byId("sale-return-panel")) return;
+    if (byId("sale-return-panel"))
+        return;
 
     const panel = makeElement("div", null, "panel");
     panel.id = "sale-return-panel";
@@ -359,10 +403,7 @@ function installReturnPanel() {
 
     const form = makeElement("form");
     form.id = "sale-return-form";
-    form.appendChild(formField(
-        "sale-return-quantity", "本次退貨數量 *", "number",
-        { min: "1", step: "1", value: "1" }
-    ));
+    form.appendChild(formField("sale-return-quantity", "本次退貨數量 *", "number", { min: "1", step: "1", value: "1" }));
 
     const reasonGroup = makeElement("div", null, "form-group");
     const reasonLabel = makeElement("label", "退貨原因");
@@ -414,9 +455,11 @@ function getRemainingQuantity(record) {
 // 將後端的 LocalDateTime 視為使用者當地時間（本 Demo 以臺灣時區運行）。
 // 期限的最終判斷仍以後端為準，前端只做操作提示與防止明顯無效請求。
 function getReturnDeadline(saleTime) {
-    if (!saleTime) return null;
+    if (!saleTime)
+        return null;
     const date = new Date(String(saleTime));
-    if (Number.isNaN(date.getTime())) return null;
+    if (Number.isNaN(date.getTime()))
+        return null;
     return new Date(date.getTime() + 7 * 24 * 60 * 60 * 1000);
 }
 
@@ -426,7 +469,8 @@ function isReturnExpired(saleTime) {
 }
 
 function formatDeadline(deadline) {
-    if (!deadline) return "無法判斷退貨截止時間";
+    if (!deadline)
+        return "無法判斷退貨截止時間";
     const two = value => String(value).padStart(2, "0");
     return `${deadline.getFullYear()}-${two(deadline.getMonth() + 1)}-${two(deadline.getDate())} ` +
         `${two(deadline.getHours())}:${two(deadline.getMinutes())}:${two(deadline.getSeconds())}`;
@@ -434,7 +478,8 @@ function formatDeadline(deadline) {
 
 // 每次開啟都向後端取得最新累計數量，避免使用過期的列表資料。
 async function openReturnPanel(salesRecordId) {
-    if (returnSubmitting) return;
+    if (returnSubmitting)
+        return;
     activeReturnSalesId = salesRecordId;
     byId("sale-return-panel").hidden = false;
     byId("sale-return-form").reset();
@@ -445,7 +490,8 @@ async function openReturnPanel(salesRecordId) {
     byId("sale-return-panel").scrollIntoView({ behavior: "smooth", block: "start" });
     try {
         await refreshReturnPanel(salesRecordId);
-    } catch (error) {
+    }
+    catch (error) {
         showMessage(error.message, "error");
         byId("sale-return-info").textContent = "無法讀取銷售資料";
         renderReturnHistoryMessage("無法載入退貨紀錄");
@@ -456,19 +502,21 @@ async function refreshReturnPanel(salesRecordId) {
     // 依序讀取銷售主檔和退貨歷史；API 不改動現有後端。
     const record = await requestJson(`${API.salesRecords}/${salesRecordId}`);
     const returns = await requestJson(`${API.salesRecords}/${salesRecordId}/returns`);
-    if (activeReturnSalesId !== salesRecordId) return;
-    if (!Array.isArray(returns)) throw new Error("退貨紀錄回傳格式不正確");
+    if (activeReturnSalesId !== salesRecordId)
+        return;
+    if (!Array.isArray(returns))
+        throw new Error("退貨紀錄回傳格式不正確");
 
     const remaining = getRemainingQuantity(record);
     byId("sale-return-info").textContent =
         `銷售 #${record.id}｜${displayValue(record.productName)}｜原始銷售 ${record.quantity} 件` +
-        `｜累計已退 ${record.returnedQuantity ?? 0} 件｜剩餘可退 ${remaining} 件`;
+            `｜累計已退 ${record.returnedQuantity ?? 0} 件｜剩餘可退 ${remaining} 件`;
 
     const deadline = getReturnDeadline(record.dateTime);
     const expired = isReturnExpired(record.dateTime);
     byId("sale-return-deadline").textContent =
         `一般退貨期限：${formatDeadline(deadline)}${expired ? "（已逾期）" : ""}。` +
-        "僅受理可重新販售的商品；最終以後端驗證為準。";
+            "僅受理可重新販售的商品；送出時仍會確認退貨條件。";
 
     // 剩餘數量為零或已超過 7 天時仍顯示歷史，但不顯示退貨表單。
     byId("sale-return-form").hidden = remaining <= 0 || expired;
@@ -506,7 +554,8 @@ function renderReturnHistoryMessage(message) {
 }
 
 function closeReturnPanel() {
-    if (returnSubmitting) return;
+    if (returnSubmitting)
+        return;
     activeReturnSalesId = null;
     byId("sale-return-panel").hidden = true;
     byId("sale-return-form").reset();
@@ -514,7 +563,8 @@ function closeReturnPanel() {
 
 async function submitReturnForm(event) {
     event.preventDefault();
-    if (returnSubmitting || activeReturnSalesId == null) return;
+    if (returnSubmitting || activeReturnSalesId == null)
+        return;
 
     const quantity = Number(byId("sale-return-quantity").value);
     const max = Number(byId("sale-return-quantity").max);
@@ -528,7 +578,8 @@ async function submitReturnForm(event) {
         return;
     }
 
-    if (!window.confirm(`確定退貨 ${quantity} 件？成功後會回補商品庫存。`)) return;
+    if (!window.confirm(`確定退貨 ${quantity} 件？成功後會回補商品庫存。`))
+        return;
 
     const salesRecordId = activeReturnSalesId;
     const submit = byId("sale-return-submit");
@@ -547,13 +598,16 @@ async function submitReturnForm(event) {
             await refreshReturnPanel(salesRecordId);
             await refreshSales();
             await refreshProducts();
-        } catch (refreshError) {
+        }
+        catch (refreshError) {
             console.error("退貨成功，但部分畫面刷新失敗：", refreshError);
             showMessage("退貨已成功，但部分畫面未更新，請重新整理頁面", "error");
         }
-    } catch (error) {
+    }
+    catch (error) {
         showMessage(error.message, "error");
-    } finally {
+    }
+    finally {
         returnSubmitting = false;
         setButtonLoading(submit, false);
     }

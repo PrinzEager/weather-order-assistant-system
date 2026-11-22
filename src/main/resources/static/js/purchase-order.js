@@ -2,12 +2,22 @@
 
 /* 採購單管理：對應草稿 CRUD 以及送出、到貨、取消狀態流程。 */
 import {
-    API, byId, makeElement, getTaiwanToday, showMessage, hideMessage,
-    setButtonLoading, displayValue, formatNumber, requestJson
+    API,
+    byId,
+    makeElement,
+    getTaiwanToday,
+    showMessage,
+    hideMessage,
+    setButtonLoading,
+    displayValue,
+    formatNumber,
+    requestJson
 } from "./common.js";
+
 import { refreshProducts } from "./product.js";
 
 let ordersLoaded = false;
+
 let availableProducts = [];
 
 export function initOrders() {
@@ -21,14 +31,13 @@ export function initOrders() {
     // 使用者選擇日期後，立即檢查是否為過去日期。
     byId("order-expected-delivery-date")
         .addEventListener("change", () => {
-
-            validateOrderDeliveryDate();
-
-        });
+        validateOrderDeliveryDate();
+    });
 }
 
 export function enterOrdersPage() {
-    if (!ordersLoaded) void refreshOrders();
+    if (!ordersLoaded)
+        void refreshOrders();
 }
 
 export async function refreshOrders() {
@@ -36,11 +45,13 @@ export async function refreshOrders() {
     try {
         hideMessage();
         const orders = await requestJson(API.purchaseOrders);
-        if (!Array.isArray(orders)) throw new Error("採購單清單回傳格式不正確");
+        if (!Array.isArray(orders))
+            throw new Error("採購單清單回傳格式不正確");
         renderOrders(orders);
         ordersLoaded = true;
         return true;
-    } catch (error) {
+    }
+    catch (error) {
         ordersLoaded = false;
         renderMessageRow("無法載入採購單");
         showMessage(error.message, "error");
@@ -79,14 +90,17 @@ function renderOrders(orders) {
                 actionButton("取消", "secondary-button", () => changeOrderState(order, "cancel")),
                 actionButton("刪除", "danger-button", () => deleteOrder(order))
             );
-        } else if (order.orderStatus === "SUBMITTED") {
+        }
+        else if (order.orderStatus === "SUBMITTED") {
             actions.append(
                 actionButton("確認到貨", "primary-button", () => changeOrderState(order, "receive")),
                 actionButton("取消", "danger-button", () => changeOrderState(order, "cancel"))
             );
-        } else if (order.orderStatus === "CANCELLED") {
+        }
+        else if (order.orderStatus === "CANCELLED") {
             actions.appendChild(actionButton("刪除", "danger-button", () => deleteOrder(order)));
-        } else {
+        }
+        else {
             actions.appendChild(makeElement("span", "已完成", "status-badge neutral"));
         }
         row.appendChild(actions);
@@ -96,7 +110,8 @@ function renderOrders(orders) {
 
 // index.html 原先只有列表；此處建立符合 Request DTO 的採購單表單。
 function installOrderForm() {
-    if (byId("order-form")) return;
+    if (byId("order-form"))
+        return;
     const panel = makeElement("div", null, "panel");
     panel.id = "order-form-panel";
     panel.hidden = true;
@@ -104,7 +119,7 @@ function installOrderForm() {
     const toolbar = makeElement("div", null, "panel-toolbar");
     const title = makeElement("h4", "建立採購單");
     title.id = "order-form-title";
-    const close = actionButton("關閉", "secondary-button", () => {});
+    const close = actionButton("關閉", "secondary-button", () => { });
     close.id = "order-form-close";
     toolbar.append(title, close);
     panel.appendChild(toolbar);
@@ -123,7 +138,7 @@ function installOrderForm() {
 
     const itemToolbar = makeElement("div", null, "panel-toolbar");
     itemToolbar.appendChild(makeElement("h5", "採購商品明細"));
-    const addItem = actionButton("新增商品", "secondary-button", () => {});
+    const addItem = actionButton("新增商品", "secondary-button", () => { });
     addItem.id = "order-add-item";
     itemToolbar.appendChild(addItem);
     form.appendChild(itemToolbar);
@@ -132,7 +147,7 @@ function installOrderForm() {
     form.appendChild(items);
 
     const buttons = makeElement("div", null, "action-bar");
-    const cancel = actionButton("取消", "secondary-button", () => {});
+    const cancel = actionButton("取消", "secondary-button", () => { });
     cancel.id = "order-form-cancel";
     const submit = makeElement("button", "儲存草稿", "primary-button");
     submit.id = "order-form-submit";
@@ -149,13 +164,16 @@ function formField(id, labelText, type) {
     const input = makeElement(type === "select" ? "select" : type === "textarea" ? "textarea" : "input");
     label.htmlFor = id;
     input.id = id;
-    if (type !== "select" && type !== "textarea") input.type = type;
+    if (type !== "select" && type !== "textarea")
+        input.type = type;
     // 採購單預計到貨日期不可早於台灣今天。
     if (id === "order-expected-delivery-date") {
         input.min = getTaiwanToday();
     }
-    if (id === "order-supplier-id") input.required = true;
-    if (id === "order-remark") input.maxLength = 500;
+    if (id === "order-supplier-id")
+        input.required = true;
+    if (id === "order-remark")
+        input.maxLength = 500;
     group.append(label, input);
     return group;
 }
@@ -171,7 +189,6 @@ function formField(id, labelText, type) {
  * @returns {boolean} 日期是否合法
  */
 function validateOrderDeliveryDate() {
-
     const input = byId("order-expected-delivery-date");
 
     // 使用台灣日期，避免 UTC 時差造成判斷錯誤。
@@ -187,14 +204,10 @@ function validateOrderDeliveryDate() {
 
     // 使用 YYYY-MM-DD 格式進行日期比較。
     if (input.value < today) {
-
         // 清除不合法的過去日期。
         input.value = "";
 
-        showMessage(
-            "預計到貨日期不可早於今天，請重新選擇",
-            "error"
-        );
+        showMessage("預計到貨日期不可早於今天，請重新選擇", "error");
 
         return false;
     }
@@ -220,14 +233,12 @@ async function openOrderForm(order = null) {
         supplierSelect.replaceChildren(createOption("", "請選擇供應商"));
         suppliers.forEach(supplier => supplierSelect.appendChild(createOption(supplier.id, supplier.name)));
         supplierSelect.value = order?.supplierId ?? "";
+
         // =====================================================
         // 預計到貨日期限制
         // =====================================================
-
         // 取得預計到貨日期欄位。
-        const deliveryDateInput = byId(
-            "order-expected-delivery-date"
-        );
+        const deliveryDateInput = byId("order-expected-delivery-date");
 
         // 每次開啟表單時，重新取得台灣今天日期。
         // 限制日期不可早於今天。
@@ -249,7 +260,8 @@ async function openOrderForm(order = null) {
         (order?.items?.length ? order.items : [null]).forEach(item => appendItemRow(item));
         byId("order-form-panel").hidden = false;
         byId("order-form-panel").scrollIntoView({ behavior: "smooth", block: "start" });
-    } catch (error) {
+    }
+    catch (error) {
         showMessage(error.message, "error");
     }
 }
@@ -303,10 +315,8 @@ async function submitOrderForm(event) {
         quantity: Number(row.querySelector(".order-item-quantity").value)
     }));
 
-    const validItems = items.every(item =>
-        Number.isSafeInteger(item.productId) && item.productId > 0 &&
-        Number.isSafeInteger(item.quantity) && item.quantity > 0
-    );
+    const validItems = items.every(item => Number.isSafeInteger(item.productId) && item.productId > 0 &&
+        Number.isSafeInteger(item.quantity) && item.quantity > 0);
     if (!Number.isSafeInteger(supplierId) || supplierId <= 0 || !items.length || !validItems) {
         showMessage("請選擇供應商，並填寫至少一筆有效商品明細", "error");
         return;
@@ -319,20 +329,13 @@ async function submitOrderForm(event) {
     // =====================================================
     // 儲存採購單前，再次驗證預計到貨日期
     // =====================================================
-
     // 取得使用者填寫的預計到貨日期。
-    const deliveryDate = byId(
-        "order-expected-delivery-date"
-    ).value;
+    const deliveryDate = byId("order-expected-delivery-date").value;
 
     // 預計到貨日可以不填寫。
     // 若有填寫，則不可早於台灣今天。
     if (deliveryDate && deliveryDate < getTaiwanToday()) {
-
-        showMessage(
-            "預計到貨日期不可早於今天",
-            "error"
-        );
+        showMessage("預計到貨日期不可早於今天", "error");
 
         // 日期不符合規則時，停止送出 API。
         return;
@@ -341,7 +344,6 @@ async function submitOrderForm(event) {
     // =====================================================
     // 建立採購單 Request
     // =====================================================
-
     const payload = {
         supplierId,
         expectedDeliveryDate: deliveryDate || null,
@@ -355,34 +357,41 @@ async function submitOrderForm(event) {
         closeOrderForm();
         await refreshOrders();
         showMessage(`採購單草稿已${id ? "更新" : "建立"}`, "success");
-    } catch (error) {
+    }
+    catch (error) {
         showMessage(error.message, "error");
-    } finally {
+    }
+    finally {
         setButtonLoading(submit, false);
     }
 }
 
 async function changeOrderState(order, action) {
     const labels = { submit: "送出", receive: "確認到貨", cancel: "取消" };
-    if (!window.confirm(`確定要${labels[action]}採購單 #${order.id}？`)) return;
+    if (!window.confirm(`確定要${labels[action]}採購單 #${order.id}？`))
+        return;
     try {
         await requestJson(`${API.purchaseOrders}/${order.id}/${action}`, "POST");
         await refreshOrders();
         // 確認到貨後端會增加庫存，需同步刷新商品頁。
-        if (action === "receive") await refreshProducts();
+        if (action === "receive")
+            await refreshProducts();
         showMessage(`採購單已${labels[action]}`, "success");
-    } catch (error) {
+    }
+    catch (error) {
         showMessage(error.message, "error");
     }
 }
 
 async function deleteOrder(order) {
-    if (!window.confirm(`確定要刪除採購單 #${order.id}？`)) return;
+    if (!window.confirm(`確定要刪除採購單 #${order.id}？`))
+        return;
     try {
         await requestJson(`${API.purchaseOrders}/${order.id}`, "DELETE");
         await refreshOrders();
         showMessage("採購單已刪除", "success");
-    } catch (error) {
+    }
+    catch (error) {
         showMessage(error.message, "error");
     }
 }

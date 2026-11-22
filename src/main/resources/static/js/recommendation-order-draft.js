@@ -9,25 +9,34 @@
  * 4. 只傳 productId、supplierId、quantity，價格由後端重新驗證及儲存。
  * 5. 一次 POST，由後端交易式地依供應商拆成多張 DRAFT。
  */
-import {
-    byId, makeElement, clearElement, showMessage,
-    hideMessage, requestJson, setButtonLoading
-} from "./common.js";
+import { byId, makeElement, clearElement, showMessage, hideMessage, requestJson, setButtonLoading } from "./common.js";
 
 const OFFER_API = "/api/supplier-products/by-product";
+
 const POLICY_API = "/api/purchase-order-batches/delivery-policy";
+
 const DRAFT_API = "/api/purchase-order-batches/drafts";
+
 const PAGE_SIZE = 10;
+
 const MAX_QUANTITY = 2147483647;
 
 let draftItems = [];
+
 let draftPage = 1;
+
 let isSubmitting = false;
+
 let modalOpen = false;
+
 let isLoading = false;
+
 let onCreated = null;
+
 let openRequestVersion = 0;
+
 let earliestDeliveryDate = "";
+
 let submitError = "";
 
 export function initDraftConfirmation(successCallback) {
@@ -38,10 +47,16 @@ export function initDraftConfirmation(successCallback) {
     byId("recommendation-order-items-body").addEventListener("change", onItemChange);
     byId("recommendation-order-items-body").addEventListener("input", onItemInput);
     byId("recommendation-order-page-prev").addEventListener("click", () => {
-        if (draftPage > 1) { draftPage -= 1; renderDraftPage(); }
+        if (draftPage > 1) {
+            draftPage -= 1;
+            renderDraftPage();
+        }
     });
     byId("recommendation-order-page-next").addEventListener("click", () => {
-        if (draftPage * PAGE_SIZE < draftItems.length) { draftPage += 1; renderDraftPage(); }
+        if (draftPage * PAGE_SIZE < draftItems.length) {
+            draftPage += 1;
+            renderDraftPage();
+        }
     });
     byId("recommendation-delivery-date").addEventListener("change", () => {
         submitError = "";
@@ -49,10 +64,12 @@ export function initDraftConfirmation(successCallback) {
     });
     // 視窗遮罩區域與 Escape 鍵允許退出，提交中則禁止關閉。
     byId("recommendation-order-panel").addEventListener("click", event => {
-        if (event.target === byId("recommendation-order-panel")) closeDraftConfirmation();
+        if (event.target === byId("recommendation-order-panel"))
+            closeDraftConfirmation();
     });
     document.addEventListener("keydown", event => {
-        if (event.key === "Escape" && modalOpen) closeDraftConfirmation();
+        if (event.key === "Escape" && modalOpen)
+            closeDraftConfirmation();
     });
 }
 
@@ -60,7 +77,8 @@ export function initDraftConfirmation(successCallback) {
  * 主清單傳入所有頁面已選商品；各商品必須有 productId/name/sku/quantity。
  */
 export async function openDraftConfirmation(items) {
-    if (modalOpen || isSubmitting || !items.length) return;
+    if (modalOpen || isSubmitting || !items.length)
+        return;
     openRequestVersion += 1;
     const thisVersion = openRequestVersion;
     modalOpen = true;
@@ -87,8 +105,10 @@ export async function openDraftConfirmation(items) {
             requestJson(POLICY_API),
             ...items.map(item => requestJson(`${OFFER_API}/${item.productId}`))
         ]);
-        if (!modalOpen || thisVersion !== openRequestVersion) return;
-        if (!policy?.earliestDeliveryDate) throw new Error("後端未回傳最早預計到貨日期");
+        if (!modalOpen || thisVersion !== openRequestVersion)
+            return;
+        if (!policy?.earliestDeliveryDate)
+            throw new Error("目前無法確認預計到貨日期，請稍後再試");
         earliestDeliveryDate = policy.earliestDeliveryDate;
         const delivery = byId("recommendation-delivery-date");
         delivery.min = earliestDeliveryDate;
@@ -115,15 +135,18 @@ export async function openDraftConfirmation(items) {
         });
         isLoading = false;
         renderDraftPage();
-    } catch (error) {
-        if (!modalOpen || thisVersion !== openRequestVersion) return;
+    }
+    catch (error) {
+        if (!modalOpen || thisVersion !== openRequestVersion)
+            return;
         showMessage(`無法開啟採購草稿確認視窗：${error.message}`, "error");
         closeDraftConfirmation();
     }
 }
 
 export function closeDraftConfirmation() {
-    if (isSubmitting) return;
+    if (isSubmitting)
+        return;
     openRequestVersion += 1; // 若尚有查價回應，忽略過期結果。
     modalOpen = false;
     isLoading = false;
@@ -131,7 +154,8 @@ export function closeDraftConfirmation() {
     draftPage = 1;
     submitError = "";
     const modal = byId("recommendation-order-panel");
-    if (modal) modal.hidden = true;
+    if (modal)
+        modal.hidden = true;
     document.body.classList.remove("rec-modal-open");
 }
 
@@ -146,11 +170,12 @@ function setDraftMessage(message) {
 function money(value) {
     const n = Number(value);
     return Number.isFinite(n)
-        ? n.toLocaleString("zh-TW", {minimumFractionDigits:2, maximumFractionDigits:2}) : "--";
+        ? n.toLocaleString("zh-TW", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "--";
 }
 
 function parsePositiveQuantity(raw) {
-    if (!/^[0-9]+$/.test(String(raw ?? "").trim())) return null;
+    if (!/^[0-9]+$/.test(String(raw ?? "").trim()))
+        return null;
     const n = Number(raw);
     return Number.isSafeInteger(n) && n > 0 && n <= MAX_QUANTITY ? n : null;
 }
@@ -177,8 +202,7 @@ function buildItemRow(item) {
     const tr = makeElement("tr");
     tr.dataset.productId = String(item.productId);
     const name = makeElement("td");
-    name.append(makeElement("strong", item.productName),
-        makeElement("div", item.sku ?? "--", "weather-description"));
+    name.append(makeElement("strong", item.productName), makeElement("div", item.sku ?? "--", "weather-description"));
     tr.appendChild(name);
 
     const qty = makeElement("td");
@@ -230,12 +254,14 @@ function findItem(input) {
 function onItemChange(event) {
     const input = event.target;
     const item = findItem(input);
-    if (!item) return;
+    if (!item)
+        return;
     if (input.matches(".recommendation-preview-supplier")) {
         submitError = "";
         item.supplierId = input.value;
         renderDraftPage(); // 價格與小計立即連動；保留其他頁面的選擇。
-    } else if (input.matches(".recommendation-preview-quantity")) {
+    }
+    else if (input.matches(".recommendation-preview-quantity")) {
         submitError = "";
         item.quantityRaw = input.value;
         renderDraftPage();
@@ -244,9 +270,11 @@ function onItemChange(event) {
 
 function onItemInput(event) {
     const input = event.target;
-    if (!input.matches(".recommendation-preview-quantity")) return;
+    if (!input.matches(".recommendation-preview-quantity"))
+        return;
     const item = findItem(input);
-    if (!item) return;
+    if (!item)
+        return;
     item.quantityRaw = input.value;
     submitError = "";
     const tr = input.closest("tr");
@@ -258,7 +286,8 @@ function onItemInput(event) {
 }
 
 function refreshDraftSummary() {
-    if (!modalOpen || isLoading) return;
+    if (!modalOpen || isLoading)
+        return;
     let total = 0;
     let missingSupplier = 0;
     let invalidQuantity = 0;
@@ -267,11 +296,16 @@ function refreshDraftSummary() {
     for (const item of draftItems) {
         const offer = chosenOffer(item);
         const quantity = parsePositiveQuantity(item.quantityRaw);
-        if (item.offers.length === 0) missingOffers += 1;
-        if (!offer) missingSupplier += 1;
-        else supplierIds.add(String(offer.supplierId));
-        if (quantity === null) invalidQuantity += 1;
-        if (offer && quantity) total += Number(offer.purchasePrice) * quantity;
+        if (item.offers.length === 0)
+            missingOffers += 1;
+        if (!offer)
+            missingSupplier += 1;
+        else
+            supplierIds.add(String(offer.supplierId));
+        if (quantity === null)
+            invalidQuantity += 1;
+        if (offer && quantity)
+            total += Number(offer.purchasePrice) * quantity;
     }
     byId("recommendation-order-total").textContent = money(total);
     byId("recommendation-order-count").textContent =
@@ -279,11 +313,16 @@ function refreshDraftSummary() {
     const date = byId("recommendation-delivery-date").value;
     const validDate = !!date && date >= earliestDeliveryDate;
     let warning = "";
-    if (missingOffers) warning = `${missingOffers} 項商品沒有有效供應商，請先設定供貨關聯或移除商品後重試。`;
-    else if (missingSupplier) warning = `尚有 ${missingSupplier} 項商品未選供應商，請逐頁完成選擇。`;
-    else if (invalidQuantity) warning = `${invalidQuantity} 項商品的採購數量不合法，必須大於 0。`;
-    else if (!validDate) warning = `預計到貨日不可早於 ${earliestDeliveryDate}。`;
-    else if (!Number.isSafeInteger(Math.round(total * 100))) warning = "採購總額超過前端可安全計算範圍。";
+    if (missingOffers)
+        warning = `${missingOffers} 項商品沒有有效供應商，請先設定供貨關聯或移除商品後重試。`;
+    else if (missingSupplier)
+        warning = `尚有 ${missingSupplier} 項商品未選供應商，請逐頁完成選擇。`;
+    else if (invalidQuantity)
+        warning = `${invalidQuantity} 項商品的採購數量不合法，必須大於 0。`;
+    else if (!validDate)
+        warning = `預計到貨日不可早於 ${earliestDeliveryDate}。`;
+    else if (!Number.isSafeInteger(Math.round(total * 100)))
+        warning = "採購總額超過前端可安全計算範圍。";
     byId("recommendation-order-warning").textContent = warning || submitError;
     byId("recommendation-order-submit").disabled =
         !!warning || isSubmitting || !draftItems.length;
@@ -291,7 +330,8 @@ function refreshDraftSummary() {
 
 async function submitDrafts(event) {
     event.preventDefault();
-    if (isSubmitting || isLoading || !modalOpen) return;
+    if (isSubmitting || isLoading || !modalOpen)
+        return;
     const button = byId("recommendation-order-submit");
     // 送出一開始就鎖定，包含重新查詢日期政策期間，阻止連點重複建單。
     isSubmitting = true;
@@ -300,16 +340,20 @@ async function submitDrafts(event) {
     try {
         const items = draftItems.map(item => {
             const quantity = parsePositiveQuantity(item.quantityRaw);
-            if (!chosenOffer(item)) throw new Error(`「${item.productName}」尚未選擇有效供應商`);
-            if (quantity === null) throw new Error(`「${item.productName}」採購數量必須大於 0`);
-            return {productId: item.productId, supplierId:Number(item.supplierId), quantity};
+            if (!chosenOffer(item))
+                throw new Error(`「${item.productName}」尚未選擇有效供應商`);
+            if (quantity === null)
+                throw new Error(`「${item.productName}」採購數量必須大於 0`);
+            return { productId: item.productId, supplierId: Number(item.supplierId), quantity };
         });
-        if (!items.length) throw new Error("請至少選擇一項商品");
+        if (!items.length)
+            throw new Error("請至少選擇一項商品");
 
         // 送出前再次向後端查詢台灣時間日期政策，避免視窗開著跨過中午截單時間。
         const policy = await requestJson(POLICY_API);
         const minDate = policy?.earliestDeliveryDate;
-        if (!minDate) throw new Error("無法確認最早預計到貨日期");
+        if (!minDate)
+            throw new Error("無法確認最早預計到貨日期");
         earliestDeliveryDate = minDate;
         byId("recommendation-delivery-date").min = minDate;
         byId("recommendation-delivery-policy").textContent =
@@ -320,7 +364,8 @@ async function submitDrafts(event) {
             throw new Error(`依目前台灣時間，預計到貨日不可早於 ${minDate}`);
         }
         const remark = byId("recommendation-order-remark").value.trim();
-        if (remark.length > 500) throw new Error("採購備註不可超過 500 字");
+        if (remark.length > 500)
+            throw new Error("採購備註不可超過 500 字");
 
         button.textContent = "正在建立採購草稿...";
         hideMessage();
@@ -337,13 +382,16 @@ async function submitDrafts(event) {
         // 先恢復可關閉狀態；清除跨頁選購，避免使用者再次建立同一批草稿。
         isSubmitting = false;
         closeDraftConfirmation();
-        if (typeof onCreated === "function") onCreated(result);
+        if (typeof onCreated === "function")
+            onCreated(result);
         showMessage(`成功建立 ${count} 張 DRAFT 草稿${ids ? `（${ids}）` : ""}，總金額 NT$ ${amount}。請至採購訂單頁面確認。`, "success");
-    } catch (error) {
+    }
+    catch (error) {
         submitError = error.message;
         showMessage(error.message, "error");
         console.error("批次建立採購草稿失敗：", error);
-    } finally {
+    }
+    finally {
         isSubmitting = false;
         setButtonLoading(button, false);
         refreshDraftSummary();

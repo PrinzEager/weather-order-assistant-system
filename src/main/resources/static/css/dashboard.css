@@ -2,7 +2,6 @@
  * 此檔已整合舊版多份樣式；保留必要的 CSS cascade 與媒體查詢覆寫。
  */
 
-
 /* ===================================================
  * 暖色主題與側邊選單
  * =================================================== */
@@ -34,7 +33,6 @@
     --radius: 16px;
     --shadow: 0 6px 20px rgba(91, 61, 44, .10);
     --sidebar-width: 260px;
-
     /* 新主題的專用色票，後續模組可沿用。 */
     --warm-panel: rgba(255, 250, 243, .96);
     --warm-card: #FFF9F0;
@@ -47,6 +45,7 @@
 }
 
 /* 全站保留自然的米白背景與原生字體，不外連字型及 CSS 框架。 */
+
 body {
     background: radial-gradient(ellipse at 87% 5%, rgba(253, 212, 164, .34), transparent 40%),
                 radial-gradient(ellipse at 22% 92%, rgba(237, 207, 180, .28), transparent 42%),
@@ -66,6 +65,7 @@ textarea:focus-visible,
 /* -------------------------------------------------------------
    A. 左側導覽：保留所有 [data-page] 與 JS 選單事件。
    ------------------------------------------------------------- */
+
 .sidebar {
     background: linear-gradient(167deg, #79523F 0%, #704B3D 50%, #5F3D32 100%);
     border-radius: 0 22px 22px 0;
@@ -163,6 +163,7 @@ textarea:focus-visible,
 /* -------------------------------------------------------------
    B. 主內容與工具列：以高對比暖白底襯托資料。
    ------------------------------------------------------------- */
+
 .main-content {
     max-width: none;
     min-width: 0;
@@ -225,6 +226,7 @@ textarea:focus-visible,
 }
 
 /* 本階段讓共用按鈕與基礎資料容器跟隨暖色 token。 */
+
 .primary-button {
     border-radius: 10px;
     background: var(--primary);
@@ -288,6 +290,7 @@ textarea:focus-visible,
    C. 儀表板 4 張 KPI 卡：數字仍由 #stat-* 原 ID 提供。
    未連上資料時保留 --，不使用參考圖中的假數字。
    ------------------------------------------------------------- */
+
 #page-dashboard .section-heading {
     margin-bottom: 20px;
 }
@@ -368,6 +371,7 @@ textarea:focus-visible,
    D. 儀表板兩張功能入口：後續才把真實天氣／銷售曲線接進首頁。
    目前保留原本 [data-go-page] 按鈕，確保快捷入口可操作。
    ------------------------------------------------------------- */
+
 #page-dashboard .dashboard-panels {
     gap: 19px;
 }
@@ -428,6 +432,7 @@ textarea:focus-visible,
 /* -------------------------------------------------------------
    E. 響應式：保持既有天氣圖卡、Modal、管理篩選及表格不變。
    ------------------------------------------------------------- */
+
 @media (max-width: 1250px) {
     #page-dashboard .dashboard-stats {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -435,15 +440,38 @@ textarea:focus-visible,
 }
 
 @media (max-width: 900px) {
-    :root { --sidebar-width: 210px; }
-    .sidebar { width: 210px; }
-    .sidebar-brand { padding: 20px 12px; gap: 8px; }
-    .sidebar-brand-emblem { width: 35px; height: 35px; flex-basis: 35px; font-size: 21px; }
-    .sidebar-brand-copy h1 { font-size: 13px; }
-    .sidebar-brand-copy p { font-size: 10px; }
-    .main-content { margin-left: 210px; padding: 23px 20px 45px; }
-    .topbar { padding: 18px 20px; }
-    #page-dashboard .dashboard-panels { grid-template-columns: 1fr; }
+    :root {
+        --sidebar-width: 210px;
+    }
+    .sidebar {
+        width: 210px;
+    }
+    .sidebar-brand {
+        padding: 20px 12px;
+        gap: 8px;
+    }
+    .sidebar-brand-emblem {
+        width: 35px;
+        height: 35px;
+        flex-basis: 35px;
+        font-size: 21px;
+    }
+    .sidebar-brand-copy h1 {
+        font-size: 13px;
+    }
+    .sidebar-brand-copy p {
+        font-size: 10px;
+    }
+    .main-content {
+        margin-left: 210px;
+        padding: 23px 20px 45px;
+    }
+    .topbar {
+        padding: 18px 20px;
+    }
+    #page-dashboard .dashboard-panels {
+        grid-template-columns: 1fr;
+    }
 }
 
 @media (max-width: 680px) {
@@ -452,19 +480,58 @@ textarea:focus-visible,
         width: 100%;
         border-radius: 0 0 17px 17px;
     }
-    .sidebar-brand { padding: 13px 16px; }
-    .sidebar-brand-copy h1 { font-size: 16px; }
-    .sidebar-brand-copy p { font-size: 11px; }
-    .sidebar-nav { gap: 6px; padding: 10px; }
-    .nav-item { width: auto; min-height: 42px; padding: 9px 13px; font-size: 13px; }
-    .nav-icon { width: 18px; height: 18px; flex-basis: 18px; }
-    .main-content { margin-left: 0; padding: 20px 14px 36px; }
-    .topbar { align-items: stretch; gap: 12px; margin-bottom: 22px; padding: 17px; }
-    .topbar-status { align-self: flex-start; }
-    #page-dashboard .dashboard-stats { grid-template-columns: 1fr; gap: 12px; }
-    #page-dashboard .stat-card { min-height: 127px; padding: 21px 20px 20px 97px; }
-    #page-dashboard .dashboard-stat-icon { top: 20px; }
-    #page-dashboard .dashboard-panels .panel { min-height: 188px; padding: 20px; }
+    .sidebar-brand {
+        padding: 13px 16px;
+    }
+    .sidebar-brand-copy h1 {
+        font-size: 16px;
+    }
+    .sidebar-brand-copy p {
+        font-size: 11px;
+    }
+    .sidebar-nav {
+        gap: 6px;
+        padding: 10px;
+    }
+    .nav-item {
+        width: auto;
+        min-height: 42px;
+        padding: 9px 13px;
+        font-size: 13px;
+    }
+    .nav-icon {
+        width: 18px;
+        height: 18px;
+        flex-basis: 18px;
+    }
+    .main-content {
+        margin-left: 0;
+        padding: 20px 14px 36px;
+    }
+    .topbar {
+        align-items: stretch;
+        gap: 12px;
+        margin-bottom: 22px;
+        padding: 17px;
+    }
+    .topbar-status {
+        align-self: flex-start;
+    }
+    #page-dashboard .dashboard-stats {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    #page-dashboard .stat-card {
+        min-height: 127px;
+        padding: 21px 20px 20px 97px;
+    }
+    #page-dashboard .dashboard-stat-icon {
+        top: 20px;
+    }
+    #page-dashboard .dashboard-panels .panel {
+        min-height: 188px;
+        padding: 20px;
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -475,7 +542,6 @@ textarea:focus-visible,
 
 /* 商品貨架背景於取得正式可使用的獨立圖片後再加入。
    不可直接把參考儀表板截圖當背景，也不可使用整層 opacity。 */
-
 
 /* ===================================================
  * 首頁天氣與銷售趨勢
@@ -493,6 +559,7 @@ textarea:focus-visible,
 }
 
 /* 覆寫 的入口卡片高度與內距，改成資訊型面板。 */
+
 #page-dashboard .dashboard-overview-grid .dashboard-overview-panel {
     min-height: 448px;
     padding: 20px 19px 17px;
@@ -559,11 +626,20 @@ textarea:focus-visible,
     color: #80522F;
 }
 
-#page-dashboard .dashboard-weather-status[data-status="COMPLETE"] { color: #2F7441; }
-#page-dashboard .dashboard-weather-status[data-status="PARTIAL"] { color: #925A22; }
-#page-dashboard .dashboard-weather-status[data-status="UNAVAILABLE"] { color: #B43D30; }
+#page-dashboard .dashboard-weather-status[data-status="COMPLETE"] {
+    color: #2F7441;
+}
+
+#page-dashboard .dashboard-weather-status[data-status="PARTIAL"] {
+    color: #925A22;
+}
+
+#page-dashboard .dashboard-weather-status[data-status="UNAVAILABLE"] {
+    color: #B43D30;
+}
 
 /* 七天皆能直接看到；依面板寬度自動換行，不隱藏第 4～7 天。 */
+
 #page-dashboard .dashboard-weather-cards {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 126px), 1fr));
@@ -684,6 +760,7 @@ textarea:focus-visible,
 }
 
 /* 銷售金額與數量合計：不在 HTML 中寫死任何數值。 */
+
 #page-dashboard .dashboard-sales-totals {
     display: flex;
     justify-content: space-between;
@@ -771,6 +848,7 @@ textarea:focus-visible,
 }
 
 /* 保留原訂貨建議的快捷入口；資料留待下一階段再嵌入首頁。 */
+
 #page-dashboard .dashboard-next-action {
     display: flex;
     justify-content: space-between;
@@ -784,16 +862,24 @@ textarea:focus-visible,
     box-shadow: 0 5px 16px rgba(86, 49, 27, .05);
 }
 
-#page-dashboard .dashboard-next-action strong { color: #573925; font-size: 15px; }
+#page-dashboard .dashboard-next-action strong {
+    color: #573925;
+    font-size: 15px;
+}
+
 #page-dashboard .dashboard-next-action p {
     min-height: 0;
     margin: 3px 0 0;
     font-size: 12px;
     color: #8B7060;
 }
-#page-dashboard .dashboard-next-action .primary-button { flex: 0 0 auto; }
+
+#page-dashboard .dashboard-next-action .primary-button {
+    flex: 0 0 auto;
+}
 
 /* 特別提升選擇器權重，避免 面板通用 p 規則覆蓋提示內容。 */
+
 #page-dashboard .dashboard-overview-grid .dashboard-overview-panel p.dashboard-widget-loading,
 #page-dashboard .dashboard-overview-grid .dashboard-overview-panel p.dashboard-widget-empty,
 #page-dashboard .dashboard-overview-grid .dashboard-overview-panel p.dashboard-widget-error {
@@ -803,6 +889,7 @@ textarea:focus-visible,
     min-height: 0;
     font-size: 13px;
 }
+
 #page-dashboard .dashboard-overview-grid .dashboard-overview-panel p.dashboard-sales-period {
     margin: 2px 0 10px;
     min-height: 0;
@@ -812,27 +899,55 @@ textarea:focus-visible,
 }
 
 @media (max-width: 1199px) {
-    #page-dashboard .dashboard-overview-grid { grid-template-columns: 1fr; }
-    #page-dashboard .dashboard-overview-grid .dashboard-overview-panel { min-height: 350px; }
+    #page-dashboard .dashboard-overview-grid {
+        grid-template-columns: 1fr;
+    }
+    #page-dashboard .dashboard-overview-grid .dashboard-overview-panel {
+        min-height: 350px;
+    }
 }
 
 @media (max-width: 680px) {
-    #page-dashboard .dashboard-overview-grid { gap: 12px; }
-    #page-dashboard .dashboard-overview-grid .dashboard-overview-panel { padding: 16px 13px; }
-    #page-dashboard .dashboard-overview-header { flex-wrap: wrap; align-items: flex-start; }
-    #page-dashboard .dashboard-overview-header h4 { font-size: 17px; }
-    #page-dashboard .dashboard-weather-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    #page-dashboard .dashboard-mini-weather { min-height: 157px; }
-    #page-dashboard .dashboard-sales-chart svg { min-width: 330px; }
-    #page-dashboard .dashboard-sales-totals { gap: 10px; padding: 11px; }
-    #page-dashboard .dashboard-next-action { flex-direction: column; align-items: flex-start; }
-    #page-dashboard .dashboard-next-action .primary-button { align-self: stretch; }
+    #page-dashboard .dashboard-overview-grid {
+        gap: 12px;
+    }
+    #page-dashboard .dashboard-overview-grid .dashboard-overview-panel {
+        padding: 16px 13px;
+    }
+    #page-dashboard .dashboard-overview-header {
+        flex-wrap: wrap;
+        align-items: flex-start;
+    }
+    #page-dashboard .dashboard-overview-header h4 {
+        font-size: 17px;
+    }
+    #page-dashboard .dashboard-weather-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    #page-dashboard .dashboard-mini-weather {
+        min-height: 157px;
+    }
+    #page-dashboard .dashboard-sales-chart svg {
+        min-width: 330px;
+    }
+    #page-dashboard .dashboard-sales-totals {
+        gap: 10px;
+        padding: 11px;
+    }
+    #page-dashboard .dashboard-next-action {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    #page-dashboard .dashboard-next-action .primary-button {
+        align-self: stretch;
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    #page-dashboard .dashboard-mini-weather, #page-dashboard .dashboard-inline-link { transition: none; }
+    #page-dashboard .dashboard-mini-weather, #page-dashboard .dashboard-inline-link {
+        transition: none;
+    }
 }
-
 
 /* ===================================================
  * 首頁訂貨建議摘要
@@ -863,117 +978,304 @@ textarea:focus-visible,
     gap: 12px;
 }
 
-#page-dashboard .dashboard-rec-heading-row { align-items: flex-start; margin-bottom: 12px; }
-#page-dashboard .dashboard-rec-heading-row .dashboard-panel-heading { min-width: 0; margin: 0; }
-#page-dashboard .dashboard-rec-heading-row h4 { margin: 0; font-size: 19px; color: #513324; line-height: 1.4; }
-#page-dashboard .dashboard-rec-heading-row .dashboard-panel-mark {
-    width: 43px; height: 43px; flex: 0 0 43px; font-size: 24px;
+#page-dashboard .dashboard-rec-heading-row {
+    align-items: flex-start;
+    margin-bottom: 12px;
 }
-#page-dashboard .dashboard-rec-heading-row .dashboard-overview-subtitle { margin-top: 4px; }
 
-#page-dashboard .dashboard-rec-actions { flex-wrap: wrap; justify-content: flex-end; flex: 0 1 auto; }
-#page-dashboard .dashboard-rec-basis-label { font-size: 12px; color: #7a6152; font-weight: 700; white-space: nowrap; }
-#page-dashboard #dashboard-rec-basis {
-    min-height: 36px; padding: 7px 10px;
-    border: 1px solid #d8bfa8; border-radius: 9px;
-    background: #fffaf3; color: #553b2d; font-size: 12px;
+#page-dashboard .dashboard-rec-heading-row .dashboard-panel-heading {
+    min-width: 0;
+    margin: 0;
 }
-#page-dashboard .dashboard-rec-weather-label {
-    display: inline-flex; align-items: center; gap: 7px;
-    padding: 6px 10px; background: #f8eadb; border: 1px solid #ead1b9;
-    border-radius: 9px; font-size: 12px; color: #654631; cursor: pointer;
+
+#page-dashboard .dashboard-rec-heading-row h4 {
+    margin: 0;
+    font-size: 19px;
+    color: #513324;
+    line-height: 1.4;
+}
+
+#page-dashboard .dashboard-rec-heading-row .dashboard-panel-mark {
+    width: 43px;
+    height: 43px;
+    flex: 0 0 43px;
+    font-size: 24px;
+}
+
+#page-dashboard .dashboard-rec-heading-row .dashboard-overview-subtitle {
+    margin-top: 4px;
+}
+
+#page-dashboard .dashboard-rec-actions {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    flex: 0 1 auto;
+}
+
+#page-dashboard .dashboard-rec-basis-label {
+    font-size: 12px;
+    color: #7a6152;
+    font-weight: 700;
     white-space: nowrap;
 }
-#page-dashboard #dashboard-rec-use-weather { accent-color: #c36d2f; width: 16px; height: 16px; cursor: pointer; }
-#page-dashboard .dashboard-rec-refresh { padding: 7px 12px; min-height: 36px; font-size: 12px; white-space: nowrap; }
+
+#page-dashboard #dashboard-rec-basis {
+    min-height: 36px;
+    padding: 7px 10px;
+    border: 1px solid #d8bfa8;
+    border-radius: 9px;
+    background: #fffaf3;
+    color: #553b2d;
+    font-size: 12px;
+}
+
+#page-dashboard .dashboard-rec-weather-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 10px;
+    background: #f8eadb;
+    border: 1px solid #ead1b9;
+    border-radius: 9px;
+    font-size: 12px;
+    color: #654631;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+#page-dashboard #dashboard-rec-use-weather {
+    accent-color: #c36d2f;
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+#page-dashboard .dashboard-rec-refresh {
+    padding: 7px 12px;
+    min-height: 36px;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
 #page-dashboard .dashboard-rec-actions :focus-visible,
 #page-dashboard .dashboard-rec-footer button:focus-visible,
-#page-dashboard .dashboard-rec-table button:focus-visible { outline: 3px solid #e8a56f; outline-offset: 2px; }
+#page-dashboard .dashboard-rec-table button:focus-visible {
+    outline: 3px solid #e8a56f;
+    outline-offset: 2px;
+}
 
 #page-dashboard .dashboard-rec-meta {
-    margin: 0 0 12px; padding: 8px 12px; border-radius: 9px;
-    border: 1px solid #efdecc; background: #f9f1e9;
-    color: #765843; font-size: 12px; line-height: 1.6;
+    margin: 0 0 12px;
+    padding: 8px 12px;
+    border-radius: 9px;
+    border: 1px solid #efdecc;
+    background: #f9f1e9;
+    color: #765843;
+    font-size: 12px;
+    line-height: 1.6;
 }
 
-#page-dashboard .dashboard-rec-table-wrap { border-radius: 12px; border: 1px solid #eee0d0; }
+#page-dashboard .dashboard-rec-table-wrap {
+    border-radius: 12px;
+    border: 1px solid #eee0d0;
+}
+
 #page-dashboard .dashboard-rec-table {
-    min-width: 960px; width: 100%; white-space: normal;
+    min-width: 960px;
+    width: 100%;
+    white-space: normal;
     font-variant-numeric: tabular-nums;
 }
+
 #page-dashboard .dashboard-rec-table th {
-    padding: 12px 11px; font-size: 12px; color: #624636;
-    background: #f5e4d3; border-bottom: 1px solid #e7d0ba; white-space: nowrap;
+    padding: 12px 11px;
+    font-size: 12px;
+    color: #624636;
+    background: #f5e4d3;
+    border-bottom: 1px solid #e7d0ba;
+    white-space: nowrap;
 }
+
 #page-dashboard .dashboard-rec-table td {
-    padding: 11px 12px; font-size: 13px; color: #4d3b31;
-    border-bottom: 1px solid #efdfd0; vertical-align: middle;
+    padding: 11px 12px;
+    font-size: 13px;
+    color: #4d3b31;
+    border-bottom: 1px solid #efdfd0;
+    vertical-align: middle;
 }
-#page-dashboard .dashboard-rec-table tbody tr:nth-child(even) { background: #fffbf6; }
-#page-dashboard .dashboard-rec-table tbody tr:hover { background: #fff1e2; }
+
+#page-dashboard .dashboard-rec-table tbody tr:nth-child(even) {
+    background: #fffbf6;
+}
+
+#page-dashboard .dashboard-rec-table tbody tr:hover {
+    background: #fff1e2;
+}
+
 #page-dashboard .dashboard-rec-table .dashboard-rec-rank {
-    display: inline-flex; width: 28px; height: 28px;
-    align-items: center; justify-content: center;
-    border-radius: 50%; background: #eee2d6; color: #694832;
-    font-weight: 800; font-size: 13px;
+    display: inline-flex;
+    width: 28px;
+    height: 28px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #eee2d6;
+    color: #694832;
+    font-weight: 800;
+    font-size: 13px;
 }
+
 #page-dashboard .dashboard-rec-table tr:first-child .dashboard-rec-rank {
-    background: #e3a547; color: #56300f;
+    background: #e3a547;
+    color: #56300f;
 }
-#page-dashboard .dashboard-rec-product-name { display: block; color: #462d1e; font-weight: 750; }
-#page-dashboard .dashboard-rec-sku { display: block; color: #8c7567; font-size: 11px; margin-top: 3px; }
+
+#page-dashboard .dashboard-rec-product-name {
+    display: block;
+    color: #462d1e;
+    font-weight: 750;
+}
+
+#page-dashboard .dashboard-rec-sku {
+    display: block;
+    color: #8c7567;
+    font-size: 11px;
+    margin-top: 3px;
+}
+
 #page-dashboard .dashboard-rec-category {
-    display: inline-block; padding: 4px 9px; border-radius: 999px;
-    background: #e9efd9; color: #4e6b39; font-size: 11px; font-weight: 700;
+    display: inline-block;
+    padding: 4px 9px;
+    border-radius: 999px;
+    background: #e9efd9;
+    color: #4e6b39;
+    font-size: 11px;
+    font-weight: 700;
 }
+
 #page-dashboard .dashboard-rec-quantity {
-    color: #b94e18; font-size: 18px; font-weight: 800; white-space: nowrap;
+    color: #b94e18;
+    font-size: 18px;
+    font-weight: 800;
+    white-space: nowrap;
 }
+
 #page-dashboard .dashboard-rec-quantity-note {
-    display: block; font-size: 10px; line-height: 1.4;
-    font-weight: 500; color: #856855;
+    display: block;
+    font-size: 10px;
+    line-height: 1.4;
+    font-weight: 500;
+    color: #856855;
 }
-#page-dashboard .dashboard-rec-number { white-space: nowrap; }
-#page-dashboard .dashboard-rec-reason { color: #68554a; line-height: 1.5; font-size: 12px; }
+
+#page-dashboard .dashboard-rec-number {
+    white-space: nowrap;
+}
+
+#page-dashboard .dashboard-rec-reason {
+    color: #68554a;
+    line-height: 1.5;
+    font-size: 12px;
+}
+
 #page-dashboard .dashboard-rec-row-button {
-    min-height: 34px; border-radius: 9px; padding: 6px 11px;
-    border: 1px solid #c26b2c; background: #da7734;
-    color: #fff; white-space: nowrap; font-size: 12px; font-weight: 700;
+    min-height: 34px;
+    border-radius: 9px;
+    padding: 6px 11px;
+    border: 1px solid #c26b2c;
+    background: #da7734;
+    color: #fff;
+    white-space: nowrap;
+    font-size: 12px;
+    font-weight: 700;
 }
-#page-dashboard .dashboard-rec-row-button:hover { background: #bc5d20; }
+
+#page-dashboard .dashboard-rec-row-button:hover {
+    background: #bc5d20;
+}
+
 #page-dashboard .dashboard-rec-table .dashboard-rec-state {
-    text-align: center; white-space: normal; padding: 24px 12px;
-    font-size: 13px; color: #806d5e; line-height: 1.5;
+    text-align: center;
+    white-space: normal;
+    padding: 24px 12px;
+    font-size: 13px;
+    color: #806d5e;
+    line-height: 1.5;
 }
-#page-dashboard .dashboard-rec-table .dashboard-rec-state.error { color: #a5362c; }
+
+#page-dashboard .dashboard-rec-table .dashboard-rec-state.error {
+    color: #a5362c;
+}
 
 /* 說明文字不受 .panel p 全域最小高度影響。 */
+
 #page-dashboard .dashboard-recommendation-panel .dashboard-rec-warning {
-    min-height: 0; margin: 10px 0 0; padding: 9px 12px;
-    background: #fff1dd; border: 1px solid #ecc798; border-radius: 9px;
-    font-size: 12px; color: #845020; line-height: 1.6;
+    min-height: 0;
+    margin: 10px 0 0;
+    padding: 9px 12px;
+    background: #fff1dd;
+    border: 1px solid #ecc798;
+    border-radius: 9px;
+    font-size: 12px;
+    color: #845020;
+    line-height: 1.6;
 }
-#page-dashboard .dashboard-recommendation-panel .dashboard-rec-warning[hidden] { display: none !important; }
+
+#page-dashboard .dashboard-recommendation-panel .dashboard-rec-warning[hidden] {
+    display: none !important;
+}
+
 #page-dashboard .dashboard-rec-footer {
-    margin-top: 13px; padding-top: 13px;
-    border-top: 1px solid #eee0d4; align-items: center;
+    margin-top: 13px;
+    padding-top: 13px;
+    border-top: 1px solid #eee0d4;
+    align-items: center;
 }
-#page-dashboard .dashboard-rec-footer span { max-width: 880px; font-size: 11px; line-height: 1.6; color: #826a5a; }
-#page-dashboard .dashboard-rec-footer .primary-button { flex: 0 0 auto; white-space: nowrap; }
+
+#page-dashboard .dashboard-rec-footer span {
+    max-width: 880px;
+    font-size: 11px;
+    line-height: 1.6;
+    color: #826a5a;
+}
+
+#page-dashboard .dashboard-rec-footer .primary-button {
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
 
 @media (max-width: 1180px) {
-    #page-dashboard .dashboard-rec-heading-row { flex-direction: column; }
-    #page-dashboard .dashboard-rec-actions { width: 100%; justify-content: flex-start; }
-}
-@media (max-width: 680px) {
-    #page-dashboard .dashboard-recommendation-panel { padding: 14px 12px; margin-top: 13px; }
-    #page-dashboard .dashboard-rec-heading-row h4 { font-size: 17px; }
-    #page-dashboard .dashboard-rec-actions { gap: 8px; }
-    #page-dashboard .dashboard-rec-footer { flex-direction: column; align-items: stretch; }
-    #page-dashboard .dashboard-rec-footer .primary-button { width: 100%; }
-    #page-dashboard .dashboard-rec-table { min-width: 850px; }
+    #page-dashboard .dashboard-rec-heading-row {
+        flex-direction: column;
+    }
+    #page-dashboard .dashboard-rec-actions {
+        width: 100%;
+        justify-content: flex-start;
+    }
 }
 
+@media (max-width: 680px) {
+    #page-dashboard .dashboard-recommendation-panel {
+        padding: 14px 12px;
+        margin-top: 13px;
+    }
+    #page-dashboard .dashboard-rec-heading-row h4 {
+        font-size: 17px;
+    }
+    #page-dashboard .dashboard-rec-actions {
+        gap: 8px;
+    }
+    #page-dashboard .dashboard-rec-footer {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    #page-dashboard .dashboard-rec-footer .primary-button {
+        width: 100%;
+    }
+    #page-dashboard .dashboard-rec-table {
+        min-width: 850px;
+    }
+}
 
 /* ===================================================
  * 貨架背景與質感細節
@@ -995,7 +1297,6 @@ textarea:focus-visible,
     --shelf-background-opacity: .13;
     --shelf-background-blur: 3px;
     --shelf-background-overlay: rgba(255, 248, 239, .28);
-
     /* 與 –6 共存，不更名既有 token。 */
     --warm-text-primary: #452d25;
     --warm-text-muted: #80685c;
@@ -1006,6 +1307,7 @@ textarea:focus-visible,
 }
 
 /* A. 商品貨架背景：背景照片與內容分開疊放，任何按鈕都不會被遮住。 */
+
 .main-content {
     position: relative;
     isolation: isolate;
@@ -1040,9 +1342,13 @@ textarea:focus-visible,
    視窗開啟時解除 main 的 isolation，避免 sidebar 疊在遮罩上方；
    同時不對 main 設 overflow，避免截斷任何 Modal／清單。
 */
-body.rec-modal-open .main-content { isolation: auto; }
+
+body.rec-modal-open .main-content {
+    isolation: auto;
+}
 
 /* B. 頂部工具列：微弱玻璃感，維持高對比與溫暖邊框。 */
+
 .topbar {
     position: relative;
     border: 1px solid #e8d7c8;
@@ -1066,6 +1372,7 @@ body.rec-modal-open .main-content { isolation: auto; }
 }
 
 /* C. 側邊導覽層次：深奶茶棕為主，橘色只用於目前選取。 */
+
 .sidebar {
     background: linear-gradient(162deg, #805643 0%, #714b3b 52%, #603c2f 100%);
     box-shadow: 5px 0 26px rgba(63, 39, 29, .13);
@@ -1087,6 +1394,7 @@ body.rec-modal-open .main-content { isolation: auto; }
 }
 
 /* D. 主內容區的表單／表格，避免貨架圖穿透小字。 */
+
 .main-content .panel,
 .main-content .stat-card,
 .main-content .table-panel {
@@ -1095,6 +1403,7 @@ body.rec-modal-open .main-content { isolation: auto; }
 }
 
 /* 只優化儀表板，不覆寫其他 CRUD 版面和遮罩視窗。 */
+
 #page-dashboard .section-heading {
     margin-bottom: 21px;
 }
@@ -1114,6 +1423,7 @@ body.rec-modal-open .main-content { isolation: auto; }
 }
 
 /* 四張 KPI 卡保留原本 API 動態 ID；增加一致的光感與暖色線條。 */
+
 #page-dashboard .stat-card {
     background: linear-gradient(140deg,
         rgba(255, 253, 249, .99),
@@ -1152,6 +1462,7 @@ body.rec-modal-open .main-content { isolation: auto; }
 }
 
 /* 中間兩張資訊面板：背景不能搶過真實數據及圖表。 */
+
 #page-dashboard .dashboard-overview-grid .dashboard-overview-panel,
 #page-dashboard .dashboard-recommendation-panel {
     background: rgba(255, 252, 247, .975);
@@ -1211,6 +1522,7 @@ body.rec-modal-open .main-content { isolation: auto; }
 }
 
 /* 操作按鈕強調區分：一般按鈕用深焦糖色確保小字對比。 */
+
 #page-dashboard .dashboard-rec-row-button,
 #page-dashboard .dashboard-rec-footer .primary-button,
 #page-dashboard .dashboard-rec-refresh,
@@ -1234,41 +1546,79 @@ body.rec-modal-open .main-content { isolation: auto; }
 }
 
 /* E. 尺寸響應：維持原本 CSS 的斷點，只微調間距與背景。 */
+
 @media (min-width: 1480px) {
-    .main-content { padding: 28px 35px 65px; }
-    #page-dashboard .dashboard-overview-grid { gap: 20px; }
-    #page-dashboard .dashboard-stats { gap: 20px; }
+    .main-content {
+        padding: 28px 35px 65px;
+    }
+    #page-dashboard .dashboard-overview-grid {
+        gap: 20px;
+    }
+    #page-dashboard .dashboard-stats {
+        gap: 20px;
+    }
 }
 
 @media (max-width: 1200px) {
-    .main-content { padding-inline: 21px; }
-    #page-dashboard .dashboard-overview-grid { gap: 16px; }
+    .main-content {
+        padding-inline: 21px;
+    }
+    #page-dashboard .dashboard-overview-grid {
+        gap: 16px;
+    }
 }
 
 @media (max-width: 900px) {
-    .main-content { padding-inline: 18px; }
-    #page-dashboard .stat-card { padding-right: 13px; }
+    .main-content {
+        padding-inline: 18px;
+    }
+    #page-dashboard .stat-card {
+        padding-right: 13px;
+    }
 }
 
 @media (max-width: 680px) {
-    .main-content { padding: 18px 13px 38px; }
-    .main-content::before { opacity: .045; filter: blur(5px) saturate(.55); }
-    .main-content::after { background: rgba(255, 248, 239, .50); }
-    .topbar { border-radius: 15px; padding: 16px 15px; }
-    #page-dashboard .section-heading { margin-bottom: 16px; }
+    .main-content {
+        padding: 18px 13px 38px;
+    }
+    .main-content::before {
+        opacity: .045;
+        filter: blur(5px) saturate(.55);
+    }
+    .main-content::after {
+        background: rgba(255, 248, 239, .50);
+    }
+    .topbar {
+        border-radius: 15px;
+        padding: 16px 15px;
+    }
+    #page-dashboard .section-heading {
+        margin-bottom: 16px;
+    }
     #page-dashboard .dashboard-overview-grid .dashboard-overview-panel,
-    #page-dashboard .dashboard-recommendation-panel { border-radius: 16px; }
+    #page-dashboard .dashboard-recommendation-panel {
+        border-radius: 16px;
+    }
 }
 
 /* 對動態文字的對比保護與列印模式。 */
+
 @media print {
     .main-content::before,
-    .main-content::after { display: none !important; }
-    .main-content { background: #fff !important; overflow: visible; }
-    .sidebar { display: none; }
-    .main-content { margin-left: 0; }
+    .main-content::after {
+        display: none !important;
+    }
+    .main-content {
+        background: #fff !important;
+        overflow: visible;
+    }
+    .sidebar {
+        display: none;
+    }
+    .main-content {
+        margin-left: 0;
+    }
 }
-
 
 /* ===================================================
  * 首頁氣溫時間軸
@@ -1278,6 +1628,7 @@ body.rec-modal-open .main-content { isolation: auto; }
    首頁未來 48 小時氣溫趨勢（僅 #page-dashboard 範圍）。
    使用獨立檔案覆蓋版面，不影響天氣詳細頁或其他管理功能。
    ===================================================================== */
+
 #page-dashboard .dashboard-temperature-section {
     margin: 13px 0 15px;
     padding: 15px 12px 10px;
@@ -1287,6 +1638,7 @@ body.rec-modal-open .main-content { isolation: auto; }
     box-shadow: inset 0 1px 0 rgba(255,255,255,.75);
     min-width: 0;
 }
+
 #page-dashboard .dashboard-temperature-head {
     display: flex;
     justify-content: space-between;
@@ -1294,6 +1646,7 @@ body.rec-modal-open .main-content { isolation: auto; }
     gap: 12px;
     margin-bottom: 10px;
 }
+
 #page-dashboard .dashboard-temperature-head h5 {
     margin: 0;
     font-size: 14px;
@@ -1301,12 +1654,14 @@ body.rec-modal-open .main-content { isolation: auto; }
     font-weight: 800;
     color: #56382B;
 }
+
 #page-dashboard .dashboard-temperature-head p {
     margin: 2px 0 0;
     color: #826A5C;
     font-size: 11px;
     line-height: 1.6;
 }
+
 #page-dashboard .dashboard-temperature-period {
     flex-shrink: 0;
     font-size: 11px;
@@ -1319,10 +1674,12 @@ body.rec-modal-open .main-content { isolation: auto; }
     color: #AD591F;
     background: #FFF3E4;
 }
+
 #page-dashboard .dashboard-temperature-timeline {
     min-width: 0;
     width: 100%;
 }
+
 #page-dashboard .dashboard-temperature-scroller {
     max-width: 100%;
     overflow-x: auto;
@@ -1331,10 +1688,12 @@ body.rec-modal-open .main-content { isolation: auto; }
     scrollbar-color: #D7AE8A transparent;
     border-radius: 8px;
 }
+
 #page-dashboard .dashboard-temperature-scroller:focus-visible {
     outline: 2px solid #C66B2B;
     outline-offset: 2px;
 }
+
 #page-dashboard .dashboard-temperature-scroller svg {
     display: block;
     height: auto;
@@ -1342,6 +1701,7 @@ body.rec-modal-open .main-content { isolation: auto; }
     overflow: visible;
     font-family: inherit;
 }
+
 #page-dashboard .dashboard-temperature-message {
     margin: 0;
     padding: 25px 10px;
@@ -1349,19 +1709,29 @@ body.rec-modal-open .main-content { isolation: auto; }
     text-align: center;
     color: #76594A;
 }
-#page-dashboard .dashboard-temperature-error { color: #B14B37; }
+
+#page-dashboard .dashboard-temperature-error {
+    color: #B14B37;
+}
+
 #page-dashboard .dashboard-temperature-note {
     margin: 8px 2px 0;
     font-size: 10px;
     line-height: 1.6;
     color: #826F63;
 }
-@media (max-width: 680px) {
-    #page-dashboard .dashboard-temperature-section { padding: 13px 9px 9px; }
-    #page-dashboard .dashboard-temperature-head { align-items: flex-start; }
-    #page-dashboard .dashboard-temperature-scroller svg { max-height: 280px; }
-}
 
+@media (max-width: 680px) {
+    #page-dashboard .dashboard-temperature-section {
+        padding: 13px 9px 9px;
+    }
+    #page-dashboard .dashboard-temperature-head {
+        align-items: flex-start;
+    }
+    #page-dashboard .dashboard-temperature-scroller svg {
+        max-height: 280px;
+    }
+}
 
 /* ===================================================
  * 首頁營運指標
@@ -1373,6 +1743,7 @@ body.rec-modal-open .main-content { isolation: auto; }
    ===================================================================== */
 
 /* 四張指標卡的高度與間距保持一致，避免動態狀態訊息導致視覺跳動。 */
+
 #page-dashboard .dashboard-stats {
     gap: clamp(12px, 1.25vw, 20px);
     margin-bottom: 21px;
@@ -1408,12 +1779,14 @@ body.rec-modal-open .main-content { isolation: auto; }
 }
 
 /* 新增的統計數值沿用原有 #stat-reorder、#stat-orders，不另建假資料卡。 */
+
 #page-dashboard #stat-reorder,
 #page-dashboard #stat-orders {
     color: #a75320;
 }
 
 /* 讓首頁資訊區更接近原定暖白參考稿；只改視覺密度。 */
+
 #page-dashboard .dashboard-overview-grid {
     gap: clamp(13px, 1.3vw, 20px);
 }
@@ -1434,13 +1807,16 @@ body.rec-modal-open .main-content { isolation: auto; }
         padding-top: 16px;
         padding-bottom: 15px;
     }
-    #page-dashboard .dashboard-stats .stat-card p { min-height: 0; }
+    #page-dashboard .dashboard-stats .stat-card p {
+        min-height: 0;
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    #page-dashboard .dashboard-stats .stat-card { transition: none; }
+    #page-dashboard .dashboard-stats .stat-card {
+        transition: none;
+    }
 }
-
 
 /* ===================================================
  * 首頁間距與響應式優化
@@ -1457,7 +1833,6 @@ body.rec-modal-open .main-content { isolation: auto; }
 
 :root {
     /* 比原本 10% 稍微清楚；不對前景容器套用 opacity/filter。 */
-
     /* 首頁統一尺寸與字色：只供本 CSS 使用，避免影響其他功能頁。 */
     --dashboard-card-edge: #e6d4c2;
     --dashboard-card-shadow: 0 8px 24px rgba(88, 55, 36, .075);
@@ -1467,6 +1842,7 @@ body.rec-modal-open .main-content { isolation: auto; }
 }
 
 /* ── A. 首頁標題：比原本更接近參考圖的精簡段落 ─────── */
+
 #page-dashboard {
     min-width: 0;
     color: var(--dashboard-heading-color);
@@ -1475,6 +1851,7 @@ body.rec-modal-open .main-content { isolation: auto; }
 #page-dashboard .section-heading {
     margin-bottom: 16px;
 }
+
 #page-dashboard .section-heading h3 {
     margin: 0;
     padding-left: 14px;
@@ -1482,6 +1859,7 @@ body.rec-modal-open .main-content { isolation: auto; }
     line-height: 1.34;
     letter-spacing: -.025em;
 }
+
 #page-dashboard .section-heading p {
     margin: 5px 0 0;
     font-size: 12px;
@@ -1490,11 +1868,13 @@ body.rec-modal-open .main-content { isolation: auto; }
 }
 
 /* ── B. 四張 KPI：縮減空白、放大數值的閱讀優先順序 ─────── */
+
 #page-dashboard .dashboard-stats {
     gap: var(--dashboard-panel-gap);
     margin-bottom: var(--dashboard-panel-gap);
     align-items: stretch;
 }
+
 #page-dashboard .dashboard-stats .stat-card {
     min-height: 139px;
     padding: 17px 12px 15px 80px;
@@ -1502,22 +1882,26 @@ body.rec-modal-open .main-content { isolation: auto; }
     border-radius: 18px;
     box-shadow: var(--dashboard-card-shadow);
 }
+
 #page-dashboard .dashboard-stats .dashboard-stat-icon {
     top: 20px;
     left: 15px;
     width: 51px;
     height: 51px;
 }
+
 #page-dashboard .dashboard-stats .dashboard-stat-icon svg {
     width: 26px;
     height: 26px;
 }
+
 #page-dashboard .dashboard-stats .stat-card h4 {
     margin: 0;
     font-size: 13px;
     line-height: 1.45;
     color: #664332;
 }
+
 #page-dashboard .dashboard-stats .stat-card strong {
     display: block;
     margin: 5px 0 4px;
@@ -1525,6 +1909,7 @@ body.rec-modal-open .main-content { isolation: auto; }
     font-size: clamp(25px, 2.2vw, 34px);
     font-variant-numeric: tabular-nums;
 }
+
 #page-dashboard .dashboard-stats .stat-card p {
     min-height: 0;
     margin: 0;
@@ -1534,11 +1919,13 @@ body.rec-modal-open .main-content { isolation: auto; }
 }
 
 /* ── C. 天氣與銷售：統一內容外距、標題、資訊條 ─────── */
+
 #page-dashboard .dashboard-overview-grid {
     gap: var(--dashboard-panel-gap);
     grid-template-columns: minmax(0, 1.06fr) minmax(0, .94fr);
     align-items: stretch;
 }
+
 #page-dashboard .dashboard-overview-grid .dashboard-overview-panel {
     min-width: 0;
     padding: 17px 17px 15px;
@@ -1546,14 +1933,17 @@ body.rec-modal-open .main-content { isolation: auto; }
     border-color: var(--dashboard-card-edge);
     box-shadow: var(--dashboard-card-shadow);
 }
+
 #page-dashboard .dashboard-overview-header {
     gap: 12px;
     margin-bottom: 11px;
 }
+
 #page-dashboard .dashboard-panel-heading {
     min-width: 0;
     gap: 10px;
 }
+
 #page-dashboard .dashboard-overview-grid .dashboard-panel-mark,
 #page-dashboard .dashboard-rec-heading-row .dashboard-panel-mark {
     width: 40px;
@@ -1562,22 +1952,26 @@ body.rec-modal-open .main-content { isolation: auto; }
     font-size: 21px;
     border-radius: 12px;
 }
+
 #page-dashboard .dashboard-overview-header h4,
 #page-dashboard .dashboard-rec-heading-row h4 {
     font-size: clamp(16px, 1.3vw, 19px);
     line-height: 1.36;
     color: var(--dashboard-heading-color);
 }
+
 #page-dashboard .dashboard-overview-subtitle {
     margin-top: 3px;
     font-size: 11px;
     color: #80685b;
 }
+
 #page-dashboard .dashboard-overview-meta {
     margin-bottom: 10px;
     padding: 7px 10px;
     font-size: 11px;
 }
+
 #page-dashboard .dashboard-icon-button,
 #page-dashboard .dashboard-rec-refresh {
     min-height: 34px;
@@ -1585,32 +1979,41 @@ body.rec-modal-open .main-content { isolation: auto; }
 }
 
 /* 七天天氣：桌機的並排區域能放四張、下排三張，避免三列造成過長。 */
+
 #page-dashboard .dashboard-weather-cards {
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 109px), 1fr));
     gap: 8px;
     margin-bottom: 10px;
 }
+
 #page-dashboard .dashboard-mini-weather {
     min-width: 0;
     min-height: 151px;
     padding: 9px 5px 8px;
     border-radius: 12px;
 }
-#page-dashboard .dashboard-mini-date { font-size: 11px; }
+
+#page-dashboard .dashboard-mini-date {
+    font-size: 11px;
+}
+
 #page-dashboard .dashboard-mini-icon {
     margin: 4px 0 1px;
     font-size: 26px;
 }
+
 #page-dashboard .dashboard-mini-description {
     min-height: 17px;
     font-size: 10.5px;
     line-height: 1.45;
 }
+
 #page-dashboard .dashboard-mini-temperature {
     font-size: 17px;
     line-height: 1.5;
     white-space: nowrap;
 }
+
 #page-dashboard .dashboard-mini-metrics {
     padding-top: 5px;
     font-size: 10px;
@@ -1618,44 +2021,57 @@ body.rec-modal-open .main-content { isolation: auto; }
 }
 
 /* 48 小時圖：保留完整真實時間軸，只減少垂直占用。 */
+
 #page-dashboard .dashboard-temperature-section {
     margin: 10px 0 12px;
     padding: 12px 11px 10px;
     border-radius: 14px;
 }
+
 #page-dashboard .dashboard-temperature-head {
     margin-bottom: 6px;
 }
-#page-dashboard .dashboard-temperature-head h5 { font-size: 13px; }
+
+#page-dashboard .dashboard-temperature-head h5 {
+    font-size: 13px;
+}
+
 #page-dashboard .dashboard-temperature-head p {
     font-size: 10px;
     line-height: 1.5;
 }
+
 #page-dashboard .dashboard-temperature-scroller {
     overscroll-behavior-inline: contain;
 }
+
 #page-dashboard .dashboard-temperature-scroller svg {
     max-height: 265px;
 }
+
 #page-dashboard .dashboard-temperature-note {
     margin-top: 5px;
 }
 
 /* 銷售：兩個合計數字與圖表明確區分，禁止金額換行造成溢出。 */
+
 #page-dashboard .dashboard-sales-totals {
     padding: 11px 13px;
     gap: 12px;
     border-radius: 12px;
 }
+
 #page-dashboard .dashboard-sales-totals strong {
     font-size: clamp(18px, 1.8vw, 24px);
     line-height: 1.24;
     overflow-wrap: anywhere;
 }
+
 #page-dashboard .dashboard-chart-legend {
     margin-top: 11px;
     gap: 13px;
 }
+
 #page-dashboard .dashboard-sales-chart {
     min-width: 0;
     min-height: 255px;
@@ -1663,19 +2079,23 @@ body.rec-modal-open .main-content { isolation: auto; }
     scrollbar-width: thin;
     scrollbar-color: #d5ae8c transparent;
 }
+
 #page-dashboard .dashboard-sales-chart svg {
     max-width: none;
 }
+
 #page-dashboard .dashboard-overview-footer {
     gap: 8px 12px;
     padding-top: 10px;
     font-size: 10.5px;
 }
+
 #page-dashboard .dashboard-inline-link {
     font-size: 12px;
 }
 
 /* ── D. 智慧訂貨摘要：標題清楚、控制項易用、表格更緊湊 ─── */
+
 #page-dashboard .dashboard-recommendation-panel {
     margin-top: var(--dashboard-panel-gap);
     padding: 17px 18px 15px;
@@ -1683,22 +2103,27 @@ body.rec-modal-open .main-content { isolation: auto; }
     border-color: var(--dashboard-card-edge);
     box-shadow: var(--dashboard-card-shadow);
 }
+
 #page-dashboard .dashboard-rec-heading-row {
     gap: 12px 20px;
     margin-bottom: 11px;
 }
+
 #page-dashboard .dashboard-rec-actions {
     gap: 8px;
 }
+
 #page-dashboard #dashboard-rec-basis,
 #page-dashboard .dashboard-rec-weather-label {
     min-height: 35px;
 }
+
 #page-dashboard .dashboard-rec-meta {
     margin-bottom: 10px;
     padding: 8px 11px;
     font-size: 11px;
 }
+
 #page-dashboard .dashboard-rec-table-wrap {
     overflow-x: auto;
     max-width: 100%;
@@ -1706,69 +2131,84 @@ body.rec-modal-open .main-content { isolation: auto; }
     scrollbar-width: thin;
     scrollbar-color: #d5ae8c transparent;
 }
+
 #page-dashboard .dashboard-rec-table {
     min-width: 920px;
     border-collapse: collapse;
 }
+
 #page-dashboard .dashboard-rec-table th {
     padding: 11px 10px;
     font-size: 11px;
     letter-spacing: .01em;
     line-height: 1.45;
 }
+
 #page-dashboard .dashboard-rec-table td {
     padding: 10px 10px;
     font-size: 12px;
     line-height: 1.48;
 }
+
 #page-dashboard .dashboard-rec-table th:nth-child(4),
 #page-dashboard .dashboard-rec-table th:nth-child(5),
 #page-dashboard .dashboard-rec-table td:nth-child(4),
 #page-dashboard .dashboard-rec-table td:nth-child(5) {
     text-align: center;
 }
+
 #page-dashboard .dashboard-rec-table .dashboard-rec-rank {
     width: 27px;
     height: 27px;
     font-size: 12px;
 }
+
 #page-dashboard .dashboard-rec-table .dashboard-rec-quantity {
     font-size: 17px;
 }
+
 #page-dashboard .dashboard-rec-table .dashboard-rec-reason {
     font-size: 11.5px;
     line-height: 1.55;
 }
+
 /* 前三名使用穩重的金、銀、銅色，資料排名順序仍由 API 決定。 */
+
 #page-dashboard .dashboard-rec-table tr:nth-child(2) .dashboard-rec-rank {
     background: #e5e3df;
     color: #5a5750;
 }
+
 #page-dashboard .dashboard-rec-table tr:nth-child(3) .dashboard-rec-rank {
     background: #ebc3a2;
     color: #71421e;
 }
+
 #page-dashboard .dashboard-rec-row-button {
     min-height: 34px;
     border-radius: 10px;
 }
+
 #page-dashboard .dashboard-rec-footer {
     margin-top: 10px;
     padding-top: 11px;
     gap: 10px 14px;
 }
+
 #page-dashboard .dashboard-rec-footer span {
     font-size: 10.5px;
     line-height: 1.55;
 }
 
 /* ── E. 自適應布局：手機不顯示整頁橫向捲軸 ──────────── */
+
 @media (max-width: 1250px) {
     /* 單欄邏輯由 1199px 提早到 1250px，避免狹窄欄位擠壓圖卡。 */
     #page-dashboard .dashboard-overview-grid {
         grid-template-columns: minmax(0, 1fr);
     }
 }
+
 @media (max-width: 900px) {
     #page-dashboard .dashboard-stats .stat-card {
         min-height: 134px;
@@ -1781,9 +2221,14 @@ body.rec-modal-open .main-content { isolation: auto; }
         justify-content: flex-start;
     }
 }
+
 @media (max-width: 680px) {
-    #page-dashboard .section-heading { margin-bottom: 13px; }
-    #page-dashboard .dashboard-stats { gap: 11px; }
+    #page-dashboard .section-heading {
+        margin-bottom: 13px;
+    }
+    #page-dashboard .dashboard-stats {
+        gap: 11px;
+    }
     #page-dashboard .dashboard-stats .stat-card {
         min-height: 118px;
         padding: 13px 12px 12px 71px;
@@ -1820,27 +2265,46 @@ body.rec-modal-open .main-content { isolation: auto; }
     #page-dashboard .dashboard-temperature-scroller svg {
         max-height: 230px;
     }
-    #page-dashboard .dashboard-sales-chart { min-height: 220px; }
+    #page-dashboard .dashboard-sales-chart {
+        min-height: 220px;
+    }
     #page-dashboard .dashboard-recommendation-panel {
         padding: 14px 12px;
         border-radius: 16px;
     }
-    #page-dashboard .dashboard-rec-table { min-width: 825px; }
-    #page-dashboard .dashboard-rec-footer { align-items: stretch; }
-    #page-dashboard .dashboard-rec-footer .primary-button { width: 100%; }
+    #page-dashboard .dashboard-rec-table {
+        min-width: 825px;
+    }
+    #page-dashboard .dashboard-rec-footer {
+        align-items: stretch;
+    }
+    #page-dashboard .dashboard-rec-footer .primary-button {
+        width: 100%;
+    }
 }
+
 @media (max-width: 380px) {
-    #page-dashboard .dashboard-overview-header { flex-wrap: wrap; }
-    #page-dashboard .dashboard-mini-temperature { font-size: 16px; }
-    #page-dashboard .dashboard-rec-actions { width: 100%; }
-    #page-dashboard #dashboard-rec-basis { max-width: 100%; }
+    #page-dashboard .dashboard-overview-header {
+        flex-wrap: wrap;
+    }
+    #page-dashboard .dashboard-mini-temperature {
+        font-size: 16px;
+    }
+    #page-dashboard .dashboard-rec-actions {
+        width: 100%;
+    }
+    #page-dashboard #dashboard-rec-basis {
+        max-width: 100%;
+    }
 }
 
 /* ── F. 鍵盤、動態效果及列印：只補視覺安全性 ─────── */
+
 #page-dashboard :is(button, select, input):focus-visible {
     outline: 3px solid rgba(207, 108, 37, .46);
     outline-offset: 2px;
 }
+
 @media (prefers-reduced-motion: reduce) {
     #page-dashboard .stat-card,
     #page-dashboard .dashboard-mini-weather,
@@ -1848,10 +2312,15 @@ body.rec-modal-open .main-content { isolation: auto; }
         transition: none !important;
     }
 }
+
 @media print {
     #page-dashboard .dashboard-rec-table-wrap,
-    #page-dashboard .dashboard-temperature-scroller { overflow: visible; }
+    #page-dashboard .dashboard-temperature-scroller {
+        overflow: visible;
+    }
     #page-dashboard .dashboard-stats .stat-card,
     #page-dashboard .dashboard-overview-panel,
-    #page-dashboard .dashboard-recommendation-panel { box-shadow: none !important; }
+    #page-dashboard .dashboard-recommendation-panel {
+        box-shadow: none !important;
+    }
 }

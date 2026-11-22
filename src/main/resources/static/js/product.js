@@ -2,8 +2,15 @@
 
 /* 商品管理：對應 ProductController、ProductRequest 與 ProductResponse。 */
 import {
-    API, byId, makeElement, showMessage, hideMessage,
-    setButtonLoading, displayValue, formatNumber, requestJson
+    API,
+    byId,
+    makeElement,
+    showMessage,
+    hideMessage,
+    setButtonLoading,
+    displayValue,
+    formatNumber,
+    requestJson
 } from "./common.js";
 
 let productsLoaded = false;
@@ -19,7 +26,8 @@ export function initProducts() {
 }
 
 export function enterProductsPage() {
-    if (!productsLoaded) void refreshProducts();
+    if (!productsLoaded)
+        void refreshProducts();
 }
 
 export async function refreshProducts() {
@@ -27,12 +35,14 @@ export async function refreshProducts() {
     try {
         hideMessage();
         const products = await requestJson(API.products);
-        if (!Array.isArray(products)) throw new Error("商品清單回傳格式不正確");
+        if (!Array.isArray(products))
+            throw new Error("商品清單回傳格式不正確");
         renderProducts(products);
         productsLoaded = true;
         byId("stat-products").textContent = String(products.length);
         return true;
-    } catch (error) {
+    }
+    catch (error) {
         productsLoaded = false;
         byId("stat-products").textContent = "--";
         renderMessageRow("無法載入商品資料");
@@ -62,11 +72,7 @@ function renderProducts(products) {
         ].forEach(value => row.appendChild(makeElement("td", displayValue(value))));
 
         const statusCell = makeElement("td");
-        statusCell.appendChild(makeElement(
-            "span",
-            product.status === 1 ? "啟用" : "停用",
-            product.status === 1 ? "status-badge success" : "status-badge danger"
-        ));
+        statusCell.appendChild(makeElement("span", product.status === 1 ? "啟用" : "停用", product.status === 1 ? "status-badge success" : "status-badge danger"));
         row.appendChild(statusCell);
 
         const actions = makeElement("td");
@@ -81,7 +87,8 @@ function renderProducts(products) {
 }
 
 function installProductForm() {
-    if (byId("product-form")) return;
+    if (byId("product-form"))
+        return;
     const panel = makeElement("div", null, "panel");
     panel.id = "product-form-panel";
     panel.hidden = true;
@@ -89,7 +96,7 @@ function installProductForm() {
     const toolbar = makeElement("div", null, "panel-toolbar");
     const title = makeElement("h4", "新增商品");
     title.id = "product-form-title";
-    const close = actionButton("關閉", "secondary-button", () => {});
+    const close = actionButton("關閉", "secondary-button", () => { });
     close.id = "product-form-close";
     toolbar.append(title, close);
     panel.appendChild(toolbar);
@@ -116,7 +123,8 @@ function installProductForm() {
         label.htmlFor = id;
         input.id = id;
         input.required = required;
-        if (type !== "select") input.type = type;
+        if (type !== "select")
+            input.type = type;
         if (type === "number") {
             input.min = "0";
             input.step = id === "product-price" ? "0.01" : "1";
@@ -126,7 +134,7 @@ function installProductForm() {
     });
 
     const buttons = makeElement("div", null, "action-bar");
-    const cancel = actionButton("取消", "secondary-button", () => {});
+    const cancel = actionButton("取消", "secondary-button", () => { });
     cancel.id = "product-form-cancel";
     const submit = makeElement("button", "儲存商品", "primary-button");
     submit.id = "product-form-submit";
@@ -140,7 +148,8 @@ function installProductForm() {
 async function openProductForm(product = null) {
     try {
         const categories = await requestJson(API.categories);
-        if (!Array.isArray(categories)) throw new Error("商品分類回傳格式不正確");
+        if (!Array.isArray(categories))
+            throw new Error("商品分類回傳格式不正確");
         byId("product-form").reset();
         byId("product-id").value = product?.id ?? "";
         byId("product-form-title").textContent = product ? "編輯商品" : "新增商品";
@@ -150,11 +159,11 @@ async function openProductForm(product = null) {
         categories
             .filter(category => category.parentId != null && category.status === 1)
             .forEach(category => {
-                const label = category.parentName
-                    ? `${category.parentName} / ${category.name}`
-                    : category.name;
-                select.appendChild(createOption(category.id, label));
-            });
+            const label = category.parentName
+                ? `${category.parentName} / ${category.name}`
+                : category.name;
+            select.appendChild(createOption(category.id, label));
+        });
         select.value = product?.categoryId ?? "";
 
         [
@@ -172,7 +181,8 @@ async function openProductForm(product = null) {
         panel.hidden = false;
         panel.scrollIntoView({ behavior: "smooth", block: "start" });
         byId("product-sku").focus();
-    } catch (error) {
+    }
+    catch (error) {
         showMessage(error.message, "error");
     }
 }
@@ -193,10 +203,14 @@ async function submitProductForm(event) {
     const unit = byId("product-unit").value.trim();
 
     try {
-        if (!Number.isSafeInteger(categoryId) || categoryId <= 0) throw new Error("請選擇第二層分類");
-        if (!sku || sku.length > 50 || !name || name.length > 100) throw new Error("商品名稱或 SKU 不符合規則");
-        if (!/^\d+(\.\d{1,2})?$/.test(priceText)) throw new Error("售價必須是非負金額，最多兩位小數");
-        if (unit.length > 20) throw new Error("單位最多 20 個字元");
+        if (!Number.isSafeInteger(categoryId) || categoryId <= 0)
+            throw new Error("請選擇第二層分類");
+        if (!sku || sku.length > 50 || !name || name.length > 100)
+            throw new Error("商品名稱或 SKU 不符合規則");
+        if (!/^\d+(\.\d{1,2})?$/.test(priceText))
+            throw new Error("售價必須是非負金額，最多兩位小數");
+        if (unit.length > 20)
+            throw new Error("單位最多 20 個字元");
 
         const payload = {
             categoryId,
@@ -214,17 +228,20 @@ async function submitProductForm(event) {
             closeProductForm();
             await refreshProducts();
             showMessage(`商品已${id ? "更新" : "新增"}`, "success");
-        } finally {
+        }
+        finally {
             setButtonLoading(submit, false);
         }
-    } catch (error) {
+    }
+    catch (error) {
         showMessage(error.message, "error");
     }
 }
 
 function parseStock(inputId) {
     const value = byId(inputId).value.trim();
-    if (value === "") return null;
+    if (value === "")
+        return null;
     if (!/^\d+$/.test(value) || !Number.isSafeInteger(Number(value))) {
         throw new Error("庫存必須是非負整數");
     }
@@ -234,23 +251,27 @@ function parseStock(inputId) {
 async function updateProductStatus(product) {
     const status = product.status === 1 ? 0 : 1;
     const action = status === 1 ? "啟用" : "停用";
-    if (!window.confirm(`確定要${action}商品「${product.name}」？`)) return;
+    if (!window.confirm(`確定要${action}商品「${product.name}」？`))
+        return;
     try {
         await requestJson(`${API.products}/${product.id}/status?status=${status}`, "PATCH");
         await refreshProducts();
         showMessage(`商品已${action}`, "success");
-    } catch (error) {
+    }
+    catch (error) {
         showMessage(error.message, "error");
     }
 }
 
 async function deleteProduct(product) {
-    if (!window.confirm(`確定要刪除商品「${product.name}」？`)) return;
+    if (!window.confirm(`確定要刪除商品「${product.name}」？`))
+        return;
     try {
         await requestJson(`${API.products}/${product.id}`, "DELETE");
         await refreshProducts();
         showMessage("商品已刪除", "success");
-    } catch (error) {
+    }
+    catch (error) {
         showMessage(error.message, "error");
     }
 }

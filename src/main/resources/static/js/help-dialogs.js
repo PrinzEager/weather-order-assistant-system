@@ -11,15 +11,18 @@ function bindDialog(openId, dialogId, closeId) {
     const open = document.getElementById(openId);
     const dialog = document.getElementById(dialogId);
     const close = document.getElementById(closeId);
-    if (!open || !dialog || !close) return;
+    if (!open || !dialog || !close)
+        return;
 
     open.addEventListener("click", () => {
-        if (!dialog.open) dialog.showModal();
+        if (!dialog.open)
+            dialog.showModal();
     });
     close.addEventListener("click", () => dialog.close());
     dialog.addEventListener("click", event => {
         // 只有點到 dialog 自身背景，不是內文，才關閉。
-        if (event.target === dialog) dialog.close();
+        if (event.target === dialog)
+            dialog.close();
     });
 }
 
@@ -29,19 +32,22 @@ function initHelpDialogs() {
 }
 
 if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initHelpDialogs, {once: true});
-} else {
+    document.addEventListener("DOMContentLoaded", initHelpDialogs, { once: true });
+}
+else {
     initHelpDialogs();
 }
 
 function text(id, value) {
     const element = document.getElementById(id);
-    if (element) element.textContent = String(value);
+    if (element)
+        element.textContent = String(value);
 }
 
 /** 只在數值有效時格式化，null／undefined 不可誤顯示為 0%。 */
 function validNumber(value) {
-    if (value === null || value === undefined || value === "") return null;
+    if (value === null || value === undefined || value === "")
+        return null;
     const number = Number(value);
     return Number.isFinite(number) ? number : null;
 }
@@ -53,8 +59,10 @@ function rate(value) {
 
 function adjustment(value) {
     const number = validNumber(value);
-    if (number === null) return "--";
-    if (number > 0) return `+${number.toFixed(2)}`;
+    if (number === null)
+        return "--";
+    if (number > 0)
+        return `+${number.toFixed(2)}`;
     return number.toFixed(2);
 }
 
@@ -69,7 +77,8 @@ function dateLabel(value) {
 function addCell(row, value, className = "") {
     const cell = document.createElement("td");
     cell.textContent = String(value);
-    if (className) cell.className = className;
+    if (className)
+        cell.className = className;
     row.appendChild(cell);
 }
 
@@ -82,7 +91,8 @@ export function setWeatherFactorExplanation(response, emptyMessage = "尚未產�
     const tbody = document.getElementById("guidance-factor-rows");
     const note = document.getElementById("guidance-factor-missing");
     const status = document.getElementById("guidance-factor-status");
-    if (!details || !tbody || !note || !status) return;
+    if (!details || !tbody || !note || !status)
+        return;
 
     tbody.replaceChildren();
     details.hidden = true;
@@ -108,7 +118,8 @@ export function setWeatherFactorExplanation(response, emptyMessage = "尚未產�
     text("guidance-factor-value", backendFactor === null ? "--" : `${backendFactor.toFixed(2)} ×`);
     if (backendFactor === null) {
         text("guidance-factor-change", "沒有可用的期間倍率");
-    } else {
+    }
+    else {
         const percent = (backendFactor - 1) * 100;
         const label = Math.abs(percent) < 0.00001
             ? "與歷史需求基準相同"
@@ -119,8 +130,8 @@ export function setWeatherFactorExplanation(response, emptyMessage = "尚未產�
     const forecastStatus = String(response.forecastStatus ?? "");
     const statusText = forecastStatus === "COMPLETE" ? "預報查詢完成"
         : forecastStatus === "PARTIAL" ? "部分預報資料不足"
-        : forecastStatus === "UNAVAILABLE" ? "暫無有效預報（使用中性倍率）"
-        : "預報狀態未知";
+            : forecastStatus === "UNAVAILABLE" ? "暫無有效預報（使用中性倍率）"
+                : "預報狀態未知";
     status.dataset.state = forecastStatus === "COMPLETE" ? "normal" : "warning";
     status.textContent = response.warning ? `${statusText}：${response.warning}` : statusText;
 
@@ -155,11 +166,16 @@ export function setWeatherFactorExplanation(response, emptyMessage = "尚未產�
         addCell(row, rate(factor));
         tbody.appendChild(row);
 
-        if (temp === null) missingTemperatureDays += 1;
-        if (humidity === null) missingHumidityDays += 1;
-        if (rain === null) missingRainDays += 1;
-        if (factor === null) completeFactors = false;
-        else sumHundredths += Math.round(factor * 100);
+        if (temp === null)
+            missingTemperatureDays += 1;
+        if (humidity === null)
+            missingHumidityDays += 1;
+        if (rain === null)
+            missingRainDays += 1;
+        if (factor === null)
+            completeFactors = false;
+        else
+            sumHundredths += Math.round(factor * 100);
     }
 
     details.hidden = false;
@@ -173,17 +189,21 @@ export function setWeatherFactorExplanation(response, emptyMessage = "尚未產�
         const roundedHalfUp = Math.round(sumHundredths / days.length) / 100;
         if (backendFactor !== null && Math.abs(roundedHalfUp - backendFactor) > 0.001) {
             status.dataset.state = "warning";
-            status.textContent += "。每日平均與後端採用的倍率不一致，請檢查資料版本。";
+            status.textContent += "。每日平均與本次訂貨倍率不同，請重新產生訂貨建議。";
         }
-    } else {
+    }
+    else {
         text("guidance-factor-equation", "部分每日倍率缺失，無法完整還原加總過程。");
-        text("guidance-factor-rounding", `商品建議仍使用後端提供的 ${rate(backendFactor)} 倍。`);
+        text("guidance-factor-rounding", `商品訂貨建議仍使用本次已計算的 ${rate(backendFactor)} 倍。`);
     }
 
     const notices = [];
-    if (missingRainDays > 0) notices.push(`${missingRainDays} 天沒有降雨機率預報（本項調整 0，並不代表降雨機率為 0%）`);
-    if (missingTemperatureDays > 0) notices.push(`${missingTemperatureDays} 天缺少最高氣溫`);
-    if (missingHumidityDays > 0) notices.push(`${missingHumidityDays} 天缺少平均濕度`);
+    if (missingRainDays > 0)
+        notices.push(`${missingRainDays} 天沒有降雨機率預報（本項調整 0，並不代表降雨機率為 0%）`);
+    if (missingTemperatureDays > 0)
+        notices.push(`${missingTemperatureDays} 天缺少最高氣溫`);
+    if (missingHumidityDays > 0)
+        notices.push(`${missingHumidityDays} 天缺少平均濕度`);
     if (notices.length > 0) {
         note.textContent = `資料提醒：${notices.join("；")}。遠期降雨機率未提供時，可能仍屬官方預報範圍的正常情況。`;
         note.hidden = false;

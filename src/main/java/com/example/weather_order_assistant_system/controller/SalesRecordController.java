@@ -14,8 +14,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.weather_order_assistant_system.request.SalesRecordRequest;
 import com.example.weather_order_assistant_system.request.SalesBatchRequest;
+import com.example.weather_order_assistant_system.request.SalesRecordRequest;
 import com.example.weather_order_assistant_system.request.SalesReturnRequest;
 import com.example.weather_order_assistant_system.response.SalesRecordResponse;
 import com.example.weather_order_assistant_system.response.SalesReturnResponse;

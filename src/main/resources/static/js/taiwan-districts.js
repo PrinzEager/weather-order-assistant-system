@@ -43,7 +43,8 @@ export function initLocationDropdown(prefix) {
     }
 
     // 避免初始化函式重複執行，造成 change 監聽器重複註冊。
-    if (citySelect.dataset.locationInitialized === "true") return;
+    if (citySelect.dataset.locationInitialized === "true")
+        return;
     citySelect.dataset.locationInitialized = "true";
 
     const originalCity = citySelect.value || "高雄市";

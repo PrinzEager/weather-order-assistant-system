@@ -2,6 +2,8 @@ package com.example.weather_order_assistant_system.controller;
 
 import java.util.List;
 
+import jakarta.validation.Valid;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -17,7 +19,6 @@ import com.example.weather_order_assistant_system.request.ProductCategoryRequest
 import com.example.weather_order_assistant_system.response.ProductCategoryResponse;
 import com.example.weather_order_assistant_system.service.ProductCategoryService;
 
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController

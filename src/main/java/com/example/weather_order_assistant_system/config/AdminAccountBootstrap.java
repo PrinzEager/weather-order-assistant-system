@@ -2,15 +2,17 @@ package com.example.weather_order_assistant_system.config;
 
 import java.nio.charset.StandardCharsets;
 
-import com.example.weather_order_assistant_system.entity.AppUser;
-import com.example.weather_order_assistant_system.repository.AppUserRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.core.env.Environment;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.example.weather_order_assistant_system.entity.AppUser;
+import com.example.weather_order_assistant_system.repository.AppUserRepository;
+
+import lombok.RequiredArgsConstructor;
 
 /**
  * 開發環境第一次啟動時，使用外部環境變數建立首個管理員帳號。

@@ -11,30 +11,30 @@
  * 提醒：這是前端兩階段儲存，並非跨 API 的資料庫交易。
  * 若其中一筆儲存失敗，重新按下儲存時會先重新讀取後端狀態，避免重複 POST。
  */
-import {
-    API, byId, makeElement, requestJson
-} from "./common.js";
+import { API, byId, makeElement, requestJson } from "./common.js";
 
 const OFFER_API = `${API.suppliers}`;
+
 const PRICE_PATTERN = /^\d{1,8}(\.\d{1,2})?$/;
 
 let products = [];
+
 let entries = [];
+
 let ready = false;
+
 let loadVersion = 0;
 
 // 建立原本 Supplier 表單內的「供貨商品」區域，不改變既有供應商欄位。
 export function installSupplierProductsEditor(form) {
-    if (byId("supplier-products-editor")) return;
+    if (byId("supplier-products-editor"))
+        return;
 
     const section = makeElement("section", null, "panel");
     section.id = "supplier-products-editor";
 
     const heading = makeElement("h4", "供貨商品與採購單價");
-    const help = makeElement(
-        "p",
-        "可在新增供應商時一起選擇商品及採購價；既有供貨商品可調價、停用或重新啟用。採購價不同於商品售價。"
-    );
+    const help = makeElement("p", "可在新增供應商時一起選擇商品及採購價；既有供貨商品可調價、停用或重新啟用。採購價不同於商品售價。");
 
     const pickerGroup = makeElement("div", null, "form-group");
     const pickerLabel = makeElement("label", "選擇新增供貨商品");
@@ -87,7 +87,8 @@ export async function openSupplierProductsEditor(supplierId = null) {
             requestJson(API.products),
             supplierId ? requestJson(`${OFFER_API}/${supplierId}/products`) : Promise.resolve([])
         ]);
-        if (version !== loadVersion) return;
+        if (version !== loadVersion)
+            return;
         if (!Array.isArray(productList) || !Array.isArray(offerList)) {
             throw new Error("商品或供貨關聯回傳格式不正確");
         }
@@ -104,8 +105,10 @@ export async function openSupplierProductsEditor(supplierId = null) {
         state.textContent = "目前沒有供貨商品；可從上方選擇新增。";
         updatePicker();
         renderRows();
-    } catch (error) {
-        if (version !== loadVersion) return;
+    }
+    catch (error) {
+        if (version !== loadVersion)
+            return;
         state.textContent = `載入供貨商品失敗：${error.message}`;
         throw error;
     }
@@ -138,11 +141,13 @@ function updatePicker() {
 }
 
 function addSelectedProduct() {
-    if (!ready) return;
+    if (!ready)
+        return;
     const picker = byId("supplier-product-picker");
     const productId = Number(picker.value);
     const product = products.find(p => Number(p.id) === productId);
-    if (!product || entries.some(e => e.productId === productId)) return;
+    if (!product || entries.some(e => e.productId === productId))
+        return;
 
     entries.push({
         productId,
@@ -155,12 +160,14 @@ function addSelectedProduct() {
     updatePicker();
     renderRows();
     const addedPriceInput = byId(`supplier-offer-price-${productId}`);
-    if (addedPriceInput) addedPriceInput.focus();
+    if (addedPriceInput)
+        addedPriceInput.focus();
 }
 
 function renderRows() {
     const body = byId("supplier-products-body");
-    if (!body) return;
+    if (!body)
+        return;
     body.replaceChildren();
     byId("supplier-products-state").hidden = entries.length > 0;
 
@@ -212,7 +219,8 @@ function renderRows() {
                 renderRows();
             });
             actionCell.appendChild(remove);
-        } else {
+        }
+        else {
             actionCell.appendChild(makeElement("small", "既有資料：可修改價格或停用"));
         }
         row.append(productCell, priceCell, statusCell, actionCell);
@@ -222,7 +230,8 @@ function renderRows() {
 
 // 建立供應商之前先檢查所有輸入，避免基本資料已建立後才發現採購價格不合法。
 export function validateSupplierProductsEditor() {
-    if (!ready) throw new Error("商品資料尚未載入完成，請重新開啟供應商表單");
+    if (!ready)
+        throw new Error("商品資料尚未載入完成，請重新開啟供應商表單");
     const seen = new Set();
     for (const entry of entries) {
         if (!Number.isSafeInteger(entry.productId) || entry.productId <= 0 || seen.has(entry.productId)) {
@@ -252,7 +261,8 @@ export async function saveSupplierProducts(supplierId) {
     // 建立操作快照：避免使用者在等待 HTTP 回應期間更動表單造成儲存範圍飄移。
     const desiredEntries = entries.map(entry => ({ ...entry }));
     const existing = await requestJson(url);
-    if (!Array.isArray(existing)) throw new Error("供貨關聯清單回傳格式不正確");
+    if (!Array.isArray(existing))
+        throw new Error("供貨關聯清單回傳格式不正確");
     const byProductId = new Map(existing.map(o => [Number(o.productId), o]));
 
     // 僅透過現在表單中的商品更動供貨設定；未出現在表單的其他商品不會被刪除。
@@ -260,12 +270,14 @@ export async function saveSupplierProducts(supplierId) {
         const old = byProductId.get(entry.productId);
         try {
             if (!old) {
-                if (!entry.active) continue;
+                if (!entry.active)
+                    continue;
                 await requestJson(url, "POST", {
                     productId: entry.productId,
                     purchasePrice: Number(entry.priceText)
                 });
-            } else {
+            }
+            else {
                 const productUrl = `${url}/${entry.productId}`;
                 if (normalizedPrice(old.purchasePrice) !== normalizedPrice(entry.priceText)) {
                     await requestJson(productUrl, "PUT", {
@@ -278,7 +290,8 @@ export async function saveSupplierProducts(supplierId) {
                     });
                 }
             }
-        } catch (error) {
+        }
+        catch (error) {
             throw new Error(`商品「${entry.productName}」儲存失敗：${error.message}`);
         }
     }

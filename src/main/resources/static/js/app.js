@@ -2,18 +2,22 @@
 
 /* 系統入口：僅負責初始化、選單與頁面切換，不放入各模組 CRUD。 */
 import { byId, hideMessage, initializeDates } from "./common.js";
+
 import { initWeather, enterWeatherPage } from "./weather.js";
+
 // 增加版本參數，強制瀏覽器重新取得新版訂貨建議模組。
 import { initRecommendations } from "./order-recommendation.js?v=20261121-2";
+
 import { initCategories, enterCategoriesPage } from "./product-category.js";
+
 import { initProducts, enterProductsPage } from "./product.js";
+
 import { initSuppliers, enterSuppliersPage } from "./supplier.js";
+
 import { initSales, enterSalesPage } from "./sales-record.js";
+
 // 使用版本參數，避免瀏覽器載入舊版採購單模組。
-import {
-    initOrders,
-    enterOrdersPage
-} from "./purchase-order.js?v=20261121-2";
+import { initOrders, enterOrdersPage } from "./purchase-order.js?v=20261121-2";
 
 const PAGE_INFO = {
     dashboard: ["系統儀表板", "查看系統資訊及快速進入主要功能"],
@@ -27,7 +31,8 @@ const PAGE_INFO = {
 };
 
 function switchPage(page) {
-    if (!PAGE_INFO[page]) return;
+    if (!PAGE_INFO[page])
+        return;
 
     document.querySelectorAll(".page-section").forEach(section => {
         section.hidden = true;
@@ -40,7 +45,8 @@ function switchPage(page) {
         button.classList.toggle("active", active);
         if (active) {
             button.setAttribute("aria-current", "page");
-        } else {
+        }
+        else {
             button.removeAttribute("aria-current");
         }
     });
@@ -50,12 +56,18 @@ function switchPage(page) {
     hideMessage();
 
     // 進入頁面時才交由對應模組處理首次載入。
-    if (page === "weather") enterWeatherPage();
-    if (page === "categories") enterCategoriesPage();
-    if (page === "products") enterProductsPage();
-    if (page === "suppliers") enterSuppliersPage();
-    if (page === "sales") enterSalesPage();
-    if (page === "orders") enterOrdersPage();
+    if (page === "weather")
+        enterWeatherPage();
+    if (page === "categories")
+        enterCategoriesPage();
+    if (page === "products")
+        enterProductsPage();
+    if (page === "suppliers")
+        enterSuppliersPage();
+    if (page === "sales")
+        enterSalesPage();
+    if (page === "orders")
+        enterOrdersPage();
 
     window.scrollTo({ top: 0, behavior: "auto" });
 }

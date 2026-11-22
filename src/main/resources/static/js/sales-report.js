@@ -8,17 +8,25 @@
 import { byId, makeElement, getTaiwanToday, addDays, showMessage } from "./common.js";
 
 let allRecords = [];
+
 let selectedRecords = [];
+
 let onFilter = null;
+
 const MONEY = new Intl.NumberFormat("zh-TW", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
 const SVG = "http://www.w3.org/2000/svg";
 
 function yuan(cents) { return MONEY.format(cents / 100); }
+
 function recordCents(record) { return Math.round(Number(record.totalAmount ?? 0) * 100); }
+
 function returnedCents(record) {
     return Math.round(Number(record.unitPrice ?? 0) * 100) * Number(record.returnedQuantity ?? 0);
 }
+
 function datePart(record) { return String(record.dateTime ?? "").slice(0, 10); }
+
 function dateRange() {
     const start = byId("sales-start-date").value;
     const end = byId("sales-end-date").value;
@@ -35,7 +43,12 @@ export function initSalesReport(callback) {
     byId("sales-end-date").value = today;
     byId("sales-filter-form").addEventListener("submit", event => {
         event.preventDefault();
-        try { applyDateFilter(); } catch (error) { showMessage(error.message, "error"); }
+        try {
+            applyDateFilter();
+        }
+        catch (error) {
+            showMessage(error.message, "error");
+        }
     });
     byId("sales-last-seven-days").addEventListener("click", () => {
         const todayNow = getTaiwanToday();
@@ -60,7 +73,8 @@ function applyDateFilter() {
     });
     renderMetrics();
     renderChart(start, end);
-    if (typeof onFilter === "function") onFilter(selectedRecords);
+    if (typeof onFilter === "function")
+        onFilter(selectedRecords);
 }
 
 function reportTotals() {
@@ -94,8 +108,10 @@ function renderMetrics() {
 
 function svgNode(tag, attrs = {}, text = null) {
     const node = document.createElementNS(SVG, tag);
-    for (const [key, value] of Object.entries(attrs)) node.setAttribute(key, String(value));
-    if (text != null) node.textContent = String(text);
+    for (const [key, value] of Object.entries(attrs))
+        node.setAttribute(key, String(value));
+    if (text != null)
+        node.textContent = String(text);
     return node;
 }
 
@@ -105,7 +121,8 @@ function renderChart(start, end) {
     container.replaceChildren();
     const chartStart = start > addDays(end, -13) ? start : addDays(end, -13);
     const dateKeys = [];
-    for (let date = chartStart; date <= end; date = addDays(date, 1)) dateKeys.push(date);
+    for (let date = chartStart; date <= end; date = addDays(date, 1))
+        dateKeys.push(date);
     note.textContent = dateKeys.length < Number((Date.parse(end) - Date.parse(start)) / 86400000 + 1)
         ? `長條圖僅顯示 ${chartStart} ～ ${end}（最近 14 天）；列表與匯出仍包含整個篩選期間。`
         : `${start} ～ ${end}；柱狀為原始售出件數，折線為銷售毛額，未扣除退貨。`;
@@ -116,7 +133,8 @@ function renderChart(start, end) {
     const byDate = new Map(dateKeys.map(date => [date, { count: 0, cents: 0 }]));
     selectedRecords.forEach(record => {
         const day = byDate.get(datePart(record));
-        if (!day) return;
+        if (!day)
+            return;
         day.count += Number(record.quantity ?? 0);
         day.cents += recordCents(record);
     });
@@ -129,23 +147,23 @@ function renderChart(start, end) {
     chart.appendChild(svgNode("title", {}, "銷售數量與銷售金額趨勢"));
     for (let tick = 0; tick <= 4; tick++) {
         const y = bottom - plot * tick / 4;
-        chart.appendChild(svgNode("line", { x1:left, x2:right, y1:y, y2:y, stroke:"#ecded0" }));
-        chart.appendChild(svgNode("text", { x:left - 8, y:y + 5, "text-anchor":"end", fill:"#826956", "font-size":12 }, Math.round(maxQty * tick / 4)));
-        chart.appendChild(svgNode("text", { x:right + 8, y:y + 5, fill:"#826956", "font-size":11 }, Math.round(maxCents / 100 * tick / 4).toLocaleString("zh-TW")));
+        chart.appendChild(svgNode("line", { x1: left, x2: right, y1: y, y2: y, stroke: "#ecded0" }));
+        chart.appendChild(svgNode("text", { x: left - 8, y: y + 5, "text-anchor": "end", fill: "#826956", "font-size": 12 }, Math.round(maxQty * tick / 4)));
+        chart.appendChild(svgNode("text", { x: right + 8, y: y + 5, fill: "#826956", "font-size": 11 }, Math.round(maxCents / 100 * tick / 4).toLocaleString("zh-TW")));
     }
     const points = [];
     days.forEach((day, index) => {
         const center = left + (index + 0.5) * step;
         const yBar = bottom - day.count / maxQty * plot;
-        const bar = svgNode("rect", { x:center - step * .30, y:yBar, width:step * .6, height:bottom - yBar, rx:5, fill:"#ebb580" });
+        const bar = svgNode("rect", { x: center - step * .30, y: yBar, width: step * .6, height: bottom - yBar, rx: 5, fill: "#ebb580" });
         bar.appendChild(svgNode("title", {}, `${day.date}：銷售 ${day.count} 件`));
         chart.appendChild(bar);
         points.push(`${center},${bottom - day.cents / maxCents * plot}`);
-        chart.appendChild(svgNode("text", { x:center, y:bottom + 22, "text-anchor":"middle", fill:"#78624f", "font-size":11 }, day.date.slice(5).replace("-", "/")));
+        chart.appendChild(svgNode("text", { x: center, y: bottom + 22, "text-anchor": "middle", fill: "#78624f", "font-size": 11 }, day.date.slice(5).replace("-", "/")));
     });
-    chart.appendChild(svgNode("polyline", { points:points.join(" "), fill:"none", stroke:"#ce6b2b", "stroke-width":3, "stroke-linejoin":"round", "stroke-linecap":"round" }));
+    chart.appendChild(svgNode("polyline", { points: points.join(" "), fill: "none", stroke: "#ce6b2b", "stroke-width": 3, "stroke-linejoin": "round", "stroke-linecap": "round" }));
     days.forEach((day, index) => {
-        const circle = svgNode("circle", { cx:left + (index + .5) * step, cy:bottom - day.cents / maxCents * plot, r:4, fill:"#fff", stroke:"#ce6b2b", "stroke-width":2 });
+        const circle = svgNode("circle", { cx: left + (index + .5) * step, cy: bottom - day.cents / maxCents * plot, r: 4, fill: "#fff", stroke: "#ce6b2b", "stroke-width": 2 });
         circle.appendChild(svgNode("title", {}, `${day.date}：銷售毛額 NT$ ${yuan(day.cents)}`));
         chart.appendChild(circle);
     });
@@ -155,9 +173,11 @@ function renderChart(start, end) {
 // 防止 CSV 公式注入與逗號、換行造成欄位錯位；Excel 可直接開啟 UTF-8 BOM 檔案。
 function csvCell(value) {
     let text = String(value ?? "");
-    if (/^[\s]*[=+\-@]/.test(text)) text = "'" + text;
+    if (/^[\s]*[=+\-@]/.test(text))
+        text = "'" + text;
     return `"${text.replaceAll('"', '""')}"`;
 }
+
 function exportRows() {
     const rows = [["銷售時間", "批次識別碼", "明細編號", "商品名稱", "SKU", "銷售數量", "已退貨量", "淨售數量", "單價(NT$)", "銷售毛額(NT$)", "退貨金額(NT$)", "淨銷售額(NT$)"]];
     selectedRecords.forEach(row => {
@@ -174,11 +194,15 @@ function exportRows() {
         yuan(total.grossCents - total.returnedTotal)]);
     return rows;
 }
+
 function downloadCsv() {
-    if (!selectedRecords.length) { showMessage("指定範圍沒有銷售紀錄可匯出", "error"); return; }
+    if (!selectedRecords.length) {
+        showMessage("指定範圍沒有銷售紀錄可匯出", "error");
+        return;
+    }
     const rows = exportRows();
     const csv = "\uFEFF" + rows.map(row => row.map(csvCell).join(",")).join("\r\n");
-    const blob = new Blob([csv], { type:"text/csv;charset=utf-8" });
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -188,14 +212,22 @@ function downloadCsv() {
     a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
+
 function htmlEscape(value) {
     return String(value ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;")
         .replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");
 }
+
 function printReport() {
-    if (!selectedRecords.length) { showMessage("指定範圍沒有銷售紀錄可列印", "error"); return; }
+    if (!selectedRecords.length) {
+        showMessage("指定範圍沒有銷售紀錄可列印", "error");
+        return;
+    }
     const popup = window.open("", "_blank");
-    if (!popup) { showMessage("瀏覽器阻擋報表視窗，請允許本站開啟彈出視窗", "error"); return; }
+    if (!popup) {
+        showMessage("瀏覽器阻擋報表視窗，請允許本站開啟彈出視窗", "error");
+        return;
+    }
     const totals = reportTotals();
     const rows = exportRows();
     // 使用 HTML escaping 建立單獨的列印畫面，不插入未經處理的商品名稱。

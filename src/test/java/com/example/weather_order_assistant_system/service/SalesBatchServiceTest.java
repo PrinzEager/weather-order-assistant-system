@@ -37,10 +37,14 @@ import com.example.weather_order_assistant_system.request.SalesRecordRequest;
 @ExtendWith(MockitoExtension.class)
 class SalesBatchServiceTest {
 
-    @Mock private SalesRecordRepository salesRecordRepository;
-    @Mock private ProductRepository productRepository;
-    @Mock private SalesReturnRepository salesReturnRepository;
-    @InjectMocks private SalesRecordService salesRecordService;
+    @Mock
+    private SalesRecordRepository salesRecordRepository;
+    @Mock
+    private ProductRepository productRepository;
+    @Mock
+    private SalesReturnRepository salesReturnRepository;
+    @InjectMocks
+    private SalesRecordService salesRecordService;
 
     private Product tea;
     private Product juice;

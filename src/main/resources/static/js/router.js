@@ -22,9 +22,7 @@ const PAGE_BY_ROUTE = Object.freeze({
     orders: "orders"
 });
 
-const ROUTE_BY_PAGE = Object.freeze(Object.fromEntries(
-    Object.entries(PAGE_BY_ROUTE).map(([route, page]) => [page, route])
-));
+const ROUTE_BY_PAGE = Object.freeze(Object.fromEntries(Object.entries(PAGE_BY_ROUTE).map(([route, page]) => [page, route])));
 
 // Thymeleaf 的 @{} 會產生包含 context-path 的 JS 連結。
 // 例如部署在 /store，載入路徑為 /store/js/router.js，網址就應為 /store/orders。
@@ -33,18 +31,23 @@ function getContextPath() {
         try {
             return new URL(element.getAttribute("src"), window.location.href)
                 .pathname.endsWith("/js/router.js");
-        } catch (_) {
+        }
+        catch (_) {
             return false;
         }
     });
-    if (!script) return "";
+    if (!script)
+        return "";
     const path = new URL(script.getAttribute("src"), window.location.href).pathname;
     return path.slice(0, -"/js/router.js".length);
 }
 
 const CONTEXT_PATH = getContextPath();
+
 let currentPage = "dashboard";
+
 let syncingHistory = false;
+
 let formHasUnsavedChanges = false;
 
 /**
@@ -75,32 +78,36 @@ function canonicalUrl(page) {
 function updateUrl(page, replace = false) {
     const target = canonicalUrl(page);
     // 路徑一致但仍含舊 hash / query / 末尾斜線時，也要規範為乾淨網址。
-    if (window.location.pathname === target && !window.location.hash && !window.location.search) return;
+    if (window.location.pathname === target && !window.location.hash && !window.location.search)
+        return;
     if (replace) {
         window.history.replaceState({ page }, "", target);
-    } else {
+    }
+    else {
         window.history.pushState({ page }, "", target);
     }
 }
 
 function isFormVisible(form) {
-    if (!form) return false;
-    const panel = form.closest(
-        "#recommendation-order-panel, #order-form-panel, #sale-form-panel, [role='dialog']"
-    );
+    if (!form)
+        return false;
+    const panel = form.closest("#recommendation-order-panel, #order-form-panel, #sale-form-panel, [role='dialog']");
     return Boolean(panel && !panel.hidden);
 }
 
 function hasOpenUnsavedForm() {
-    if (!formHasUnsavedChanges) return false;
+    if (!formHasUnsavedChanges)
+        return false;
     return ["recommendation-order-form", "order-form", "sale-form"]
         .some(id => isFormVisible(document.getElementById(id)));
 }
 
 function confirmLeavingPage() {
-    if (!hasOpenUnsavedForm()) return true;
+    if (!hasOpenUnsavedForm())
+        return true;
     const accepted = window.confirm("目前有尚未儲存的表單修改，確定要離開此功能頁嗎？");
-    if (accepted) formHasUnsavedChanges = false;
+    if (accepted)
+        formHasUnsavedChanges = false;
     return accepted;
 }
 
@@ -131,7 +138,8 @@ function syncFromAddress() {
         menu.click();
         currentPage = destination;
         updateUrl(destination, true);
-    } finally {
+    }
+    finally {
         syncingHistory = false;
     }
 }
@@ -139,10 +147,12 @@ function syncFromAddress() {
 function onNavigationClick(event) {
     const button = event.target instanceof Element
         ? event.target.closest("[data-page], [data-go-page]") : null;
-    if (!button || syncingHistory) return;
+    if (!button || syncingHistory)
+        return;
 
     const destination = button.dataset.page || button.dataset.goPage;
-    if (!ROUTE_BY_PAGE[destination]) return;
+    if (!ROUTE_BY_PAGE[destination])
+        return;
 
     if (destination !== currentPage && !confirmLeavingPage()) {
         event.preventDefault();
@@ -165,9 +175,8 @@ function initRouter() {
     window.addEventListener("hashchange", syncFromAddress);
 
     const markDirty = event => {
-        if (event.target instanceof Element && event.target.closest(
-            "#recommendation-order-form, #order-form, #sale-form"
-        )) formHasUnsavedChanges = true;
+        if (event.target instanceof Element && event.target.closest("#recommendation-order-form, #order-form, #sale-form"))
+            formHasUnsavedChanges = true;
     };
     document.addEventListener("input", markDirty, true);
     document.addEventListener("change", markDirty, true);
@@ -177,7 +186,8 @@ function initRouter() {
         if (button && [
             "recommendation-order-close", "recommendation-order-cancel",
             "order-form-close", "order-form-cancel", "sale-form-close", "sale-form-cancel"
-        ].includes(button.id)) formHasUnsavedChanges = false;
+        ].includes(button.id))
+            formHasUnsavedChanges = false;
     });
 
     window.addEventListener("beforeunload", event => {

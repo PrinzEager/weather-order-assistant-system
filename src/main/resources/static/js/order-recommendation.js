@@ -8,30 +8,44 @@
  * 舊 /api/order-recommendations 保留，不改動既有後端 API。
  */
 import {
-    API, byId, makeElement, clearElement, showMessage,
-    hideMessage, setButtonLoading, formatNumber,
-    getTaiwanToday, addDays, apiGet, createStatCard
+    API,
+    byId,
+    makeElement,
+    clearElement,
+    showMessage,
+    hideMessage,
+    setButtonLoading,
+    formatNumber,
+    getTaiwanToday,
+    addDays,
+    apiGet,
+    createStatCard
 } from "./common.js";
-import {
-    initDraftConfirmation, openDraftConfirmation, closeDraftConfirmation
-} from "./recommendation-order-draft.js";
-import {
-    setWeatherFactorExplanation
-} from "./help-dialogs.js";
+
+import { initDraftConfirmation, openDraftConfirmation, closeDraftConfirmation } from "./recommendation-order-draft.js";
+
+import { setWeatherFactorExplanation } from "./help-dialogs.js";
 
 const OPTION_API = "/api/order-recommendation-options/with-weather-details";
+
 const PAGE_SIZE = 10;
+
 const MAX_QUANTITY = 2147483647;
 
 let recommendationLoaded = false;
+
 let loading = false;
+
 let recommendationData = [];
+
 let categories = [];
+
 let productCategoryIds = new Map();
 
 // 以商品 ID 保存狀態，不依賴目前畫面有哪些列，因此跨頁及跨分類不會遺失選擇。
 // value = { selected:boolean, applyWeather:boolean, quantityRaw:string|null }
 let productStates = new Map();
+
 let listPage = 1;
 
 export function initRecommendations() {
@@ -67,7 +81,8 @@ export function initRecommendations() {
 
     byId("recommendation-history-basis").addEventListener("change", () => {
         // 換歷史基準必須由後端重新計算：兩種來源不相加。
-        if (recommendationLoaded && !loading) void loadRecommendations();
+        if (recommendationLoaded && !loading)
+            void loadRecommendations();
     });
 
     byId("recommendation-parent-category").addEventListener("change", () => {
@@ -97,7 +112,8 @@ export function initRecommendations() {
     byId("create-order-from-recommendation").addEventListener("click", () => {
         try {
             openDraftConfirmation(getSelectedItems());
-        } catch (error) {
+        }
+        catch (error) {
             showMessage(error.message, "error");
         }
     });
@@ -119,17 +135,21 @@ function getRecommendationSearchParameters() {
     const endDate = byId("recommendation-end-date").value;
     const today = getTaiwanToday();
     const lastDay = addDays(today, 6);
-    if (!city || !district) throw new Error("請選擇縣市與鄉鎮市區");
-    if (!startDate || !endDate) throw new Error("請選擇起始日期與結束日期");
-    if (startDate > endDate) throw new Error("起始日期不可晚於結束日期");
+    if (!city || !district)
+        throw new Error("請選擇縣市與鄉鎮市區");
+    if (!startDate || !endDate)
+        throw new Error("請選擇起始日期與結束日期");
+    if (startDate > endDate)
+        throw new Error("起始日期不可晚於結束日期");
     if (startDate < today || endDate > lastDay) {
         throw new Error(`訂貨建議日期範圍為 ${today} 至 ${lastDay}（含首尾）`);
     }
-    return {city, district, startDate, endDate};
+    return { city, district, startDate, endDate };
 }
 
 async function loadRecommendations() {
-    if (loading) return;
+    if (loading)
+        return;
     const button = byId("recommendation-search-form").querySelector('button[type="submit"]');
     loading = true;
     recommendationLoaded = false;
@@ -161,26 +181,24 @@ async function loadRecommendations() {
         const productList = Array.isArray(productResponse)
             ? productResponse : productResponse?.content;
         if (!Array.isArray(options) ||
-                !Array.isArray(detailResponse?.dailyWeatherFactors) ||
-                detailResponse?.weatherFactor == null ||
-                !Array.isArray(categoryResponse)
-                || !Array.isArray(productList)) {
+            !Array.isArray(detailResponse?.dailyWeatherFactors) ||
+            detailResponse?.weatherFactor == null ||
+            !Array.isArray(categoryResponse)
+            || !Array.isArray(productList)) {
             throw new Error("訂貨建議、商品或分類回傳格式不正確");
         }
         // 避免 API 版本不符時，把缺少的建議數量誤當成 0 件。
-        const incomplete = options.find(item =>
-            item.productId == null ||
+        const incomplete = options.find(item => item.productId == null ||
             item.normalRecommendedQuantity == null ||
             item.weatherRecommendedQuantity == null ||
             item.selectedHistoricalSalesQuantity == null ||
-            item.weatherFactor == null
-        );
+            item.weatherFactor == null);
         if (incomplete) {
-            throw new Error("訂貨建議缺少一般／天氣建議量或歷史淨銷量，請檢查後端版本");
+            throw new Error("訂貨建議資料不完整，請重新整理頁面後再試");
         }
         // 如果 Product API 改成分頁，只拿第一頁可能造成部分商品找不到分類。
         if (!Array.isArray(productResponse) &&
-                Number(productResponse?.totalElements) > productList.length) {
+            Number(productResponse?.totalElements) > productList.length) {
             throw new Error("商品已啟用分頁，請先取得完整商品分類對應資料");
         }
 
@@ -196,17 +214,19 @@ async function loadRecommendations() {
         renderRecommendationTable();
         renderRecommendationSummary();
         showMessage(`已產生 ${options.length} 筆商品建議，請選擇第一層與第二層分類`, "success");
-    } catch (error) {
+    }
+    catch (error) {
         recommendationLoaded = false;
         recommendationData = [];
         categories = [];
         productStates.clear();
         setWeatherFactorExplanation(null, "訂貨建議查詢失敗，請重新產生後再查看實際天氣倍率。");
-        showTableMessage("訂貨建議載入失敗，請檢查後端資料");
+        showTableMessage("目前無法顯示訂貨建議，請稍後再試");
         byId("stat-reorder").textContent = "--";
         showMessage(error.message, "error");
         console.error("訂貨建議查詢失敗：", error);
-    } finally {
+    }
+    finally {
         loading = false;
         setButtonLoading(button, false);
         updateCreateButtonState();
@@ -266,7 +286,8 @@ function populateChildCategories() {
 
 function getFilteredItems() {
     const childId = Number(byId("recommendation-child-category").value);
-    if (!childId) return [];
+    if (!childId)
+        return [];
     return recommendationData.filter(p => productCategoryIds.get(Number(p.productId)) === childId);
 }
 
@@ -303,10 +324,14 @@ function explainSameRecommendation(item) {
     const normal = Number(item.normalRecommendedQuantity);
     const weather = Number(item.weatherRecommendedQuantity);
 
-    if (normal !== weather) return "天氣調整後的補貨數量不同";
-    if (sales === 0) return "選定的歷史期間淨銷量為 0，無可調整的銷售需求";
-    if (factor === 1) return "天氣倍率為 1.00，未增加或減少預期需求";
-    if (adjusted === sales) return "歷史需求乘倍率後經無條件進位仍相同";
+    if (normal !== weather)
+        return "天氣調整後的補貨數量不同";
+    if (sales === 0)
+        return "選定的歷史期間淨銷量為 0，無可調整的銷售需求";
+    if (factor === 1)
+        return "天氣倍率為 1.00，未增加或減少預期需求";
+    if (adjusted === sales)
+        return "歷史需求乘倍率後經無條件進位仍相同";
     if (normal === 0 && weather === 0) {
         return "現有庫存與未到貨量足夠，兩種計算最後都不需要補貨";
     }
@@ -342,7 +367,8 @@ function buildRecommendationTooltip(item, state) {
 
 function parsePositiveQuantity(value) {
     const text = String(value ?? "").trim();
-    if (!/^[0-9]+$/.test(text)) return null;
+    if (!/^[0-9]+$/.test(text))
+        return null;
     const n = Number(text);
     return Number.isSafeInteger(n) && n > 0 && n <= MAX_QUANTITY ? n : null;
 }
@@ -377,8 +403,10 @@ function renderRecommendationTable() {
     clearElement(body);
     if (!items.length) {
         showTableMessage("此分類沒有有效商品的訂貨建議");
-    } else {
-        for (const item of items) body.appendChild(createRecommendationRow(item));
+    }
+    else {
+        for (const item of items)
+            body.appendChild(createRecommendationRow(item));
     }
     byId("recommendation-list-meta").textContent = `此分類 ${filtered.length} 筆商品，每頁 ${PAGE_SIZE} 筆`;
     updatePaging(filtered.length, listPage, pageCount);
@@ -402,8 +430,7 @@ function createRecommendationRow(item) {
     row.appendChild(selectedCell);
 
     const nameCell = makeElement("td");
-    nameCell.append(makeElement("strong", item.productName),
-        makeElement("div", item.sku ?? "--", "weather-description"));
+    nameCell.append(makeElement("strong", item.productName), makeElement("div", item.sku ?? "--", "weather-description"));
     row.appendChild(nameCell);
     row.appendChild(makeElement("td", formatNumber(item.currentStock)));
     row.appendChild(makeElement("td", formatNumber(item.selectedHistoricalSalesQuantity)));
@@ -421,13 +448,11 @@ function createRecommendationRow(item) {
 
     const suggested = recommendedQuantity(item, state);
     const suggestedCell = makeElement("td");
-    const suggestedText = makeElement("strong", formatNumber(suggested),
-        suggested > 0 ? "status-badge warning" : "status-badge success");
+    const suggestedText = makeElement("strong", formatNumber(suggested), suggested > 0 ? "status-badge warning" : "status-badge success");
     suggestedCell.appendChild(suggestedText);
 
     // 明確標示目前採用哪個建議，即使兩種建議數量相同，勾選仍有回饋。
-    suggestedCell.appendChild(makeElement("div",
-        state.applyWeather ? "已套用天氣" : "一般建議", "weather-description"));
+    suggestedCell.appendChild(makeElement("div", state.applyWeather ? "已套用天氣" : "一般建議", "weather-description"));
 
     // 同時顯示兩種數量的差距，避免誤以為勾選事件沒有反應。
     const difference = Number(item.weatherRecommendedQuantity)
@@ -465,17 +490,20 @@ function createRecommendationRow(item) {
 function handleTableChange(event) {
     const input = event.target;
     const id = Number(input.dataset?.productId);
-    if (!id || !recommendationData.some(p => Number(p.productId) === id)) return;
+    if (!id || !recommendationData.some(p => Number(p.productId) === id))
+        return;
     const state = stateFor(id);
     if (input.matches(".recommendation-select")) {
         state.selected = input.checked;
         renderRecommendationSummary();
-    } else if (input.matches(".recommendation-weather-check")) {
+    }
+    else if (input.matches(".recommendation-weather-check")) {
         state.applyWeather = input.checked;
         // 使用者未自行修改訂貨量時，實際數量才跟著預設建議量切換。
         renderRecommendationTable();
         renderRecommendationSummary();
-    } else if (input.matches(".actual-order-quantity")) {
+    }
+    else if (input.matches(".actual-order-quantity")) {
         state.quantityRaw = input.value;
     }
     updateCreateButtonState();
@@ -483,19 +511,23 @@ function handleTableChange(event) {
 
 function handleTableInput(event) {
     const input = event.target;
-    if (!input.matches(".actual-order-quantity")) return;
+    if (!input.matches(".actual-order-quantity"))
+        return;
     const id = Number(input.dataset.productId);
-    if (!id) return;
+    if (!id)
+        return;
     stateFor(id).quantityRaw = input.value;
     updateCreateButtonState();
 }
 
 function getSelectedItems() {
-    if (!recommendationLoaded) throw new Error("請先產生訂貨建議");
+    if (!recommendationLoaded)
+        throw new Error("請先產生訂貨建議");
     const selected = [];
     for (const item of recommendationData) {
         const state = productStates.get(Number(item.productId));
-        if (!state?.selected) continue;
+        if (!state?.selected)
+            continue;
         const quantity = parsePositiveQuantity(actualValue(item, state));
         if (quantity === null) {
             throw new Error(`「${item.productName}」訂貨數量必須是大於 0 的整數`);
@@ -516,7 +548,12 @@ function updateCreateButtonState() {
     byId("recommendation-selected-count").textContent = `已選擇 ${count} 項商品（跨分類／頁面保留）`;
     let valid = false;
     if (recommendationLoaded && !loading && count > 0) {
-        try { valid = getSelectedItems().length > 0; } catch (_) { valid = false; }
+        try {
+            valid = getSelectedItems().length > 0;
+        }
+        catch (_) {
+            valid = false;
+        }
     }
     button.disabled = !valid;
 }
@@ -524,13 +561,14 @@ function updateCreateButtonState() {
 function renderRecommendationSummary() {
     const container = byId("recommendation-summary");
     clearElement(container);
-    if (!recommendationLoaded) return;
+    if (!recommendationLoaded)
+        return;
     let needsReorder = 0;
     let totalQuantity = 0;
     for (const item of recommendationData) {
-        const q = recommendedQuantity(item,
-            productStates.get(Number(item.productId)) ?? {applyWeather:false});
-        if (q > 0) needsReorder += 1;
+        const q = recommendedQuantity(item, productStates.get(Number(item.productId)) ?? { applyWeather: false });
+        if (q > 0)
+            needsReorder += 1;
         totalQuantity += q;
     }
     container.append(

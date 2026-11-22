@@ -23,17 +23,18 @@ import org.springframework.web.server.ResponseStatusException;
 import com.example.weather_order_assistant_system.client.CwaApiClient;
 import com.example.weather_order_assistant_system.client.CwaDatasetMapping;
 import com.example.weather_order_assistant_system.response.WeatherConditionResponse;
-import com.example.weather_order_assistant_system.response.WeatherDailyResponse;
 import com.example.weather_order_assistant_system.response.WeatherDailyFactorResponse;
-import com.example.weather_order_assistant_system.response.WeatherHumidityResponse;
+import com.example.weather_order_assistant_system.response.WeatherDailyResponse;
 import com.example.weather_order_assistant_system.response.WeatherForecastResponse;
+import com.example.weather_order_assistant_system.response.WeatherHumidityResponse;
 import com.example.weather_order_assistant_system.response.WeatherPrecipitationResponse;
 import com.example.weather_order_assistant_system.response.WeatherTemperatureResponse;
 
-import lombok.RequiredArgsConstructor;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
+
+import lombok.RequiredArgsConstructor;
 
 /**
  * 中央氣象署天氣預報服務。

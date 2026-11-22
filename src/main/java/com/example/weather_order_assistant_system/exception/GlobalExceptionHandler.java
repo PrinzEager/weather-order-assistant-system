@@ -2,6 +2,8 @@ package com.example.weather_order_assistant_system.exception;
 
 import java.time.LocalDateTime;
 
+import jakarta.servlet.http.HttpServletRequest;
+
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -9,8 +11,6 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
-
-import jakarta.servlet.http.HttpServletRequest;
 
 // 全域例外處理器，統一處理 Controller 發生的例外
 @RestControllerAdvice

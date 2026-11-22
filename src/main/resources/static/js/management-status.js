@@ -8,10 +8,7 @@
  * - 「全部」或「已停用」顯示獨立的管理查詢表格，可停用／重新啟用。
  * - 永遠不修改 /api/products、/api/suppliers 的有效資料清單定義。
  */
-import {
-    API, byId, makeElement, displayValue, formatNumber,
-    requestJson, showMessage
-} from "./common.js";
+import { API, byId, makeElement, displayValue, formatNumber, requestJson, showMessage } from "./common.js";
 
 const VIEWS = [
     {
@@ -52,11 +49,7 @@ function button(label, className, handler) {
 }
 
 function badge(status) {
-    return makeElement(
-        "span",
-        Number(status) === 1 ? "啟用" : "停用",
-        `status-badge ${Number(status) === 1 ? "success" : "danger"}`
-    );
+    return makeElement("span", Number(status) === 1 ? "啟用" : "停用", `status-badge ${Number(status) === 1 ? "success" : "danger"}`);
 }
 
 // 將原有啟用列表重新讀取。未具備重新整理 export 時不影響狀態 API 成功結果。
@@ -73,7 +66,8 @@ async function refreshOriginalList(kind) {
         return typeof module.refreshProducts === "function"
             ? (await module.refreshProducts()) !== false
             : false;
-    } catch (error) {
+    }
+    catch (error) {
         console.warn("原有管理列表暫時無法重新整理；可重新整理網頁：", error);
         return false;
     }
@@ -105,16 +99,15 @@ function renderManagementRows(view, entries) {
 
             const name = makeElement("td");
             name.appendChild(makeElement("strong", displayValue(entry.name)));
-            name.appendChild(makeElement(
-                "div", `單位：${displayValue(entry.unit)}`, "weather-description"
-            ));
+            name.appendChild(makeElement("div", `單位：${displayValue(entry.unit)}`, "weather-description"));
             row.appendChild(name);
 
             row.appendChild(td(entry.categoryName));
             row.appendChild(td(entry.price == null ? "--" : `NT$ ${formatNumber(entry.price)}`));
             row.appendChild(td(formatNumber(entry.currentStock)));
             row.appendChild(td(formatNumber(entry.safetyStock)));
-        } else {
+        }
+        else {
             row.appendChild(td(entry.name));
             row.appendChild(td(entry.contactPerson));
             row.appendChild(td(entry.phone));
@@ -126,18 +119,11 @@ function renderManagementRows(view, entries) {
         row.appendChild(statusCell);
 
         const actions = makeElement("td", null, "management-status-actions");
-        const change = button(
-            active ? "停用" : "重新啟用",
-            active ? "secondary-button" : "primary-button",
-            () => void toggleStatus(view, entry, change)
-        );
+        const change = button(active ? "停用" : "重新啟用", active ? "secondary-button" : "primary-button", () => void toggleStatus(view, entry, change));
         actions.appendChild(change);
 
         if (active) {
-            actions.appendChild(button(
-                "切換至編輯清單", "secondary-button",
-                () => void changeMode(view, "active")
-            ));
+            actions.appendChild(button("切換至編輯清單", "secondary-button", () => void changeMode(view, "active")));
         }
         row.appendChild(actions);
         view.altBody.appendChild(row);
@@ -155,22 +141,25 @@ function renderError(view, message) {
 
 async function loadManagementRows(view) {
     const status = view.filter.value;
-    if (status === "active") return false;
+    if (status === "active")
+        return false;
 
     const version = ++view.version;
     renderError(view, "正在查詢管理資料...");
 
     try {
-        const data = await requestJson(
-            `${view.config.endpoint}?status=${encodeURIComponent(status)}`
-        );
+        const data = await requestJson(`${view.config.endpoint}?status=${encodeURIComponent(status)}`);
         // 避免快速切換篩選時，舊請求覆寫目前畫面。
-        if (view.version !== version || view.filter.value !== status) return;
-        if (!Array.isArray(data)) throw new Error("後台管理回傳格式不正確");
+        if (view.version !== version || view.filter.value !== status)
+            return;
+        if (!Array.isArray(data))
+            throw new Error("後台管理回傳格式不正確");
         renderManagementRows(view, data);
         return true;
-    } catch (error) {
-        if (view.version !== version || view.filter.value !== status) return;
+    }
+    catch (error) {
+        if (view.version !== version || view.filter.value !== status)
+            return;
         renderError(view, "無法讀取管理資料");
         showMessage(`${view.config.title}狀態查詢失敗：${error.message}`, "error");
         console.error("Management Status API：", error);
@@ -194,52 +183,51 @@ async function changeMode(view, value) {
             view.count.hidden = false;
             view.count.textContent = "若列表未更新，請重新整理網頁";
         }
-    } else {
+    }
+    else {
         await loadManagementRows(view);
     }
 }
 
 async function toggleStatus(view, entry, actionButton) {
-    if (actionButton.disabled) return;
+    if (actionButton.disabled)
+        return;
 
     const nextStatus = Number(entry.status) === 1 ? 0 : 1;
     const action = nextStatus === 1 ? "重新啟用" : "停用";
-    if (!window.confirm(`確定要${action}${view.config.title}「${entry.name}」？`)) return;
+    if (!window.confirm(`確定要${action}${view.config.title}「${entry.name}」？`))
+        return;
 
     actionButton.disabled = true;
     try {
         // 不新增狀態更新 API，沿用現有 Controller 驗收過的 PATCH。
-        await requestJson(
-            `${view.config.entityApi}/${entry.id}/status?status=${nextStatus}`,
-            "PATCH"
-        );
+        await requestJson(`${view.config.entityApi}/${entry.id}/status?status=${nextStatus}`, "PATCH");
         const originalRefreshed = await refreshOriginalList(view.config.kind);
         const listLoaded = await loadManagementRows(view);
         if (!listLoaded) {
-            showMessage(
-                `${view.config.title}「${entry.name}」狀態已更新，但管理清單重新載入失敗，請重新查詢`,
-                "error"
-            );
-        } else {
-            showMessage(
-                `${view.config.title}「${entry.name}」已${action}` +
-                (originalRefreshed ? "" : "；切回啟用清單後若未更新請重新整理頁面"),
-                "success"
-            );
+            showMessage(`${view.config.title}「${entry.name}」狀態已更新，但管理清單重新載入失敗，請重新查詢`, "error");
         }
-    } catch (error) {
+        else {
+            showMessage(`${view.config.title}「${entry.name}」已${action}` +
+                (originalRefreshed ? "" : "；切回啟用清單後若未更新請重新整理頁面"), "success");
+        }
+    }
+    catch (error) {
         // 失敗時保留資料列，讓使用者可再次操作。
         showMessage(`${action}失敗：${error.message}`, "error");
-    } finally {
+    }
+    finally {
         // 列表可能已重繪，因此只解除仍存在的舊按鈕。
-        if (actionButton.isConnected) actionButton.disabled = false;
+        if (actionButton.isConnected)
+            actionButton.disabled = false;
     }
 }
 
 function installView(config) {
     const page = byId(config.pageId);
     const tbody = byId(config.tableBodyId);
-    if (!page || !tbody || byId(`management-${config.kind}-filter`)) return;
+    if (!page || !tbody || byId(`management-${config.kind}-filter`))
+        return;
 
     const originalWrapper = tbody.closest(".table-responsive");
     const panel = originalWrapper?.closest(".panel");
@@ -257,11 +245,7 @@ function installView(config) {
     label.htmlFor = `management-${config.kind}-filter`;
     const filter = makeElement("select");
     filter.id = `management-${config.kind}-filter`;
-    filter.append(
-        option("active", "啟用中（原有管理清單）"),
-        option("all", "全部（含停用）"),
-        option("inactive", "已停用（可重新啟用）")
-    );
+    filter.append(option("active", "啟用中（原有管理清單）"), option("all", "全部（含停用）"), option("inactive", "已停用（可重新啟用）"));
     filter.value = "active";
     filterGroup.append(label, filter);
     toolbar.insertBefore(filterGroup, toolbar.lastElementChild);
@@ -293,6 +277,7 @@ function initializeManagementStatus() {
 
 if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", initializeManagementStatus, { once: true });
-} else {
+}
+else {
     initializeManagementStatus();
 }

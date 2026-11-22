@@ -11,26 +11,36 @@
 import { API, apiGet, requestJson, getTaiwanToday, addDays } from "./common.js";
 
 const OPTIONS_API = "/api/order-recommendation-options";
+
 const MAX_PREVIEW = 5;
+
 const el = id => document.getElementById(id);
 
 let recommendationRows = null;
+
 let productsById = new Map();
+
 let currentInfo = null;
+
 let latestRequestId = 0;
+
 let currentRequest = null;
+
 let productInfoWarning = false;
 
 function create(tag, text, className) {
     const element = document.createElement(tag);
-    if (text !== null && text !== undefined) element.textContent = String(text);
-    if (className) element.className = className;
+    if (text !== null && text !== undefined)
+        element.textContent = String(text);
+    if (className)
+        element.className = className;
     return element;
 }
 
 function validQuantity(value) {
     // null/undefined/空字串代表缺值，不能誤當 0；也拒絕非整數及負數。
-    if (value === null || value === undefined || value === "") return null;
+    if (value === null || value === undefined || value === "")
+        return null;
     const number = Number(value);
     return Number.isSafeInteger(number) && number >= 0 ? number : null;
 }
@@ -41,7 +51,6 @@ function quantityFor(item, useWeather) {
         : item.normalRecommendedQuantity);
 }
 
-
 /**
  * 首頁「需要補貨商品」KPI，直接共用 訂貨摘要已取得的資料。
  * 只讀取後端 normalRecommendedQuantity／weatherRecommendedQuantity，絕不重算建議公式。
@@ -49,11 +58,13 @@ function quantityFor(item, useWeather) {
  */
 function updateReorderKpi(total = null, message = "訂貨建議暫時無法取得") {
     const stat = el("stat-reorder");
-    if (!stat) return;
+    if (!stat)
+        return;
     stat.textContent = Number.isSafeInteger(total) && total >= 0
         ? total.toLocaleString("zh-TW") : "--";
     const note = stat.closest(".stat-card")?.querySelector("p");
-    if (note) note.textContent = message;
+    if (note)
+        note.textContent = message;
 }
 
 function updateReorderKpiFromCurrentRows(useWeather, basisName) {
@@ -62,9 +73,7 @@ function updateReorderKpiFromCurrentRows(useWeather, basisName) {
         return;
     }
     // 若其中一筆的所選建議量沒有有效數值，就不能認定統計總數完整。
-    const incomplete = recommendationRows.some(item =>
-        item == null || quantityFor(item, useWeather) === null
-    );
+    const incomplete = recommendationRows.some(item => item == null || quantityFor(item, useWeather) === null);
     if (incomplete) {
         updateReorderKpi(null, "部分商品建議量缺值，無法確認總數");
         return;
@@ -87,8 +96,7 @@ export function pickDashboardSuggestions(items, useWeather, maxPreview = MAX_PRE
         .filter(item => item && validQuantity(item.productId) !== null)
         .map(item => ({ item, quantity: quantityFor(item, useWeather) }))
         .filter(row => row.quantity !== null && row.quantity > 0)
-        .sort((a, b) =>
-            b.quantity - a.quantity || Number(a.item.productId) - Number(b.item.productId));
+        .sort((a, b) => b.quantity - a.quantity || Number(a.item.productId) - Number(b.item.productId));
     return {
         total: validRows.length,
         top: validRows.slice(0, maxPreview)
@@ -113,7 +121,8 @@ function queryParameters() {
 
 function renderState(message, isError = false) {
     const body = el("dashboard-rec-body");
-    if (!body) return;
+    if (!body)
+        return;
     const row = create("tr");
     const cell = create("td", message, `dashboard-rec-state${isError ? " error" : ""}`);
     cell.colSpan = 7;
@@ -123,7 +132,8 @@ function renderState(message, isError = false) {
 
 function showWarning(text) {
     const warning = el("dashboard-rec-warning");
-    if (!warning) return;
+    if (!warning)
+        return;
     warning.textContent = text || "";
     warning.hidden = !text;
 }
@@ -135,12 +145,17 @@ function summaryReason(item, useWeather) {
     const stock = validQuantity(item.currentStock);
     const outstanding = validQuantity(item.outstandingQuantity);
     const parts = [];
-    if (history !== null) parts.push(`同期淨售 ${formatQuantity(history)}`);
-    if (safety !== null) parts.push(`安全庫存 ${formatQuantity(safety)}`);
-    if (stock !== null) parts.push(`現庫 ${formatQuantity(stock)}`);
-    if (outstanding !== null) parts.push(`未到貨 ${formatQuantity(outstanding)}`);
+    if (history !== null)
+        parts.push(`同期淨售 ${formatQuantity(history)}`);
+    if (safety !== null)
+        parts.push(`安全庫存 ${formatQuantity(safety)}`);
+    if (stock !== null)
+        parts.push(`現庫 ${formatQuantity(stock)}`);
+    if (outstanding !== null)
+        parts.push(`未到貨 ${formatQuantity(outstanding)}`);
     const factors = parts.length ? parts.join(" · ") : "依歷史淨銷量、庫存與安全庫存評估";
-    if (!useWeather) return factors;
+    if (!useWeather)
+        return factors;
     const factor = Number(item.weatherFactor);
     const factorLabel = item.weatherFactor !== null && item.weatherFactor !== undefined && Number.isFinite(factor)
         ? `天氣倍率 ${factor.toFixed(2)}×；` : "天氣情境；";
@@ -156,7 +171,8 @@ function navigateFullRecommendations() {
 function renderRecommendationTable() {
     const body = el("dashboard-rec-body");
     const meta = el("dashboard-rec-meta");
-    if (!body || !meta || !Array.isArray(recommendationRows) || !currentInfo) return;
+    if (!body || !meta || !Array.isArray(recommendationRows) || !currentInfo)
+        return;
 
     const weather = Boolean(el("dashboard-rec-use-weather")?.checked);
     const { total, top } = pickDashboardSuggestions(recommendationRows, weather);
@@ -168,7 +184,8 @@ function renderRecommendationTable() {
 
     if (total === 0) {
         renderState(`目前「${basisName}／${modeName}」沒有建議需補貨的商品；可切換比較基準或天氣情境查看。`);
-    } else {
+    }
+    else {
         top.forEach(({ item, quantity }, index) => {
             const product = productsById.get(Number(item.productId)) || {};
             const row = create("tr");
@@ -215,12 +232,14 @@ function updateWarnings() {
     if (Array.isArray(recommendationRows)) {
         const warnings = recommendationRows
             .map(item => String(item?.warning || "").trim()).filter(Boolean);
-        if (warnings.length) messages.push(warnings[0]);
+        if (warnings.length)
+            messages.push(warnings[0]);
         else if (recommendationRows.some(item => item?.forecastStatus === "PARTIAL" || item?.forecastStatus === "UNAVAILABLE")) {
             messages.push("部分天氣資料不完整，天氣建議量僅供參考；缺值由後端按原規則處理。");
         }
     }
-    if (productInfoWarning) messages.push("商品分類或單位資料暫時無法取得；建議數量仍使用後端結果。");
+    if (productInfoWarning)
+        messages.push("商品分類或單位資料暫時無法取得；建議數量仍使用後端結果。");
     showWarning(messages.join("；"));
 }
 
@@ -228,11 +247,13 @@ async function loadDashboardRecommendations() {
     const body = el("dashboard-rec-body");
     const meta = el("dashboard-rec-meta");
     const refresh = el("dashboard-rec-refresh");
-    if (!body || !meta || !refresh) return;
+    if (!body || !meta || !refresh)
+        return;
     const params = queryParameters();
     const key = JSON.stringify(params);
     // 若同一組查詢正在執行，切回首頁時不發送重複 API 請求。
-    if (currentRequest?.key === key) return currentRequest.promise;
+    if (currentRequest?.key === key)
+        return currentRequest.promise;
 
     const requestId = ++latestRequestId;
     updateReorderKpi(null, "正在重新計算需補貨商品...");
@@ -248,9 +269,12 @@ async function loadDashboardRecommendations() {
             const [options, productInfo] = await Promise.allSettled([
                 apiGet(OPTIONS_API, params), requestJson(API.products)
             ]);
-            if (requestId !== latestRequestId) return;
-            if (options.status !== "fulfilled") throw options.reason;
-            if (!Array.isArray(options.value)) throw new Error("訂貨建議 API 回傳格式不正確（預期為陣列）");
+            if (requestId !== latestRequestId)
+                return;
+            if (options.status !== "fulfilled")
+                throw options.reason;
+            if (!Array.isArray(options.value))
+                throw new Error("訂貨建議資料暫時無法使用，請稍後再試");
 
             recommendationRows = options.value;
             currentInfo = params;
@@ -260,8 +284,10 @@ async function loadDashboardRecommendations() {
                 .map(product => [Number(product.id), product]));
             renderRecommendationTable();
             updateWarnings();
-        } catch (error) {
-            if (requestId !== latestRequestId) return;
+        }
+        catch (error) {
+            if (requestId !== latestRequestId)
+                return;
             recommendationRows = null;
             currentInfo = null;
             updateReorderKpi(null, "訂貨建議查詢失敗，請更新重試");
@@ -269,7 +295,8 @@ async function loadDashboardRecommendations() {
             renderState(`無法載入訂貨建議：${error?.message || "未知錯誤"}`, true);
             showWarning("");
             console.error("首頁訂貨建議載入失敗：", error);
-        } finally {
+        }
+        finally {
             if (requestId === latestRequestId) {
                 refresh.disabled = false;
                 body.setAttribute("aria-busy", "false");
@@ -282,17 +309,20 @@ async function loadDashboardRecommendations() {
 }
 
 function initializeDashboardRecommendations() {
-    if (!el("page-dashboard") || !el("dashboard-rec-body")) return;
+    if (!el("page-dashboard") || !el("dashboard-rec-body"))
+        return;
     el("dashboard-rec-refresh")?.addEventListener("click", () => void loadDashboardRecommendations());
     el("dashboard-rec-basis")?.addEventListener("change", () => void loadDashboardRecommendations());
     // 切換天氣只重繪已取得的兩種後端數值，不重新查氣象署、不覆蓋選購內容。
     el("dashboard-rec-use-weather")?.addEventListener("change", renderRecommendationTable);
     document.querySelector('[data-page="dashboard"]')?.addEventListener("click", () => void loadDashboardRecommendations());
-    if (!el("page-dashboard").hidden) void loadDashboardRecommendations();
+    if (!el("page-dashboard").hidden)
+        void loadDashboardRecommendations();
 }
 
 if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", initializeDashboardRecommendations, { once: true });
-} else {
+}
+else {
     initializeDashboardRecommendations();
 }

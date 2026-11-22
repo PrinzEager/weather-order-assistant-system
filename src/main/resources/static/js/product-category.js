@@ -1,7 +1,21 @@
 /* 商品分類管理模組：由原 app.js 分離，保留既有功能。 */
-import { API, byId, makeElement, clearElement, showEmpty, showMessage, hideMessage, setButtonLoading, displayValue, apiGet, csrfHeaders, redirectIfSessionExpired } from "./common.js";
+import {
+    API,
+    byId,
+    makeElement,
+    clearElement,
+    showEmpty,
+    showMessage,
+    hideMessage,
+    setButtonLoading,
+    displayValue,
+    apiGet,
+    csrfHeaders,
+    redirectIfSessionExpired
+} from "./common.js";
 
 let categoriesLoaded = false;
+
 let categoryData = [];
 
 export function initCategories() {
@@ -9,11 +23,11 @@ export function initCategories() {
 }
 
 export function enterCategoriesPage() {
-    if (!categoriesLoaded) loadCategories();
+    if (!categoriesLoaded)
+        loadCategories();
 }
 
 async function loadCategories() {
-
     const container = byId("category-list");
 
     try {
@@ -38,9 +52,8 @@ async function loadCategories() {
 
         // 成功載入後記錄狀態。
         categoriesLoaded = true;
-
-    } catch (error) {
-
+    }
+    catch (error) {
         // 查詢失敗時允許下次重新載入。
         categoriesLoaded = false;
 
@@ -61,9 +74,7 @@ async function loadCategories() {
  * 第二層：
  * parentId 對應第一層分類的 id
  */
-
 function renderCategories(categories) {
-
     const container = byId("category-list");
 
     clearElement(container);
@@ -75,14 +86,10 @@ function renderCategories(categories) {
     }
 
     // 取得第一層分類。
-    const parentCategories = categories.filter(
-        category => category.parentId == null
-    );
+    const parentCategories = categories.filter(category => category.parentId == null);
 
     // 取得第二層分類。
-    const childCategories = categories.filter(
-        category => category.parentId != null
-    );
+    const childCategories = categories.filter(category => category.parentId != null);
 
     // 使用 ID 排序，讓畫面順序固定。
     parentCategories.sort((a, b) => a.id - b.id);
@@ -90,20 +97,11 @@ function renderCategories(categories) {
 
     // 依序顯示第一層分類。
     parentCategories.forEach(parent => {
-
         // 第一層分類容器。
-        const parentGroup = makeElement(
-            "div",
-            null,
-            "category-group"
-        );
+        const parentGroup = makeElement("div", null, "category-group");
 
         // 第一層分類標題。
-        const parentHeader = makeElement(
-            "div",
-            null,
-            "category-header"
-        );
+        const parentHeader = makeElement("div", null, "category-header");
 
         parentHeader.style.display = "flex";
         parentHeader.style.alignItems = "center";
@@ -114,78 +112,40 @@ function renderCategories(categories) {
         parentHeader.style.marginBottom = "8px";
 
         // 分類圖示。
-        parentHeader.appendChild(
-            makeElement("span", "📁")
-        );
+        parentHeader.appendChild(makeElement("span", "📁"));
 
         // 分類名稱。
-        parentHeader.appendChild(
-            makeElement(
-                "strong",
-                displayValue(parent.name)
-            )
-        );
+        parentHeader.appendChild(makeElement("strong", displayValue(parent.name)));
 
         // 第一層標籤。
-        parentHeader.appendChild(
-            makeElement(
-                "span",
-                "第一層",
-                "status-badge neutral"
-            )
-        );
+        parentHeader.appendChild(makeElement("span", "第一層", "status-badge neutral"));
 
         // 分類狀態。
-        parentHeader.appendChild(
-            createCategoryStatusBadge(parent.status)
-        );
+        parentHeader.appendChild(createCategoryStatusBadge(parent.status));
 
         // 第一層分類編輯按鈕。
-        parentHeader.appendChild(
-            createCategoryEditButton(parent)
-        );
+        parentHeader.appendChild(createCategoryEditButton(parent));
 
         // 第一層分類軟刪除按鈕。
-        parentHeader.appendChild(
-            createCategoryDeleteButton(parent)
-        );
+        parentHeader.appendChild(createCategoryDeleteButton(parent));
 
         parentGroup.appendChild(parentHeader);
 
         // 找出此第一層分類的子分類。
-        const children = childCategories.filter(
-            child => child.parentId === parent.id
-        );
+        const children = childCategories.filter(child => child.parentId === parent.id);
 
         // 第二層分類區域。
-        const childContainer = makeElement(
-            "div",
-            null,
-            "category-children"
-        );
+        const childContainer = makeElement("div", null, "category-children");
 
         childContainer.style.paddingLeft = "32px";
         childContainer.style.marginBottom = "20px";
 
         if (children.length === 0) {
-
-            childContainer.appendChild(
-                makeElement(
-                    "p",
-                    "此分類目前沒有第二層分類",
-                    "empty-state"
-                )
-            );
-
-        } else {
-
+            childContainer.appendChild(makeElement("p", "此分類目前沒有第二層分類", "empty-state"));
+        }
+        else {
             children.forEach(child => {
-
-                const childRow = makeElement(
-                    "div",
-                    null,
-                    "category-child"
-                );
+                const childRow = makeElement("div", null, "category-child");
 
                 childRow.style.display = "flex";
                 childRow.style.alignItems = "center";
@@ -194,42 +154,22 @@ function renderCategories(categories) {
                 childRow.style.borderBottom =
                     "1px solid #e2e8f0";
 
-                childRow.appendChild(
-                    makeElement("span", "↳")
-                );
+                childRow.appendChild(makeElement("span", "↳"));
 
-                childRow.appendChild(
-                    makeElement(
-                        "span",
-                        displayValue(child.name)
-                    )
-                );
+                childRow.appendChild(makeElement("span", displayValue(child.name)));
 
-                childRow.appendChild(
-                    makeElement(
-                        "span",
-                        "第二層",
-                        "status-badge neutral"
-                    )
-                );
+                childRow.appendChild(makeElement("span", "第二層", "status-badge neutral"));
 
-                childRow.appendChild(
-                    createCategoryStatusBadge(child.status)
-                );
+                childRow.appendChild(createCategoryStatusBadge(child.status));
 
                 // 分類 ID 僅作為 API 識別，不顯示給一般使用者。
-
                 // 第二層分類編輯按鈕。
-                childRow.appendChild(
-                    createCategoryEditButton(child)
-                );
+                childRow.appendChild(createCategoryEditButton(child));
 
                 childContainer.appendChild(childRow);
 
                 // 第二層分類軟刪除按鈕。
-                childRow.appendChild(
-                    createCategoryDeleteButton(child)
-                );
+                childRow.appendChild(createCategoryDeleteButton(child));
             });
         }
 
@@ -240,31 +180,17 @@ function renderCategories(categories) {
 
     // 理論上正常資料不應存在孤立的第二層分類。
     // 為避免資料被忽略，另外顯示找不到上層的項目。
-    const parentIds = new Set(
-        parentCategories.map(category => category.id)
-    );
+    const parentIds = new Set(parentCategories.map(category => category.id));
 
-    const orphanCategories = childCategories.filter(
-        category => !parentIds.has(category.parentId)
-    );
+    const orphanCategories = childCategories.filter(category => !parentIds.has(category.parentId));
 
     if (orphanCategories.length > 0) {
-
-        const warning = makeElement(
-            "div",
-            "部分第二層分類找不到對應的第一層分類",
-            "warning-message"
-        );
+        const warning = makeElement("div", "部分第二層分類找不到對應的第一層分類", "warning-message");
 
         container.appendChild(warning);
 
         orphanCategories.forEach(category => {
-            container.appendChild(
-                makeElement(
-                    "p",
-                    `${displayValue(category.name)}（找不到上層分類）`
-                )
-            );
+            container.appendChild(makeElement("p", `${displayValue(category.name)}（找不到上層分類）`));
         });
     }
 }
@@ -275,34 +201,19 @@ function renderCategories(categories) {
  * 1：啟用
  * 0：停用
  */
-
 function createCategoryStatusBadge(status) {
-
     if (status === 1) {
-        return makeElement(
-            "span",
-            "啟用",
-            "status-badge success"
-        );
+        return makeElement("span", "啟用", "status-badge success");
     }
 
     if (status === 0) {
-        return makeElement(
-            "span",
-            "停用",
-            "status-badge danger"
-        );
+        return makeElement("span", "停用", "status-badge danger");
     }
 
-    return makeElement(
-        "span",
-        "未知狀態",
-        "status-badge neutral"
-    );
+    return makeElement("span", "未知狀態", "status-badge neutral");
 }
 
 function initializeCategoryForm() {
-
     const addButton = byId("add-category-button");
     const closeButton = byId("category-form-close");
     const cancelButton = byId("category-form-cancel");
@@ -328,7 +239,7 @@ function initializeCategoryForm() {
     });
 
     // 新增與修改共用表單提交事件。
-    form.addEventListener("submit", async event => {
+    form.addEventListener("submit", async (event) => {
         event.preventDefault();
         await submitCategoryForm();
     });
@@ -337,9 +248,7 @@ function initializeCategoryForm() {
 /**
  * 開啟新增分類表單。
  */
-
 function openCreateCategoryForm() {
-
     const panel = byId("category-form-panel");
     const form = byId("category-form");
 
@@ -379,9 +288,7 @@ function openCreateCategoryForm() {
 /**
  * 關閉商品分類表單。
  */
-
 function closeCategoryForm() {
-
     byId("category-form-panel").hidden = true;
 
     // 清空欄位，避免殘留上次資料。
@@ -398,24 +305,20 @@ function closeCategoryForm() {
  * 第二層：
  * 必須選擇一筆有效的第一層分類。
  */
-
 function updateCategoryLevelFields() {
-
     const level = byId("category-level").value;
 
     const parentGroup = byId("category-parent-group");
     const parentSelect = byId("category-parent-id");
 
     if (level === "2") {
-
         parentGroup.hidden = false;
         parentSelect.required = true;
 
         // 每次切換成第二層，重新載入可選擇項目。
         populateCategoryParents();
-
-    } else {
-
+    }
+    else {
         parentGroup.hidden = true;
         parentSelect.required = false;
         parentSelect.value = "";
@@ -431,36 +334,25 @@ function updateCategoryLevelFields() {
  *
  * 避免使用者選擇不合法的上層分類。
  */
-
 function populateCategoryParents() {
-
     const select = byId("category-parent-id");
 
     clearElement(select);
 
     // 預設提示選項。
-    const placeholder = makeElement(
-        "option",
-        "請選擇第一層分類"
-    );
+    const placeholder = makeElement("option", "請選擇第一層分類");
 
     placeholder.value = "";
     select.appendChild(placeholder);
 
     // 僅取得啟用中的第一層分類。
     const parents = categoryData
-        .filter(category =>
-            category.parentId == null &&
-            category.status === 1
-        )
+        .filter(category => category.parentId == null &&
+        category.status === 1)
         .sort((a, b) => a.id - b.id);
 
     parents.forEach(category => {
-
-        const option = makeElement(
-            "option",
-            category.name
-        );
+        const option = makeElement("option", category.name);
 
         option.value = String(category.id);
 
@@ -469,7 +361,6 @@ function populateCategoryParents() {
 }
 
 async function submitCategoryForm() {
-
     const idValue = byId("category-id").value;
 
     // 沒有 ID 代表新增，有 ID 代表修改。
@@ -486,12 +377,10 @@ async function submitCategoryForm() {
     const submitButton = byId("category-form-submit");
 
     try {
-
         // 驗證修改中的分類 ID。
         if (isEdit &&
             (!Number.isSafeInteger(categoryId) ||
-             categoryId <= 0)) {
-
+                categoryId <= 0)) {
             throw new Error("商品分類 ID 不正確");
         }
 
@@ -513,7 +402,6 @@ async function submitCategoryForm() {
         let parentId = null;
 
         if (level === "2") {
-
             if (!parentValue) {
                 throw new Error("第二層分類必須選擇上層分類");
             }
@@ -522,29 +410,21 @@ async function submitCategoryForm() {
 
             if (!Number.isSafeInteger(parentId) ||
                 parentId <= 0) {
-
                 throw new Error("上層分類 ID 不正確");
             }
 
             // 不允許將自己設定成上層分類。
             if (isEdit && parentId === categoryId) {
-                throw new Error(
-                    "不可將自己設定為上層分類"
-                );
+                throw new Error("不可將自己設定為上層分類");
             }
 
             // 確認所選上層分類存在、啟用且屬於第一層。
-            const validParent = categoryData.some(
-                category =>
-                    category.id === parentId &&
-                    category.parentId == null &&
-                    category.status === 1
-            );
+            const validParent = categoryData.some(category => category.id === parentId &&
+                category.parentId == null &&
+                category.status === 1);
 
             if (!validParent) {
-                throw new Error(
-                    "請選擇有效且啟用中的第一層分類"
-                );
+                throw new Error("請選擇有效且啟用中的第一層分類");
             }
         }
 
@@ -561,11 +441,7 @@ async function submitCategoryForm() {
             ? `${API.categories}/${categoryId}`
             : API.categories;
 
-        setButtonLoading(
-            submitButton,
-            true,
-            isEdit ? "修改分類中..." : "新增分類中..."
-        );
+        setButtonLoading(submitButton, true, isEdit ? "修改分類中..." : "新增分類中...");
 
         hideMessage();
 
@@ -582,8 +458,7 @@ async function submitCategoryForm() {
 
         redirectIfSessionExpired(response);
 
-        const contentType =
-            response.headers.get("content-type") || "";
+        const contentType = response.headers.get("content-type") || "";
 
         let data = null;
 
@@ -593,22 +468,17 @@ async function submitCategoryForm() {
 
         // 由後端回傳實際錯誤訊息。
         if (!response.ok) {
-            throw new Error(
-                data?.message ||
+            throw new Error(data?.message ||
                 data?.detail ||
                 data?.error ||
-                `${isEdit ? "修改" : "新增"}分類失敗（HTTP ${response.status}）`
-            );
+                `${isEdit ? "修改" : "新增"}分類失敗（HTTP ${response.status}）`);
         }
 
         // 驗證回傳狀態。
         const expectedStatus = isEdit ? 200 : 201;
 
         if (response.status !== expectedStatus) {
-            console.warn(
-                "分類操作成功，但 HTTP 狀態與預期不同：",
-                response.status
-            );
+            console.warn("分類操作成功，但 HTTP 狀態與預期不同：", response.status);
         }
 
         // 關閉表單。
@@ -621,39 +491,24 @@ async function submitCategoryForm() {
 
         // 依實際重新載入結果提示使用者。
         if (categoriesLoaded) {
-            showMessage(
-                `商品分類「${name}」${isEdit ? "修改" : "新增"}成功`,
-                "success"
-            );
-        } else {
-            showMessage(
-                `分類已${isEdit ? "修改" : "新增"}，但清單重新載入失敗，請重新整理頁面`,
-                "error"
-            );
+            showMessage(`商品分類「${name}」${isEdit ? "修改" : "新增"}成功`, "success");
         }
-
-    } catch (error) {
-
+        else {
+            showMessage(`分類已${isEdit ? "修改" : "新增"}，但清單重新載入失敗，請重新整理頁面`, "error");
+        }
+    }
+    catch (error) {
         showMessage(error.message, "error");
 
-        console.error(
-            isEdit ? "修改商品分類失敗：" : "新增商品分類失敗：",
-            error
-        );
-
-    } finally {
-
+        console.error(isEdit ? "修改商品分類失敗：" : "新增商品分類失敗：", error);
+    }
+    finally {
         setButtonLoading(submitButton, false);
     }
 }
 
 function createCategoryEditButton(category) {
-
-    const button = makeElement(
-        "button",
-        "編輯",
-        "secondary-button"
-    );
+    const button = makeElement("button", "編輯", "secondary-button");
 
     button.type = "button";
 
@@ -671,12 +526,8 @@ function createCategoryEditButton(category) {
  * 使用已載入的分類資料，
  * 不需要再次呼叫單筆 GET API。
  */
-
 function openEditCategoryForm(categoryId) {
-
-    const category = categoryData.find(
-        item => item.id === categoryId
-    );
+    const category = categoryData.find(item => item.id === categoryId);
 
     if (!category) {
         showMessage("找不到要修改的商品分類", "error");
@@ -728,19 +579,11 @@ function openEditCategoryForm(categoryId) {
 }
 
 function createCategoryDeleteButton(category) {
-
-    const button = makeElement(
-        "button",
-        "刪除",
-        "danger-button"
-    );
+    const button = makeElement("button", "刪除", "danger-button");
 
     button.type = "button";
 
-    button.setAttribute(
-        "aria-label",
-        `刪除商品分類 ${category.name}`
-    );
+    button.setAttribute("aria-label", `刪除商品分類 ${category.name}`);
 
     button.addEventListener("click", () => {
         deleteCategory(category);
@@ -760,66 +603,51 @@ function createCategoryDeleteButton(category) {
  * 失敗：
  * HTTP 404 / 409 等狀態碼
  */
-
 async function deleteCategory(category) {
-
     // 確認使用者是否真的要刪除。
-    const confirmed = window.confirm(
-        `確定要刪除商品分類「${category.name}」嗎？\n\n` +
+    const confirmed = window.confirm(`確定要刪除商品分類「${category.name}」嗎？\n\n` +
         "此操作會將分類標記為已刪除，" +
-        "且無法透過目前前端復原。"
-    );
+        "且無法透過目前前端復原。");
 
     if (!confirmed) {
         return;
     }
 
     try {
-
         hideMessage();
 
-        const response = await fetch(
-            `${API.categories}/${category.id}`,
-            {
-                method: "DELETE",
-                headers: {
-                    "Accept": "application/json",
-                    ...csrfHeaders("DELETE")
-                }
+        const response = await fetch(`${API.categories}/${category.id}`, {
+            method: "DELETE",
+            headers: {
+                "Accept": "application/json",
+                ...csrfHeaders("DELETE")
             }
-        );
+        });
 
         redirectIfSessionExpired(response);
 
         // DELETE 成功時沒有 Response Body。
         // 不可直接呼叫 response.json()。
         if (!response.ok) {
+            const contentType = response.headers.get("content-type") || "";
 
-            const contentType =
-                response.headers.get("content-type") || "";
-
-            let errorMessage =
-                `刪除商品分類失敗（HTTP ${response.status}）`;
+            let errorMessage = `刪除商品分類失敗（HTTP ${response.status}）`;
 
             if (contentType.includes("json")) {
-
                 const data = await response.json();
 
                 errorMessage =
                     data?.message ||
-                    data?.detail ||
-                    data?.error ||
-                    errorMessage;
+                        data?.detail ||
+                        data?.error ||
+                        errorMessage;
             }
 
             throw new Error(errorMessage);
         }
 
         if (response.status !== 204) {
-            console.warn(
-                "刪除成功，但狀態碼不是預期的 204：",
-                response.status
-            );
+            console.warn("刪除成功，但狀態碼不是預期的 204：", response.status);
         }
 
         // 如果正在編輯被刪除的分類，關閉編輯表單。
@@ -835,27 +663,15 @@ async function deleteCategory(category) {
         await loadCategories();
 
         if (categoriesLoaded) {
-
-            showMessage(
-                `商品分類「${category.name}」已成功刪除`,
-                "success"
-            );
-
-        } else {
-
-            showMessage(
-                "分類已刪除，但重新載入清單失敗，請重新整理頁面",
-                "error"
-            );
+            showMessage(`商品分類「${category.name}」已成功刪除`, "success");
         }
-
-    } catch (error) {
-
+        else {
+            showMessage("分類已刪除，但重新載入清單失敗，請重新整理頁面", "error");
+        }
+    }
+    catch (error) {
         showMessage(error.message, "error");
 
-        console.error(
-            "刪除商品分類失敗：",
-            error
-        );
+        console.error("刪除商品分類失敗：", error);
     }
 }

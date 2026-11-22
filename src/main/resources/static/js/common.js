@@ -3,7 +3,8 @@
 // AJAX 與 Spring Security 共用 CSRF header；Token 來自後端渲染的 index.html。
 export function csrfHeaders(method = "GET") {
     const safeMethod = String(method).toUpperCase();
-    if (["GET", "HEAD", "OPTIONS", "TRACE"].includes(safeMethod)) return {};
+    if (["GET", "HEAD", "OPTIONS", "TRACE"].includes(safeMethod))
+        return {};
     const token = document.querySelector('meta[name="_csrf"]')?.content;
     const headerName = document.querySelector('meta[name="_csrf_header"]')?.content;
     return token && headerName ? { [headerName]: token } : {};
@@ -28,14 +29,11 @@ export const API = Object.freeze({
 });
 
 /* 共用工具：由原 app.js 分離，保留既有功能。 */
-
-
 export function byId(id) {
     return document.getElementById(id);
 }
 
 // 建立文字節點，避免直接插入 API 回傳的 HTML。
-
 export function makeElement(tag, text, className) {
     const element = document.createElement(tag);
 
@@ -60,9 +58,7 @@ export function showEmpty(container, message) {
     clearElement(container);
 
     if (container) {
-        container.appendChild(
-            makeElement("p", message, "empty-state")
-        );
+        container.appendChild(makeElement("p", message, "empty-state"));
     }
 }
 
@@ -84,13 +80,15 @@ export function hideMessage() {
 }
 
 export function setButtonLoading(button, loading, loadingText) {
-    if (!button) return;
+    if (!button)
+        return;
 
     if (loading) {
         button.dataset.originalText = button.textContent.trim();
         button.textContent = loadingText;
         button.disabled = true;
-    } else {
+    }
+    else {
         button.textContent =
             button.dataset.originalText || "查詢";
         button.disabled = false;
@@ -99,8 +97,8 @@ export function setButtonLoading(button, loading, loadingText) {
 
 export function displayValue(value, fallback = "--") {
     return value === null ||
-           value === undefined ||
-           value === ""
+        value === undefined ||
+        value === ""
         ? fallback
         : String(value);
 }
@@ -118,9 +116,7 @@ export function formatNumber(value) {
 // =========================================================
 // 3. 台灣日期工具
 // =========================================================
-
 // 取得台灣當地日期，不使用 UTC 日期直接截取。
-
 export function getTaiwanToday() {
     const formatter = new Intl.DateTimeFormat("en-US", {
         timeZone: "Asia/Taipei",
@@ -141,15 +137,12 @@ export function getTaiwanToday() {
 }
 
 // 以 UTC 日曆計算日期，避免跨日、跨月問題。
-
 export function addDays(dateString, days) {
     const [year, month, day] = dateString
         .split("-")
         .map(Number);
 
-    const date = new Date(
-        Date.UTC(year, month - 1, day + days)
-    );
+    const date = new Date(Date.UTC(year, month - 1, day + days));
 
     return date.toISOString().slice(0, 10);
 }
@@ -172,7 +165,8 @@ export function initializeDates() {
         ["recommendation-end-date", recommendationDefaultEnd]
     ].forEach(([id, value]) => {
         const input = byId(id);
-        if (!input) return;
+        if (!input)
+            return;
         input.value = value;
         input.min = today;
         input.max = lastDay;
@@ -210,31 +204,27 @@ export async function apiGet(path, parameters) {
     redirectIfSessionExpired(response);
 
     // 避免伺服器回傳非 JSON 時直接造成解析例外。
-    const contentType =
-        response.headers.get("content-type") || "";
+    const contentType = response.headers.get("content-type") || "";
 
     let data = null;
 
     if (contentType.includes("json")) {
         data = await response.json();
-    } else {
+    }
+    else {
         const text = await response.text();
 
         if (!response.ok) {
-            throw new Error(
-                `HTTP ${response.status}：${text.slice(0, 100)}`
-            );
+            throw new Error(`資料處理失敗，請稍後再試（錯誤代碼：${response.status}）`);
         }
 
-        throw new Error("後端未回傳預期的 JSON 資料");
+        throw new Error("目前無法讀取資料，請稍後再試");
     }
 
     if (!response.ok) {
-        throw new Error(
-            data?.message ||
+        throw new Error(data?.message ||
             data?.error ||
-            `請求失敗（HTTP ${response.status}）`
-        );
+            `操作未完成，請稍後再試（錯誤代碼：${response.status}）`);
     }
 
     return data;
@@ -244,11 +234,9 @@ export function getSearchParameters(prefix) {
     const city = byId(`${prefix}-city`).value.trim();
     const district = byId(`${prefix}-district`).value.trim();
 
-    const startDate =
-        byId(`${prefix}-start-date`).value;
+    const startDate = byId(`${prefix}-start-date`).value;
 
-    const endDate =
-        byId(`${prefix}-end-date`).value;
+    const endDate = byId(`${prefix}-end-date`).value;
 
     if (!city || !district) {
         throw new Error("請輸入縣市與鄉鎮市區");
@@ -262,10 +250,8 @@ export function getSearchParameters(prefix) {
 // =========================================================
 // 6. 天氣圖示
 // =========================================================
-
 // 中央氣象署 weatherCode 為字串，需保留前導零。
 // 此處以簡化圖示分類顯示，詳細代碼可後續補齊。
-
 export function createStatCard(title, value, note = "") {
     const article = makeElement("article", null, "stat-card");
 
@@ -299,7 +285,8 @@ export async function requestJson(url, method = "GET", body) {
 
     try {
         data = raw ? JSON.parse(raw) : null;
-    } catch {
+    }
+    catch {
         // 非 JSON 的錯誤回覆由 HTTP 狀態處理。
     }
 
@@ -311,13 +298,11 @@ export async function requestJson(url, method = "GET", body) {
                 .join("、")
             : null;
 
-        throw new Error(
-            validationMessage ||
+        throw new Error(validationMessage ||
             data?.message ||
             data?.detail ||
             data?.error ||
-            `HTTP ${response.status}: ${raw.slice(0, 100)}`
-        );
+            `HTTP ${response.status}: ${raw.slice(0, 100)}`);
     }
 
     return data;

@@ -5,6 +5,7 @@
 import { csrfHeaders, redirectIfSessionExpired } from "./common.js";
 
 const byId = id => document.getElementById(id);
+
 let submitting = false;
 
 // 後端回傳 LocalDateTime 不包含時區；直接以原始時間格式顯示，避免瀏覽器自行換算。
@@ -19,7 +20,8 @@ async function readApiError(response) {
         try {
             const data = await response.json();
             return data?.message || data?.detail || data?.error || `請求失敗（HTTP ${response.status}）`;
-        } catch (_) {
+        }
+        catch (_) {
             // JSON 格式異常時提供基本訊息，不洩漏完整 HTML 錯誤頁。
         }
     }
@@ -55,7 +57,8 @@ async function loadMyAccount() {
             cache: "no-store"
         });
         redirectIfSessionExpired(response);
-        if (!response.ok) throw new Error(await readApiError(response));
+        if (!response.ok)
+            throw new Error(await readApiError(response));
 
         const user = await response.json();
         byId("account-name").textContent = user.username ?? "--";
@@ -64,14 +67,16 @@ async function loadMyAccount() {
         byId("account-updated-at").textContent = formatLocalDateTime(user.updatedAt);
         info.hidden = true;
         details.hidden = false;
-    } catch (error) {
+    }
+    catch (error) {
         info.textContent = `帳號資訊讀取失敗：${error.message || "請稍後重試"}`;
     }
 }
 
 function openAccountDialog() {
     const dialog = byId("account-dialog");
-    if (!dialog || dialog.open) return;
+    if (!dialog || dialog.open)
+        return;
     resetFormMessage();
     byId("account-password-form").reset();
     dialog.showModal();
@@ -79,13 +84,15 @@ function openAccountDialog() {
 }
 
 function closeAccountDialog() {
-    if (submitting) return;
+    if (submitting)
+        return;
     byId("account-dialog")?.close();
 }
 
 async function submitChangePassword(event) {
     event.preventDefault();
-    if (submitting) return;
+    if (submitting)
+        return;
 
     const currentPassword = byId("account-current-password").value;
     const newPassword = byId("account-new-password").value;
@@ -127,15 +134,19 @@ async function submitChangePassword(event) {
             body: JSON.stringify({ currentPassword, newPassword, confirmPassword })
         });
         redirectIfSessionExpired(response);
-        if (!response.ok) throw new Error(await readApiError(response));
-        if (response.status !== 204) throw new Error("伺服器回應與預期不符，請重新確認登入狀態");
+        if (!response.ok)
+            throw new Error(await readApiError(response));
+        if (response.status !== 204)
+            throw new Error("伺服器回應與預期不符，請重新確認登入狀態");
 
         // 後端已使原本 Session 失效；不可沿用舊 Cookie，直接導回登入頁。
         byId("account-password-form").reset();
         window.location.assign("/login?passwordChanged");
-    } catch (error) {
+    }
+    catch (error) {
         showFormMessage(error.message || "更新失敗，請稍後重試");
-    } finally {
+    }
+    finally {
         submitting = false;
         button.disabled = false;
         button.textContent = "確認修改密碼";
@@ -146,14 +157,16 @@ function initializeAccountUI() {
     const openButton = byId("account-open-button");
     const dialog = byId("account-dialog");
     const form = byId("account-password-form");
-    if (!openButton || !dialog || !form) return;
+    if (!openButton || !dialog || !form)
+        return;
 
     openButton.addEventListener("click", openAccountDialog);
     byId("account-close-button").addEventListener("click", closeAccountDialog);
     byId("account-cancel-button").addEventListener("click", closeAccountDialog);
     form.addEventListener("submit", submitChangePassword);
     dialog.addEventListener("cancel", event => {
-        if (submitting) event.preventDefault();
+        if (submitting)
+            event.preventDefault();
     });
     dialog.addEventListener("close", () => {
         form.reset();

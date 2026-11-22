@@ -14,12 +14,19 @@
 import { addDays, getTaiwanToday, showMessage } from "./common.js";
 
 const ZONE = "Asia/Taipei";
+
 let observedDay = getTaiwanToday();
+
 let observedCutoffSlot = null;
+
 let queriedRecommendationDay = null;
+
 let staleRecommendations = false;
+
 let batchOpenedAt = null;
+
 let singleFormOpenedDay = null;
+
 let lastNoticeKey = "";
 
 function currentSlot() {
@@ -32,16 +39,15 @@ function currentSlot() {
 }
 
 function isRelevantPage() {
-    return Boolean(document.querySelector(
-        '.nav-item.active[data-page="recommendations"], .nav-item.active[data-page="orders"]'
-    ));
+    return Boolean(document.querySelector('.nav-item.active[data-page="recommendations"], .nav-item.active[data-page="orders"]'));
 }
 
 function showOrderWarning(message, noticeId = message) {
     showMessage(message, "error");
     const detail = document.getElementById("recommendation-order-warning");
     const panel = document.getElementById("recommendation-order-panel");
-    if (detail && panel && !panel.hidden) detail.textContent = message;
+    if (detail && panel && !panel.hidden)
+        detail.textContent = message;
     // 同一個日期或同一個狀態不連續彈出多次提示。
     if (lastNoticeKey !== noticeId) {
         lastNoticeKey = noticeId;
@@ -76,14 +82,17 @@ function checkClock(showNotice = true) {
     // 只更新有效的選取上下限，不覆寫使用者已選的日期／數量。
     for (const id of ["recommendation-start-date", "recommendation-end-date"]) {
         const field = document.getElementById(id);
-        if (!field) continue;
+        if (!field)
+            continue;
         field.min = today;
         field.max = addDays(today, 6);
     }
     const dateField = document.getElementById("recommendation-delivery-date");
-    if (dateField) dateField.min = today; // 最終最早到貨日仍以後端政策為準。
+    if (dateField)
+        dateField.min = today; // 最終最早到貨日仍以後端政策為準。
     const singleDate = document.getElementById("order-expected-delivery-date");
-    if (singleDate) singleDate.min = today;
+    if (singleDate)
+        singleDate.min = today;
 
     if (showNotice && isRelevantPage()) {
         showOrderWarning(`頁面已由 ${previous} 跨日至 ${today}。舊訂貨資料不能直接提交，請重新選擇日期並查詢訂貨建議。`, `day:${today}`);
@@ -100,7 +109,8 @@ function validNewRecommendationRange() {
 
 function onSubmitCapture(event) {
     const form = event.target;
-    if (!(form instanceof HTMLFormElement)) return;
+    if (!(form instanceof HTMLFormElement))
+        return;
     checkClock();
     const today = getTaiwanToday();
 
@@ -142,10 +152,12 @@ function onSubmitCapture(event) {
 }
 
 function onClickCapture(event) {
-    if (!(event.target instanceof Element)) return;
+    if (!(event.target instanceof Element))
+        return;
     checkClock();
     const button = event.target.closest("button");
-    if (!button) return;
+    if (!button)
+        return;
     const today = getTaiwanToday();
 
     if (button.id === "create-order-from-recommendation") {
@@ -178,13 +190,15 @@ function startGuard() {
     document.addEventListener("submit", onSubmitCapture, true);
     document.addEventListener("click", onClickCapture, true);
     document.addEventListener("visibilitychange", () => {
-        if (!document.hidden) checkClock();
+        if (!document.hidden)
+            checkClock();
     });
     window.addEventListener("focus", () => checkClock());
     // 使用者長時間停在同一頁面沒有操作時，仍能在跨日附近看到提醒。
     window.setInterval(() => {
-        if (!document.hidden) checkClock();
-    }, 30_000);
+        if (!document.hidden)
+            checkClock();
+    }, 30000);
 }
 
 document.addEventListener("DOMContentLoaded", startGuard);
