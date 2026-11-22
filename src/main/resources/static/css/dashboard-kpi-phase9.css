@@ -1,0 +1,77 @@
+/* =====================================================================
+   Phase 9｜營運 KPI 完整化與資訊層次微調
+   只作用於系統儀表板，不覆寫其他功能頁、Modal 或表單。
+   ===================================================================== */
+
+/* 四張指標卡的高度與間距保持一致，避免動態狀態訊息導致視覺跳動。 */
+#page-dashboard .dashboard-stats {
+    align-items: stretch;
+    gap: clamp(12px, 1.25vw, 20px);
+    margin-bottom: 21px;
+}
+
+#page-dashboard .dashboard-stats .stat-card {
+    min-height: 154px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-top: 20px;
+    padding-bottom: 19px;
+    transition: border-color .18s ease, box-shadow .18s ease;
+}
+
+#page-dashboard .dashboard-stats .stat-card:hover {
+    border-color: #dcb48e;
+    box-shadow: 0 11px 26px rgba(90, 58, 39, .12);
+}
+
+#page-dashboard .dashboard-stats .stat-card strong {
+    font-size: clamp(24px, 2.1vw, 34px);
+    letter-spacing: -.025em;
+    margin: 7px 0 6px;
+    line-height: 1.15;
+    font-variant-numeric: tabular-nums;
+}
+
+#page-dashboard .dashboard-stats .stat-card p {
+    margin: 0;
+    min-height: 30px;
+    font-size: 11px;
+    line-height: 1.45;
+    color: #7a5a46;
+    overflow-wrap: anywhere;
+}
+
+/* 新增的統計數值沿用原有 #stat-reorder、#stat-orders，不另建假資料卡。 */
+#page-dashboard #stat-reorder,
+#page-dashboard #stat-orders {
+    color: #a75320;
+}
+
+/* 讓首頁資訊區更接近原定暖白參考稿；只改視覺密度。 */
+#page-dashboard .dashboard-overview-grid {
+    gap: clamp(13px, 1.3vw, 20px);
+}
+
+#page-dashboard .dashboard-recommendation-panel {
+    margin-top: 18px;
+}
+
+@media (max-width: 900px) {
+    #page-dashboard .dashboard-stats .stat-card {
+        min-height: 141px;
+    }
+}
+
+@media (max-width: 680px) {
+    #page-dashboard .dashboard-stats .stat-card {
+        min-height: 128px;
+        padding-top: 16px;
+        padding-bottom: 15px;
+    }
+    #page-dashboard .dashboard-stats .stat-card p { min-height: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #page-dashboard .dashboard-stats .stat-card { transition: none; }
+}

@@ -1,0 +1,289 @@
+/* =====================================================================
+   Phase 7｜D 溫暖質感儀表板：貨架背景、色彩一致性與閱讀性優化
+
+   安全原則：
+   1. 僅新增一份 CSS，不變更 JS／API／DOM ID／Java。
+   2. 背景照片只套在 .main-content 的獨立偽元素。
+      絕不對 main、卡片或文字本身設定 opacity 或 filter。
+   3. 所有資料表格、卡片維持高不透明度，確保文字易讀。
+   4. 若要關閉照片，將 --p7-shelf-opacity 改成 0 即可。
+   ===================================================================== */
+
+:root {
+    /* 可依背景明暗微調的 3 個設定（預設忠於暖色設計規範）。 */
+    --p7-shelf-opacity: .10;
+    --p7-shelf-blur: 3px;
+    --p7-warm-veil: rgba(255, 248, 239, .28);
+
+    /* 與 Phase 4–6 共存，不更名既有 token。 */
+    --p7-ink: #452d25;
+    --p7-muted: #80685c;
+    --p7-panel: rgba(255, 251, 247, .975);
+    --p7-card-border: #e8d5c4;
+    --p7-soft-shadow: 0 10px 26px rgba(90, 58, 39, .095);
+    --p7-accent-deep: #a94d1c;
+}
+
+/* A. 商品貨架背景：背景照片與內容分開疊放，任何按鈕都不會被遮住。 */
+.main-content {
+    position: relative;
+    isolation: isolate;
+    background: #f7efe5;
+}
+
+.main-content::before,
+.main-content::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.main-content::before {
+    z-index: -2;
+    background: url('/images/beverage-shelves-warm-phase7.webp') center top / cover no-repeat;
+    opacity: var(--p7-shelf-opacity);
+    filter: blur(var(--p7-shelf-blur)) saturate(.65);
+}
+
+.main-content::after {
+    z-index: -1;
+    background: linear-gradient(180deg,
+        rgba(255, 250, 244, .11) 0%,
+        var(--p7-warm-veil) 45%,
+        rgba(255, 248, 239, .34) 100%);
+}
+
+/*
+   訂貨確認視窗採 position: fixed 且會打開遮罩。
+   視窗開啟時解除 main 的 isolation，避免 sidebar 疊在遮罩上方；
+   同時不對 main 設 overflow，避免截斷任何 Modal／清單。
+*/
+body.rec-modal-open .main-content { isolation: auto; }
+
+/* B. 頂部工具列：微弱玻璃感，維持高對比與溫暖邊框。 */
+.topbar {
+    position: relative;
+    border: 1px solid #e8d7c8;
+    background: rgba(255, 251, 246, .97);
+    box-shadow: 0 6px 24px rgba(82, 54, 37, .085);
+}
+
+.topbar-title h2 {
+    color: var(--p7-ink);
+    letter-spacing: -.025em;
+}
+
+.topbar-title h2::before {
+    background: linear-gradient(180deg, #f39c50, #c66b2b);
+}
+
+.topbar-status {
+    border-color: #e4c9b3;
+    background: #fff6ea;
+    color: #6e4932;
+}
+
+/* C. 側邊導覽層次：深奶茶棕為主，橘色只用於目前選取。 */
+.sidebar {
+    background: linear-gradient(162deg, #805643 0%, #714b3b 52%, #603c2f 100%);
+    box-shadow: 5px 0 26px rgba(63, 39, 29, .13);
+}
+
+.sidebar-nav .nav-item {
+    border: 1px solid transparent;
+}
+
+.sidebar-nav .nav-item:hover:not(.active) {
+    border-color: rgba(255, 242, 226, .10);
+    background: rgba(255, 242, 230, .11);
+}
+
+.sidebar-nav .nav-item.active {
+    border-color: rgba(255, 234, 203, .30);
+    background: linear-gradient(135deg, #be5f23 0%, #c97031 65%, #ad501c 100%);
+    box-shadow: 0 5px 16px rgba(66, 34, 22, .20), inset 0 1px rgba(255, 255, 255, .18);
+}
+
+/* D. 主內容區的表單／表格，避免貨架圖穿透小字。 */
+.main-content .panel,
+.main-content .stat-card,
+.main-content .table-panel {
+    background-color: var(--p7-panel);
+    border-color: var(--p7-card-border);
+}
+
+/* 只優化儀表板，不覆寫其他 CRUD 版面和遮罩視窗。 */
+#page-dashboard .section-heading {
+    margin-bottom: 21px;
+}
+
+#page-dashboard .section-heading h3 {
+    border-left: 5px solid #d56f2f;
+    padding-left: 15px;
+    font-size: clamp(21px, 1.8vw, 26px);
+    line-height: 1.35;
+    color: var(--p7-ink);
+}
+
+#page-dashboard .section-heading p {
+    color: #785d4d;
+    font-size: 13px;
+    margin-top: 7px;
+}
+
+/* 四張 KPI 卡保留原本 API 動態 ID；增加一致的光感與暖色線條。 */
+#page-dashboard .stat-card {
+    background: linear-gradient(140deg,
+        rgba(255, 253, 249, .99),
+        rgba(255, 247, 237, .98));
+    border: 1px solid #e8d6c6;
+    box-shadow: var(--p7-soft-shadow);
+}
+
+#page-dashboard .stat-card::before {
+    content: "";
+    position: absolute;
+    right: -28px;
+    bottom: -25px;
+    width: 155px;
+    height: 72px;
+    border-radius: 50%;
+    background: rgba(237, 171, 91, .13);
+    transform: rotate(-18deg);
+    pointer-events: none;
+    z-index: -1;
+}
+
+#page-dashboard .dashboard-stat-icon {
+    background: linear-gradient(145deg, #ffecd6, #ffdfbd);
+    color: #a64c18;
+    border: 1px solid rgba(230, 155, 83, .23);
+}
+
+#page-dashboard .stat-card strong {
+    color: #432a1f;
+    font-variant-numeric: tabular-nums;
+}
+
+#page-dashboard .stat-card p {
+    color: #80695a;
+}
+
+/* 中間兩張資訊面板：背景不能搶過真實數據及圖表。 */
+#page-dashboard .dashboard-overview-grid .dashboard-overview-panel,
+#page-dashboard .dashboard-recommendation-panel {
+    background: rgba(255, 252, 247, .975);
+    border: 1px solid #e5d4c4;
+    box-shadow: var(--p7-soft-shadow);
+}
+
+#page-dashboard .dashboard-panel-mark {
+    border: 1px solid #efd0ad;
+    background: linear-gradient(145deg, #fff0dd, #ffe8cd);
+    color: #af521e;
+}
+
+#page-dashboard .dashboard-overview-meta,
+#page-dashboard .dashboard-rec-meta {
+    background: rgba(250, 239, 225, .94);
+    border: 1px solid #ecdcc9;
+    color: #654c3d;
+}
+
+#page-dashboard .dashboard-mini-weather {
+    background: linear-gradient(145deg, rgba(255, 254, 250, .99), rgba(255, 242, 225, .97));
+    border-color: #e9d8c8;
+}
+
+#page-dashboard .dashboard-mini-weather:first-child {
+    border-color: #dfa570;
+    background: linear-gradient(145deg, #fff5e6, #ffead0);
+}
+
+#page-dashboard .dashboard-sales-totals {
+    border-color: #ead9c7;
+    background: rgba(251, 241, 231, .97);
+}
+
+#page-dashboard .dashboard-rec-table-wrap {
+    background: #fffcf8;
+    border-color: #e9d8c8;
+}
+
+#page-dashboard .dashboard-rec-table th {
+    background: #f4e3d2;
+    color: #5b4235;
+}
+
+#page-dashboard .dashboard-rec-table td {
+    background-color: rgba(255, 253, 248, .96);
+    color: #46372e;
+}
+
+#page-dashboard .dashboard-rec-table tbody tr:nth-child(even) td {
+    background-color: #fbf5ee;
+}
+
+#page-dashboard .dashboard-rec-table tbody tr:hover td {
+    background-color: #fff0de;
+}
+
+/* 操作按鈕強調區分：一般按鈕用深焦糖色確保小字對比。 */
+#page-dashboard .dashboard-rec-row-button,
+#page-dashboard .dashboard-rec-footer .primary-button,
+#page-dashboard .dashboard-rec-refresh,
+#page-dashboard .dashboard-next-action .primary-button {
+    border-color: #a94d1c;
+    background: #ad521d;
+    color: #fff;
+    box-shadow: 0 3px 10px rgba(123, 60, 27, .15);
+}
+
+#page-dashboard .dashboard-rec-row-button:hover:not(:disabled),
+#page-dashboard .dashboard-rec-footer .primary-button:hover:not(:disabled),
+#page-dashboard .dashboard-rec-refresh:hover:not(:disabled),
+#page-dashboard .dashboard-next-action .primary-button:hover:not(:disabled) {
+    background: #8e3e16;
+}
+
+#page-dashboard .dashboard-inline-link,
+#page-dashboard .dashboard-rec-quantity {
+    color: var(--p7-accent-deep);
+}
+
+/* E. 尺寸響應：維持原本 CSS 的斷點，只微調間距與背景。 */
+@media (min-width: 1480px) {
+    .main-content { padding: 28px 35px 65px; }
+    #page-dashboard .dashboard-overview-grid { gap: 20px; }
+    #page-dashboard .dashboard-stats { gap: 20px; }
+}
+
+@media (max-width: 1200px) {
+    .main-content { padding-inline: 21px; }
+    #page-dashboard .dashboard-overview-grid { gap: 16px; }
+}
+
+@media (max-width: 900px) {
+    .main-content { padding-inline: 18px; }
+    #page-dashboard .stat-card { padding-right: 13px; }
+}
+
+@media (max-width: 680px) {
+    .main-content { padding: 18px 13px 38px; }
+    .main-content::before { opacity: .045; filter: blur(5px) saturate(.55); }
+    .main-content::after { background: rgba(255, 248, 239, .50); }
+    .topbar { border-radius: 15px; padding: 16px 15px; }
+    #page-dashboard .section-heading { margin-bottom: 16px; }
+    #page-dashboard .dashboard-overview-grid .dashboard-overview-panel,
+    #page-dashboard .dashboard-recommendation-panel { border-radius: 16px; }
+}
+
+/* 對動態文字的對比保護與列印模式。 */
+@media print {
+    .main-content::before,
+    .main-content::after { display: none !important; }
+    .main-content { background: #fff !important; overflow: visible; }
+    .sidebar { display: none; }
+    .main-content { margin-left: 0; }
+}

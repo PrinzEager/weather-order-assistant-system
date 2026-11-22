@@ -28,6 +28,26 @@
     <!-- Phase 4：D 溫暖質感共用主題與儀表板視覺。保留原有 JS、API 和 DOM ID。 -->
     <link rel="stylesheet" th:href="@{/css/warm-dashboard-phase4.css}">
     <script type="module" th:src="@{/js/management-status.js}"></script>
+    <!-- Phase 5：儀表板真實七天天氣與近七日銷售趨勢專用樣式。 -->
+    <link rel="stylesheet" th:href="@{/css/dashboard-overview-phase5.css}">
+    <!-- Phase 5 獨立模組：僅讀取現有 API，不修改各頁 CRUD、訂貨流程。 -->
+    <script type="module" th:src="@{/js/dashboard-overview.js}"></script>
+    <!-- Phase 6：首頁訂貨摘要為只讀獨立模組，不改動原本的選購與採購流程。 -->
+    <link rel="stylesheet" th:href="@{/css/dashboard-recommendations-phase6.css}">
+    <script type="module" th:src="@{/js/dashboard-recommendations.js}"></script>
+    <!-- Phase 7：貨架背景圖層、暖色細節與 RWD；僅為視覺覆寫，無 JS 或 API 變更。 -->
+    <link rel="stylesheet" th:href="@{/css/dashboard-polish-phase7.css}">
+    <!-- Phase 7.1：首頁商品／供應商統計獨立載入，不侵入各功能頁程式。 -->
+    <script type="module" th:src="@{/js/dashboard-stats.js}"></script>
+
+    <!-- Phase 8：首頁未來 48 小時氣溫折線圖，資料沿用首頁現有天氣請求。 -->
+    <link rel="stylesheet" th:href="@{/css/dashboard-temperature-phase8.css}">
+    <!-- Phase 9：僅優化首頁營運統計卡；不影響其他管理頁面。 -->
+    <link rel="stylesheet" th:href="@{/css/dashboard-kpi-phase9.css}">
+    <!-- Phase 9：待處理採購單統計；僅讀取採購單清單，不更動採購狀態。 -->
+    <script type="module" th:src="@{/js/dashboard-pending-orders-phase9.js}"></script>
+
+
     
 </head>
 
@@ -43,7 +63,7 @@
         <div class="sidebar-brand">
             <span class="sidebar-brand-emblem" aria-hidden="true">☀</span>
             <div class="sidebar-brand-copy">
-                <h1>天氣 × 財氣 訂貨助手</h1>
+                <h1>飲品 × 天氣訂貨助手</h1>
                 <p>後台管理系統 · Weather Order</p>
             </div>
         </div>
@@ -166,55 +186,185 @@
                     <span class="dashboard-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4h3l2.2 11h12.5l2-8H6"/><circle cx="9" cy="20" r="1"/><circle cx="19" cy="20" r="1"/></svg></span>
                     <h4>需要補貨商品</h4>
                     <strong id="stat-reorder">--</strong>
-                    <p>依天氣訂貨建議計算</p>
+                    <p>依本頁訂貨建議條件計算</p>
                 </article>
 
                 <article class="stat-card">
                     <span class="dashboard-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 3v2h6V3M8 10h8M8 14h8M8 18h5"/></svg></span>
                     <h4>待處理訂貨單</h4>
                     <strong id="stat-orders">--</strong>
-                    <p>待後端資料載入</p>
+                    <p>待送出草稿＋已送出未到貨</p>
                 </article>
 
             </div>
 
-            <div class="dashboard-panels">
+            <!-- ========================================================
+                 Phase 5：首頁兩區改為真實 API 資料概覽。
+                 各容器 ID 僅供 dashboard-overview.js 使用；
+                 原有 data-go-page 仍由 app.js 的導覽邏輯處理。
+                 ======================================================== -->
+            <div class="dashboard-panels dashboard-overview-grid">
 
-                <article class="panel">
-                    <div class="dashboard-panel-heading">
-                        <span class="dashboard-panel-mark" aria-hidden="true">☀</span>
-                        <h4>七天天氣預報</h4>
+                <!-- 七天天氣摘要：沿用現有 /api/weather/forecast。 -->
+                <article class="panel dashboard-overview-panel dashboard-weather-panel"
+                         aria-labelledby="dashboard-weather-heading">
+                    <div class="dashboard-overview-header">
+                        <div class="dashboard-panel-heading">
+                            <span class="dashboard-panel-mark" aria-hidden="true">🌤</span>
+                            <div>
+                                <h4 id="dashboard-weather-heading">未來七天天氣</h4>
+                                <span class="dashboard-overview-subtitle">天氣現象、溫度、降雨與平均濕度</span>
+                            </div>
+                        </div>
+                        <button type="button" id="dashboard-weather-refresh"
+                                class="secondary-button dashboard-icon-button"
+                                aria-label="更新儀表板天氣摘要" title="更新天氣摘要">↻ 更新</button>
                     </div>
-                    <p>
-                        查看未來七天的天氣、溫度及降雨機率，
-                        作為訂貨需求評估的輔助資訊。
-                    </p>
 
-                    <button type="button"
-                            class="primary-button"
-                            data-go-page="weather">
-                        查看天氣預報
-                    </button>
+                    <div class="dashboard-overview-meta">
+                        <span id="dashboard-weather-location">高雄市 · 路竹區</span>
+                        <span id="dashboard-weather-status" class="dashboard-weather-status">尚未載入</span>
+                    </div>
+
+                    <div id="dashboard-weather-cards" class="dashboard-weather-cards"
+                         aria-live="polite" aria-busy="true">
+                        <p class="dashboard-widget-loading">正在載入七天天氣...</p>
+                    </div>
+                    <p id="dashboard-weather-warning" class="dashboard-widget-warning"
+                       role="status" hidden></p>
+
+                    <!-- Phase 8：小型 48 小時趨勢圖；使用首頁已取得的天氣 API 資料。 -->
+                    <section class="dashboard-temperature-section"
+                             aria-labelledby="dashboard-temperature-heading">
+                        <div class="dashboard-temperature-head">
+                            <div>
+                                <h5 id="dashboard-temperature-heading">未來 48 小時氣溫趨勢</h5>
+                                <p>依實際預報時間點繪製，不補造逐小時數值</p>
+                            </div>
+                            <span class="dashboard-temperature-period">48 小時</span>
+                        </div>
+                        <div id="dashboard-temperature-timeline" class="dashboard-temperature-timeline"
+                             aria-live="polite" aria-busy="true">
+                            <p class="dashboard-temperature-message">正在載入氣溫趨勢...</p>
+                        </div>
+                        <p id="dashboard-temperature-note" class="dashboard-temperature-note">
+                            時間為臺灣時間；缺少降雨機率時顯示「未提供」。
+                        </p>
+                    </section>
+
+                    <div class="dashboard-overview-footer">
+                        <span>依中央氣象署預報提供；缺值不視為 0%</span>
+                        <button type="button" class="dashboard-inline-link"
+                                data-go-page="weather">查看完整預報 ›</button>
+                    </div>
                 </article>
 
-                <article class="panel">
-                    <div class="dashboard-panel-heading">
-                        <span class="dashboard-panel-mark" aria-hidden="true">▤</span>
-                        <h4>智慧訂貨建議</h4>
+                <!-- 銷售趨勢：從既有未整筆退貨的銷售紀錄彙總，非淨銷售報表。 -->
+                <article class="panel dashboard-overview-panel dashboard-sales-panel"
+                         aria-labelledby="dashboard-sales-heading">
+                    <div class="dashboard-overview-header">
+                        <div class="dashboard-panel-heading">
+                            <span class="dashboard-panel-mark" aria-hidden="true">▥</span>
+                            <div>
+                                <h4 id="dashboard-sales-heading">近七日銷售趨勢</h4>
+                                <span class="dashboard-overview-subtitle">有效銷售紀錄，當日與前六日</span>
+                            </div>
+                        </div>
+                        <button type="button" id="dashboard-sales-refresh"
+                                class="secondary-button dashboard-icon-button"
+                                aria-label="更新近七日銷售趨勢" title="更新銷售趨勢">↻ 更新</button>
                     </div>
-                    <p>
-                        整合歷史銷售、目前庫存、安全庫存、
-                        未到貨數量與天氣倍率。
-                    </p>
 
-                    <button type="button"
-                            class="primary-button"
-                            data-go-page="recommendations">
-                        查看訂貨建議
-                    </button>
+                    <div class="dashboard-sales-totals" aria-label="近七日銷售合計">
+                        <div>
+                            <span>銷售紀錄金額</span>
+                            <strong id="dashboard-sales-total">--</strong>
+                        </div>
+                        <div>
+                            <span>售出數量</span>
+                            <strong id="dashboard-sales-quantity">--</strong>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-chart-legend" aria-hidden="true">
+                        <span><i class="dashboard-legend-bar"></i>售出數量</span>
+                        <span><i class="dashboard-legend-line"></i>銷售紀錄金額</span>
+                    </div>
+
+                    <div id="dashboard-sales-chart" class="dashboard-sales-chart"
+                         role="region" aria-label="近七天每日銷售數量與金額圖表"
+                         aria-live="polite" aria-busy="true">
+                        <p class="dashboard-widget-loading">正在載入銷售資料...</p>
+                    </div>
+                    <p id="dashboard-sales-period" class="dashboard-sales-period"></p>
+
+                    <div class="dashboard-overview-footer">
+                        <span>依有效銷售紀錄彙總；未另扣部分退貨</span>
+                        <button type="button" class="dashboard-inline-link"
+                                data-go-page="sales">查看銷售紀錄 ›</button>
+                    </div>
                 </article>
-
             </div>
+
+            <!-- ========================================================
+                 Phase 6：真實智慧訂貨建議摘要（只讀）。
+                 預設 WEEK 一般建議；天氣情境只改變摘要顯示，不替使用者
+                 勾選任何商品，也不建立採購草稿。正式選購需前往原訂貨頁。
+                 ======================================================== -->
+            <section class="panel dashboard-recommendation-panel"
+                     aria-labelledby="dashboard-recommendation-heading">
+                <div class="dashboard-rec-heading-row">
+                    <div class="dashboard-panel-heading">
+                        <span class="dashboard-panel-mark" aria-hidden="true">🛒</span>
+                        <div>
+                            <h4 id="dashboard-recommendation-heading">智慧訂貨建議摘要</h4>
+                            <span class="dashboard-overview-subtitle">歷史淨銷量 × 庫存 × 天氣情境，僅顯示需補貨的前 5 項商品</span>
+                        </div>
+                    </div>
+                    <div class="dashboard-rec-actions">
+                        <label class="dashboard-rec-basis-label" for="dashboard-rec-basis">歷史比較</label>
+                        <select id="dashboard-rec-basis" aria-label="首頁訂貨建議歷史比較基準">
+                            <option value="WEEK" selected>上週同期</option>
+                            <option value="MONTH">上月同期</option>
+                        </select>
+                        <label class="dashboard-rec-weather-label" for="dashboard-rec-use-weather">
+                            <input type="checkbox" id="dashboard-rec-use-weather">
+                            顯示天氣情境
+                        </label>
+                        <button type="button" id="dashboard-rec-refresh"
+                                class="secondary-button dashboard-rec-refresh"
+                                aria-label="重新查詢首頁訂貨建議">↻ 更新</button>
+                    </div>
+                </div>
+
+                <div id="dashboard-rec-meta" class="dashboard-rec-meta" aria-live="polite">
+                    正在準備訂貨建議摘要...
+                </div>
+                <div class="table-responsive dashboard-rec-table-wrap">
+                    <table class="data-table dashboard-rec-table">
+                        <thead>
+                            <tr>
+                                <th scope="col">排序</th>
+                                <th scope="col">商品名稱</th>
+                                <th scope="col">商品分類</th>
+                                <th scope="col">建議訂貨量</th>
+                                <th scope="col">目前庫存</th>
+                                <th scope="col">建議依據</th>
+                                <th scope="col">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dashboard-rec-body" aria-live="polite" aria-busy="true">
+                            <tr><td colspan="7" class="dashboard-rec-state">正在讀取訂貨建議...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p id="dashboard-rec-warning" class="dashboard-rec-warning" role="status" hidden></p>
+                <div class="dashboard-rec-footer">
+                    <span>本表為後端規則式建議摘要；天氣倍率屬冷飲等適用情境，不會自動套用到完整訂貨頁。正式採購請先確認商品、數量與供應商。</span>
+                    <button type="button" class="primary-button"
+                            data-go-page="recommendations">前往完整訂貨建議 ›</button>
+                </div>
+            </section>
 
         </section>
 
