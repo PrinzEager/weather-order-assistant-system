@@ -1,0 +1,24 @@
+flowchart LR
+    U[門市管理員 / 瀏覽器]
+    subgraph SB[單一 Spring Boot 4.1.1 / Java 21]
+        SEC[Spring Security / Session / CSRF]
+        VIEW[Thymeleaf index.html + login.html]
+        JS[ES Modules / Fetch / SVG 圖表]
+        CTL[Spring MVC Controllers]
+        SVC[Services / 業務規則]
+        JPA[Spring Data JPA / Hibernate]
+        FLY[Flyway V001 ~ V011]
+        CWA_CLIENT[CwaApiClient + WeatherService]
+    end
+    DB[(MySQL 9 張表)]
+    CWA[(中央氣象署七天天氣預報)]
+    U -->|HTTPS/HTTP 請求與 Session Cookie| SEC
+    SEC --> VIEW
+    VIEW --> JS
+    JS -->|同源 JSON + CSRF Header| CTL
+    CTL --> SVC
+    SVC --> JPA
+    JPA --> DB
+    FLY -->|啟動時 migration| DB
+    SVC --> CWA_CLIENT
+    CWA_CLIENT -->|官方 REST API| CWA

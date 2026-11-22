@@ -1,0 +1,109 @@
+erDiagram
+    product_categories ||--o{ product_categories : parent_id
+    product_categories ||--o{ products : category_id
+    products ||--o{ sales_records : product_id
+    sales_records ||--o{ sales_returns : sales_record_id
+    suppliers ||--o{ purchase_orders : supplier_id
+    purchase_orders ||--o{ purchase_order_items : purchase_order_id
+    products ||--o{ purchase_order_items : product_id
+    suppliers ||--o{ supplier_products : supplier_id
+    products ||--o{ supplier_products : product_id
+
+    product_categories {
+        BIGINT id PK
+        VARCHAR name
+        BIGINT parent_id FK
+        INT status
+        DATETIME created_at
+        DATETIME updated_at
+        DATETIME deleted_at
+    }
+    products {
+        BIGINT id PK
+        BIGINT category_id FK
+        VARCHAR sku UK
+        VARCHAR name
+        DECIMAL price
+        VARCHAR unit
+        INT current_stock
+        INT safety_stock
+        INT status
+        DATETIME created_at
+        DATETIME updated_at
+        DATETIME deleted_at
+    }
+    suppliers {
+        BIGINT id PK
+        VARCHAR name
+        VARCHAR contact_person
+        VARCHAR phone
+        VARCHAR email UK
+        VARCHAR address
+        INT status
+        DATETIME created_at
+        DATETIME updated_at
+        DATETIME deleted_at
+    }
+    sales_records {
+        BIGINT id PK
+        VARCHAR batch_id
+        BIGINT product_id FK
+        INT quantity
+        INT returned_quantity
+        DECIMAL unit_price
+        DECIMAL total_amount
+        DATETIME date_time
+        DATETIME created_at
+        DATETIME deleted_at
+    }
+    sales_returns {
+        BIGINT id PK
+        BIGINT sales_record_id FK
+        INT quantity
+        DECIMAL return_amount
+        VARCHAR reason
+        DATETIME returned_at
+    }
+    purchase_orders {
+        BIGINT id PK
+        BIGINT supplier_id FK
+        DATETIME order_date
+        DATE expected_delivery_date
+        VARCHAR order_status
+        DECIMAL total_amount
+        VARCHAR remark
+        VARCHAR supplier_name_snapshot
+        VARCHAR supplier_contact_person_snapshot
+        VARCHAR supplier_phone_snapshot
+        VARCHAR supplier_email_snapshot
+        VARCHAR supplier_address_snapshot
+        DATETIME created_at
+        DATETIME updated_at
+        DATETIME deleted_at
+    }
+    purchase_order_items {
+        BIGINT id PK
+        BIGINT purchase_order_id FK
+        BIGINT product_id FK
+        INT quantity
+        DECIMAL unit_price
+        DECIMAL subtotal
+        DATETIME created_at
+    }
+    supplier_products {
+        BIGINT id PK
+        BIGINT supplier_id FK
+        BIGINT product_id FK
+        DECIMAL purchase_price
+        INT status
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    app_users {
+        BIGINT id PK
+        VARCHAR username UK
+        VARCHAR password_hash
+        INT status
+        DATETIME created_at
+        DATETIME updated_at
+    }

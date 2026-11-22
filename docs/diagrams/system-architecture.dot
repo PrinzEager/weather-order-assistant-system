@@ -1,0 +1,28 @@
+digraph Architecture {
+  graph [rankdir=LR, bgcolor="#fffaf4", fontname="Noto Sans CJK TC", labelloc=t, label="現行系統架構｜單一 Spring Boot 應用（尚未 Docker / AWS）", fontsize=19, fontcolor="#603f2d", pad=0.35, nodesep=0.5, ranksep=0.75];
+  node [shape=box, style="rounded,filled", fontname="Noto Sans CJK TC", fontsize=12, color="#d7bd9e", fillcolor="#fffefc", fontcolor="#543d2d", penwidth=1.3];
+  edge [fontname="Noto Sans CJK TC", color="#b77d49", fontcolor="#69452e", fontsize=10, arrowsize=0.7];
+  user [label="門市使用者\n瀏覽器", fillcolor="#ffe4c1"];
+  db [shape=cylinder, label="MySQL\n9 張實體表", fillcolor="#f7e4cf"];
+  cwa [shape=cylinder, label="中央氣象署\n7 天天氣預報 API", fillcolor="#d9e9ef"];
+  subgraph cluster_app {
+    label="Spring Boot 4.1.1 + Java 21（單一 instance）";
+    labelloc=t; style="rounded,filled"; color="#dbbb9e"; fillcolor="#fcf1e5"; fontsize=14;
+    sec [label="Spring Security\nSession / CSRF"];
+    ui [label="Thymeleaf + JS\nCSS / SVG / Fetch"];
+    api [label="Spring MVC\nController + DTO"];
+    service [label="Service\n業務規則 / 交易"];
+    jpa [label="Spring Data JPA\nRepository / Entity"];
+    weather [label="WeatherService\nCwaApiClient"];
+    flyway [label="Flyway\nV001–V011"];
+  }
+  user -> sec [label="登入 / 操作"];
+  sec -> ui [label="頁面 / CSRF"];
+  ui -> api [label="同源 JSON"];
+  api -> service;
+  service -> jpa;
+  jpa -> db;
+  flyway -> db [label="初始化 / 升級"];
+  service -> weather;
+  weather -> cwa;
+}
