@@ -1,6 +1,7 @@
 package com.example.weather_order_assistant_system.service;
 
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -166,7 +167,9 @@ public class PurchaseOrderService {
         order.setOrderStatus(DRAFT);
 
         // 設定訂貨日期
-        order.setOrderDate(LocalDateTime.now());
+        // 一律記錄台灣當地的訂貨時間。
+        // LocalDateTime 沒有時區資訊，避免日後部署到 UTC 伺服器時日期偏移。
+        order.setOrderDate(LocalDateTime.now(PurchaseOrderTimePolicy.TAIPEI));
 
         // 設定預計到貨日期
         order.setExpectedDeliveryDate(
@@ -434,7 +437,22 @@ public class PurchaseOrderService {
         }
 
         // -------------------------------------------------
-        // 第三步：確認至少有一筆商品明細
+        // 第三步：確認草稿的建立日期仍是台灣今天
+        // -------------------------------------------------
+        // 以伺服器時鐘判斷，不信任瀏覽器停留時間或前端日期。
+        // 若在前一天建立 DRAFT，禁止直接送出，要求使用者重新下訂。
+        // 此處只回傳 409，不會自動取消或刪除原始採購單。
+        // 不變更商品明細、供應商快照或庫存。
+        if (!PurchaseOrderTimePolicy.isDraftCreatedToday(
+                order.getOrderDate(), Clock.systemUTC())) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "此採購草稿建立日期已過期，請取消原草稿並重新建立"
+            );
+        }
+
+        // -------------------------------------------------
+        // 第四步：確認至少有一筆商品明細
         // -------------------------------------------------
 
         if (order.getItems() == null
@@ -447,13 +465,13 @@ public class PurchaseOrderService {
         }
 
         // -------------------------------------------------
-        // 第四步：更新採購單狀態
+        // 第五步：更新採購單狀態
         // -------------------------------------------------
 
         order.setOrderStatus("SUBMITTED");
 
         // -------------------------------------------------
-        // 第五步：儲存並回傳結果
+        // 第六步：儲存並回傳結果
         // -------------------------------------------------
         // saveAndFlush 讓 JPA 在回傳 DTO 前
         // 執行資料更新與 @PreUpdate。
