@@ -144,14 +144,32 @@ function getDayMaxRain(day, data, date) {
 }
 
 /**
- * 相對濕度只使用後端有明確提供的「每日濕度欄位」。
- * 不根據其他天數補值，也不自行杜撰濕度。
- * 若最新版 DTO 使用不同欄位，整合時再依實際欄位名稱調整。
+ * 讀取「當日平均相對濕度」。
+ *
+ * 目前後端回應的 dailyForecasts 僅含日期、溫度與天氣現象；
+ * 每日平均濕度實際放在 dailyWeatherFactors[].averageRelativeHumidity。
+ * 因此優先讀取每日卡片本身欄位（相容未來 DTO 擴充），
+ * 若不存在，再依「相同日期」從 dailyWeatherFactors 找資料。
+ *
+ * 全程只使用同一次天氣 API 回傳，不重算濕度、不更動天氣倍率，
+ * 也不拿其他日期資料補值；沒有有效數字時保留 null。
  */
-function getDayHumidity(day) {
-    return readPercentage(
+function getDayHumidity(day, data, date) {
+    const direct = readPercentage(
         day.averageRelativeHumidity ?? day.relativeHumidity ?? day.avgRelativeHumidity
     );
+
+    if (direct !== null) return direct;
+
+    const dailyFactors = Array.isArray(data?.dailyWeatherFactors)
+        ? data.dailyWeatherFactors
+        : [];
+
+    const matched = dailyFactors.find(item =>
+        String(item?.date ?? "").slice(0, 10) === date
+    );
+
+    return readPercentage(matched?.averageRelativeHumidity);
 }
 
 function makeElement(tagName, className, value) {
@@ -201,7 +219,7 @@ export function renderSevenDayWeatherCards(data) {
         const max = readNumber(day.maxTemperature);
         const min = readNumber(day.minTemperature);
         const rain = getDayMaxRain(day, data, date.iso);
-        const humidity = getDayHumidity(day);
+        const humidity = getDayHumidity(day, data, date.iso);
 
         const card = makeElement("article", `weather-card${isToday ? " is-today" : ""}`);
         card.setAttribute("aria-label", `${date.fullLabel}，${weather}`);
@@ -229,7 +247,7 @@ export function renderSevenDayWeatherCards(data) {
 
         const metrics = makeElement("div", "weather-card-metrics");
         addMetric(metrics, "最高降雨機率", rain);
-        addMetric(metrics, "相對濕度", humidity);
+        addMetric(metrics, "平均相對濕度", humidity);
         card.appendChild(metrics);
         fragment.appendChild(card);
     });
