@@ -25,6 +25,8 @@
     <link rel="stylesheet" th:href="@{/css/management-status.css}">
     <!-- 天氣頁專用：七天圖卡與 D 溫暖質感配色，不影響其餘頁面 -->
     <link rel="stylesheet" th:href="@{/css/weather-seven-day.css}">
+    <!-- Phase 4：D 溫暖質感共用主題與儀表板視覺。保留原有 JS、API 和 DOM ID。 -->
+    <link rel="stylesheet" th:href="@{/css/warm-dashboard-phase4.css}">
     <script type="module" th:src="@{/js/management-status.js}"></script>
     
 </head>
@@ -37,50 +39,62 @@
          ===================================================== -->
     <aside class="sidebar">
 
+        <!-- 品牌區：只更換文字與裝飾結構，不影響原側邊導覽事件。 -->
         <div class="sidebar-brand">
-            <h1>Weather Order</h1>
-            <p>天氣訂貨輔助系統</p>
+            <span class="sidebar-brand-emblem" aria-hidden="true">☀</span>
+            <div class="sidebar-brand-copy">
+                <h1>天氣 × 財氣 訂貨助手</h1>
+                <p>後台管理系統 · Weather Order</p>
+            </div>
         </div>
 
         <nav class="sidebar-nav" aria-label="主要功能導覽">
 
             <button type="button" class="nav-item active"
                     data-page="dashboard">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
                 系統儀表板
             </button>
 
             <button type="button" class="nav-item"
                     data-page="weather">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3v2M4.93 4.93l1.42 1.42M3 12h2M19.07 4.93l-1.42 1.42"/><path d="M12 7a5 5 0 0 1 4.6 3"/><path d="M7 18a4 4 0 0 1 1-7.87A6 6 0 0 1 19 12a3.5 3.5 0 1 1-.5 7H8"/></svg>
                 七天天氣預報
             </button>
 
             <button type="button" class="nav-item"
                     data-page="recommendations">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 2h3l2.5 12H20l2-9H5"/><path d="M11 9h5M13.5 6.5v5"/></svg>
                 天氣訂貨建議
             </button>
 
             <button type="button" class="nav-item"
                     data-page="categories">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
                 商品分類管理
             </button>
 
             <button type="button" class="nav-item"
                     data-page="products">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="M3 8v8l9 5 9-5V8M12 13v8"/></svg>
                 商品管理
             </button>
 
             <button type="button" class="nav-item"
                     data-page="suppliers">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                 供應商管理
             </button>
 
             <button type="button" class="nav-item"
                     data-page="sales">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 3v18h18M7 16v-5M12 16V7M17 16V4"/></svg>
                 銷售紀錄
             </button>
 
             <button type="button" class="nav-item"
                     data-page="orders">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="5" y="4" width="14" height="18" rx="2"/><path d="M9 4.5V3h6v1.5M9 10h6M9 14h6M9 18h4"/></svg>
                 採購訂貨單
             </button>
 
@@ -132,27 +146,31 @@
                 <p>整合商品、銷售、庫存、天氣及訂貨資訊。</p>
             </div>
 
-            <div class="dashboard-stats">
+            <div class="dashboard-stats" aria-label="營運指標">
 
                 <article class="stat-card">
+                    <span class="dashboard-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 12h8M8 17h5"/></svg></span>
                     <h4>商品總數</h4>
                     <strong id="stat-products">--</strong>
                     <p>商品資料概覽</p>
                 </article>
 
                 <article class="stat-card">
+                    <span class="dashboard-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2 21v-2a6 6 0 0 1 12 0v2M17 5a3.5 3.5 0 0 1 0 7M22 21v-2a6 6 0 0 0-4-5.6"/></svg></span>
                     <h4>供應商總數</h4>
                     <strong id="stat-suppliers">--</strong>
                     <p>供應商資料概覽</p>
                 </article>
 
                 <article class="stat-card">
+                    <span class="dashboard-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4h3l2.2 11h12.5l2-8H6"/><circle cx="9" cy="20" r="1"/><circle cx="19" cy="20" r="1"/></svg></span>
                     <h4>需要補貨商品</h4>
                     <strong id="stat-reorder">--</strong>
                     <p>依天氣訂貨建議計算</p>
                 </article>
 
                 <article class="stat-card">
+                    <span class="dashboard-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 3v2h6V3M8 10h8M8 14h8M8 18h5"/></svg></span>
                     <h4>待處理訂貨單</h4>
                     <strong id="stat-orders">--</strong>
                     <p>待後端資料載入</p>
@@ -163,7 +181,10 @@
             <div class="dashboard-panels">
 
                 <article class="panel">
-                    <h4>天氣資訊</h4>
+                    <div class="dashboard-panel-heading">
+                        <span class="dashboard-panel-mark" aria-hidden="true">☀</span>
+                        <h4>七天天氣預報</h4>
+                    </div>
                     <p>
                         查看未來七天的天氣、溫度及降雨機率，
                         作為訂貨需求評估的輔助資訊。
@@ -177,7 +198,10 @@
                 </article>
 
                 <article class="panel">
-                    <h4>天氣訂貨建議</h4>
+                    <div class="dashboard-panel-heading">
+                        <span class="dashboard-panel-mark" aria-hidden="true">▤</span>
+                        <h4>智慧訂貨建議</h4>
+                    </div>
                     <p>
                         整合歷史銷售、目前庫存、安全庫存、
                         未到貨數量與天氣倍率。

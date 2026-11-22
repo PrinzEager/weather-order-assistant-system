@@ -1,0 +1,470 @@
+/* =============================================================
+   Weather Order Assistant System — Phase 4
+   D 溫暖質感主題：暖奶油白／奶茶棕／焦糖橘
+
+   本階段只調整共用視覺基礎、側邊欄、頁首與儀表板。
+   原有 DOM ID、表單、功能模組、API 與 JavaScript 均不改動。
+   如需停用此階段，從 index.html 移除此 CSS 引用即可回復外觀。
+   ============================================================= */
+
+:root {
+    /* 與原版 style.css 變數名稱相容，降低覆寫範圍。 */
+    --primary: #DF7831;
+    --primary-hover: #C96522;
+    --primary-light: #FFF0DE;
+    --sidebar-bg: #704B3D;
+    --sidebar-hover: #865A48;
+    --sidebar-text: #FFF9F1;
+    --background: #F7EFE5;
+    --surface: #FFFAF3;
+    --text-primary: #452D25;
+    --text-secondary: #80685C;
+    --border: #E8D7C7;
+    --success: #38834A;
+    --warning: #AF691E;
+    --danger: #C64635;
+    --radius: 16px;
+    --shadow: 0 6px 20px rgba(91, 61, 44, .10);
+    --sidebar-width: 260px;
+
+    /* 新主題的專用色票，後續模組可沿用。 */
+    --warm-panel: rgba(255, 250, 243, .96);
+    --warm-card: #FFF9F0;
+    --warm-soft: #F6E7D7;
+    --warm-border: #E8D7C7;
+    --warm-deep: #452D25;
+    --warm-muted: #80685C;
+    --warm-accent: #DF7831;
+    --warm-shadow: 0 8px 24px rgba(91, 61, 44, .09);
+}
+
+/* 全站保留自然的米白背景與原生字體，不外連字型及 CSS 框架。 */
+body {
+    background: radial-gradient(ellipse at 87% 5%, rgba(253, 212, 164, .34), transparent 40%),
+                radial-gradient(ellipse at 22% 92%, rgba(237, 207, 180, .28), transparent 42%),
+                var(--background);
+    color: var(--text-primary);
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+.nav-item:focus-visible {
+    outline: 3px solid rgba(223, 120, 49, .40);
+    outline-offset: 2px;
+}
+
+/* -------------------------------------------------------------
+   A. 左側導覽：保留所有 [data-page] 與 JS 選單事件。
+   ------------------------------------------------------------- */
+.sidebar {
+    background: linear-gradient(167deg, #79523F 0%, #704B3D 50%, #5F3D32 100%);
+    border-radius: 0 22px 22px 0;
+    box-shadow: 4px 0 28px rgba(58, 33, 21, .14);
+    color: var(--sidebar-text);
+}
+
+.sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 25px 16px 23px;
+    border-bottom: 1px solid rgba(255, 246, 237, .16);
+}
+
+.sidebar-brand-emblem {
+    display: inline-grid;
+    place-items: center;
+    width: 43px;
+    height: 43px;
+    flex: 0 0 43px;
+    border-radius: 14px;
+    color: #9A471D;
+    background: linear-gradient(145deg, #FFF2D7, #FFD5A5);
+    border: 1px solid rgba(255, 255, 255, .6);
+    box-shadow: 0 4px 12px rgba(48, 24, 16, .16);
+    font-size: 25px;
+}
+
+.sidebar-brand-copy {
+    min-width: 0;
+}
+
+.sidebar-brand-copy h1 {
+    margin: 0;
+    color: #FFF9EF;
+    font-size: 16px;
+    font-weight: 750;
+    letter-spacing: .02em;
+    line-height: 1.5;
+}
+
+.sidebar-brand-copy p {
+    margin: 4px 0 0;
+    color: #EFD6C8;
+    font-size: 11px;
+    line-height: 1.4;
+}
+
+.sidebar-nav {
+    gap: 7px;
+    padding: 23px 11px;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    min-height: 46px;
+    padding: 11px 16px;
+    border-radius: 12px;
+    background: transparent;
+    color: #F6E8DE;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.35;
+    white-space: nowrap;
+}
+
+.nav-icon {
+    display: block;
+    flex: 0 0 21px;
+    width: 21px;
+    height: 21px;
+    color: inherit;
+}
+
+.nav-item:hover {
+    color: #FFFDF9;
+    background: rgba(255, 244, 235, .14);
+}
+
+.nav-item.active {
+    background: linear-gradient(130deg, #D66E2B, #F3974E);
+    color: #FFFDF9;
+    box-shadow: 0 6px 15px rgba(57, 27, 15, .16), inset 0 1px rgba(255, 255, 255, .20);
+    font-weight: 750;
+}
+
+.sidebar-footer {
+    border-top-color: rgba(255, 246, 237, .15);
+    color: #DEC8BC;
+}
+
+/* -------------------------------------------------------------
+   B. 主內容與工具列：以高對比暖白底襯托資料。
+   ------------------------------------------------------------- */
+.main-content {
+    max-width: none;
+    min-width: 0;
+    min-height: 100vh;
+    padding: 25px 30px 56px;
+}
+
+.topbar {
+    min-width: 0;
+    margin-bottom: 27px;
+    padding: 20px 24px;
+    background: rgba(255, 250, 243, .95);
+    border: 1px solid var(--warm-border);
+    border-radius: 18px;
+    box-shadow: var(--warm-shadow);
+}
+
+.topbar-title h2 {
+    position: relative;
+    padding-left: 17px;
+    color: var(--warm-deep);
+    font-size: clamp(23px, 2vw, 28px);
+    font-weight: 800;
+    letter-spacing: -.02em;
+}
+
+.topbar-title h2::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 6px;
+    bottom: 5px;
+    width: 5px;
+    border-radius: 99px;
+    background: var(--warm-accent);
+}
+
+.topbar-title p {
+    margin-top: 5px;
+    padding-left: 17px;
+    color: var(--warm-muted);
+    font-size: 13px;
+}
+
+.topbar-status {
+    background: #FFF6EB;
+    border-color: #E8D2BF;
+    color: #76523B;
+    font-size: 12px;
+}
+
+.section-heading h3 {
+    border-left: 5px solid var(--warm-accent);
+    padding-left: 13px;
+    color: var(--warm-deep);
+}
+
+.section-heading p {
+    color: var(--warm-muted);
+}
+
+/* 本階段讓共用按鈕與基礎資料容器跟隨暖色 token。 */
+.primary-button {
+    border-radius: 10px;
+    background: var(--primary);
+    color: #FFFFFF;
+    box-shadow: 0 4px 10px rgba(186, 92, 38, .12);
+}
+
+.primary-button:hover:not(:disabled) {
+    background: var(--primary-hover);
+}
+
+.secondary-button {
+    background: #FFFCF8;
+    border-color: var(--border);
+    color: var(--text-primary);
+    border-radius: 10px;
+}
+
+.secondary-button:hover {
+    background: #F6EBDD;
+}
+
+.panel,
+.stat-card {
+    background: var(--warm-panel);
+    border-color: var(--warm-border);
+    box-shadow: var(--warm-shadow);
+}
+
+.form-group label {
+    color: #654D3F;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    border-color: #D9C6B6;
+    background: #FFFDF9;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(223, 120, 49, .13);
+}
+
+.data-table th {
+    background: #F7E9D9;
+    color: #654333;
+}
+
+.data-table td {
+    border-bottom-color: #F0E6DC;
+}
+
+.data-table tbody tr:hover {
+    background: #FFF6E9;
+}
+
+/* -------------------------------------------------------------
+   C. 儀表板 4 張 KPI 卡：數字仍由 #stat-* 原 ID 提供。
+   未連上資料時保留 --，不使用參考圖中的假數字。
+   ------------------------------------------------------------- */
+#page-dashboard .section-heading {
+    margin-bottom: 20px;
+}
+
+#page-dashboard .dashboard-stats {
+    gap: 18px;
+    margin-bottom: 22px;
+}
+
+#page-dashboard .stat-card {
+    position: relative;
+    isolation: isolate;
+    min-width: 0;
+    min-height: 148px;
+    overflow: hidden;
+    padding: 24px 17px 21px 93px;
+    border-radius: 20px;
+    background: linear-gradient(142deg, rgba(255, 253, 249, .99), rgba(255, 246, 234, .97));
+    border: 1px solid #E9D5C0;
+    box-shadow: 0 6px 18px rgba(92, 56, 39, .09);
+}
+
+#page-dashboard .stat-card::after {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    right: -20px;
+    bottom: -37px;
+    width: 138px;
+    height: 82px;
+    border-radius: 50%;
+    background: rgba(242, 180, 108, .12);
+    transform: rotate(-16deg);
+}
+
+#page-dashboard .dashboard-stat-icon {
+    position: absolute;
+    top: 23px;
+    left: 18px;
+    display: inline-grid;
+    place-items: center;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: #FFE6CC;
+    color: #B85B1D;
+}
+
+#page-dashboard .dashboard-stat-icon svg {
+    width: 29px;
+    height: 29px;
+}
+
+#page-dashboard .stat-card h4 {
+    color: #775443;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.5;
+}
+
+#page-dashboard .stat-card strong {
+    margin: 10px 0 5px;
+    color: var(--warm-deep);
+    font-size: clamp(25px, 2.25vw, 34px);
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+}
+
+#page-dashboard .stat-card p {
+    color: #947F70;
+    font-size: 12px;
+    margin: 0;
+    line-height: 1.45;
+}
+
+/* -------------------------------------------------------------
+   D. 儀表板兩張功能入口：後續才把真實天氣／銷售曲線接進首頁。
+   目前保留原本 [data-go-page] 按鈕，確保快捷入口可操作。
+   ------------------------------------------------------------- */
+#page-dashboard .dashboard-panels {
+    gap: 19px;
+}
+
+#page-dashboard .dashboard-panels .panel {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 208px;
+    padding: 23px 25px;
+    border: 1px solid #E9D8C5;
+    border-radius: 20px;
+    background: rgba(255, 251, 246, .96);
+    box-shadow: 0 8px 22px rgba(91, 61, 44, .09);
+}
+
+#page-dashboard .dashboard-panel-heading {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+#page-dashboard .dashboard-panel-mark {
+    display: grid;
+    place-items: center;
+    width: 41px;
+    height: 41px;
+    flex: 0 0 41px;
+    border: 1px solid #F2D1B1;
+    border-radius: 13px;
+    background: #FFF0DC;
+    color: #BD6424;
+    font-size: 22px;
+    font-weight: 800;
+}
+
+#page-dashboard .dashboard-panel-heading h4 {
+    margin: 0;
+    color: var(--warm-deep);
+    font-size: 18px;
+    font-weight: 750;
+}
+
+#page-dashboard .dashboard-panels .panel p {
+    min-height: unset;
+    margin: 0 0 20px;
+    color: var(--warm-muted);
+    font-size: 14px;
+    line-height: 1.8;
+}
+
+#page-dashboard .dashboard-panels .panel .primary-button {
+    align-self: flex-start;
+    margin-top: auto;
+}
+
+/* -------------------------------------------------------------
+   E. 響應式：保持既有天氣圖卡、Modal、管理篩選及表格不變。
+   ------------------------------------------------------------- */
+@media (max-width: 1250px) {
+    #page-dashboard .dashboard-stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 900px) {
+    :root { --sidebar-width: 210px; }
+    .sidebar { width: 210px; }
+    .sidebar-brand { padding: 20px 12px; gap: 8px; }
+    .sidebar-brand-emblem { width: 35px; height: 35px; flex-basis: 35px; font-size: 21px; }
+    .sidebar-brand-copy h1 { font-size: 13px; }
+    .sidebar-brand-copy p { font-size: 10px; }
+    .main-content { margin-left: 210px; padding: 23px 20px 45px; }
+    .topbar { padding: 18px 20px; }
+    #page-dashboard .dashboard-panels { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 680px) {
+    .sidebar {
+        position: static;
+        width: 100%;
+        border-radius: 0 0 17px 17px;
+    }
+    .sidebar-brand { padding: 13px 16px; }
+    .sidebar-brand-copy h1 { font-size: 16px; }
+    .sidebar-brand-copy p { font-size: 11px; }
+    .sidebar-nav { gap: 6px; padding: 10px; }
+    .nav-item { width: auto; min-height: 42px; padding: 9px 13px; font-size: 13px; }
+    .nav-icon { width: 18px; height: 18px; flex-basis: 18px; }
+    .main-content { margin-left: 0; padding: 20px 14px 36px; }
+    .topbar { align-items: stretch; gap: 12px; margin-bottom: 22px; padding: 17px; }
+    .topbar-status { align-self: flex-start; }
+    #page-dashboard .dashboard-stats { grid-template-columns: 1fr; gap: 12px; }
+    #page-dashboard .stat-card { min-height: 127px; padding: 21px 20px 20px 97px; }
+    #page-dashboard .dashboard-stat-icon { top: 20px; }
+    #page-dashboard .dashboard-panels .panel { min-height: 188px; padding: 20px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .nav-item, .primary-button, .secondary-button {
+        transition: none;
+    }
+}
+
+/* 商品貨架背景於取得正式可使用的獨立圖片後再加入。
+   不可直接把參考儀表板截圖當背景，也不可使用整層 opacity。 */
