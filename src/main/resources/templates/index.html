@@ -16,6 +16,10 @@
     <script type="module" th:src="@{/js/purchase-order-details.js}"></script>
     <script type="module" th:src="@{/js/management-status.js}"></script>
 
+    <!-- 頁面路由與訂貨時間保護：獨立模組，不覆蓋原有 app.js／訂貨 JS。 -->
+    <script type="module" th:src="@{/js/router.js}"></script>
+    <script type="module" th:src="@{/js/order-date-guard.js}"></script>
+
     <!-- 首頁：七天天氣與氣溫圖／銷售趨勢、訂貨摘要、KPI。 -->
     <script type="module" th:src="@{/js/dashboard-overview.js}"></script>
     <script type="module" th:src="@{/js/dashboard-recommendations.js}"></script>
@@ -44,7 +48,7 @@
             <button type="button" class="nav-item active"
                     data-page="dashboard">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-                系統儀表板
+                首頁
             </button>
 
             <button type="button" class="nav-item"
