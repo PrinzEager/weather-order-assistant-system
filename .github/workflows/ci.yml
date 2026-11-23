@@ -1,0 +1,97 @@
+# weather-order-assistant-system：只做 GitHub Actions CI，不連接 AWS / EC2。
+# 本 workflow 會使用 GitHub Runner 的臨時 MySQL 執行測試，打包 JAR 並建置 Docker Image。
+name: Weather Order Assistant - CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+# 只需要讀取 Repository 程式碼，不授予寫入套件或部署權限。
+permissions:
+  contents: read
+
+# 同一分支若快速連續推送，以最新一次為準，避免浪費 CI 額度。
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-package-docker:
+    name: Maven test + JAR + Docker
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    # 以下帳密僅供 CI 當次執行的臨時 MySQL 使用，不得作為正式環境密碼。
+    # CI 不載入本機 .env.docker，也不使用 AWS 金鑰或正式資料庫。
+    env:
+      DB_URL: 'jdbc:mysql://127.0.0.1:3306/weather_order_assistant_ci?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=Asia/Taipei'
+      DB_USERNAME: ci_user
+      DB_PASSWORD: ci_test_only_password
+      CWA_API_KEY: ci-dummy-api-key
+      APP_ADMIN_BOOTSTRAP: 'false'
+      TZ: Asia/Taipei
+
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: ci_test_only_root_password
+          MYSQL_DATABASE: weather_order_assistant_ci
+          MYSQL_USER: ci_user
+          MYSQL_PASSWORD: ci_test_only_password
+          TZ: Asia/Taipei
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "mysqladmin ping -h 127.0.0.1 -uroot -pci_test_only_root_password --silent"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 15
+          --health-start-period 30s
+
+    steps:
+      # 1. 下載當次 Push / PR 對應的專案原始碼。
+      - name: Checkout source
+        uses: actions/checkout@v6
+
+      # 2. 安裝 Java 21 並快取 Maven 依賴，縮短後續 CI 時間。
+      - name: Setup Java 21
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      # 3. 運行 JUnit / Mockito 測試與 Spring Boot 啟動測試。
+      #    Spring Boot 啟動測試會連線上方的臨時 MySQL，並執行 Flyway。
+      #    使用 bash 執行 mvnw，避免從 Windows 上傳後沒有 Linux 執行權限。
+      - name: Maven test and package JAR
+        run: bash ./mvnw -B -ntp clean package
+
+      # 4. 確認 JAR 真的產生，避免誤將編譯成功當作打包成功。
+      - name: Verify JAR exists
+        run: test -f target/weather-order-assistant-system-0.0.1-SNAPSHOT.jar
+
+      # 5. 使用專案既有 Dockerfile，驗證剛產生的 JAR 可以建置成 Docker Image。
+      #    本步驟不啟動 EC2、不推送 Docker Hub，也不啟動正式服務。
+      - name: Build Docker image
+        run: docker build -t weather-order-assistant:ci .
+
+      # 6. 確認 Image 已存在於 GitHub Runner（Runner 結束後即清除）。
+      - name: Verify Docker image
+        run: docker image inspect weather-order-assistant:ci > /dev/null
+
+      # 7. 保存短期 JAR 成品，供 Actions 頁面手動下載。
+      #    保存 3 天，降低 GitHub Artifact 儲存用量。
+      - name: Upload JAR artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: weather-order-assistant-jar
+          path: target/weather-order-assistant-system-0.0.1-SNAPSHOT.jar
+          if-no-files-found: error
+          retention-days: 3
