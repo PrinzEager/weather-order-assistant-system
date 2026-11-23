@@ -1,0 +1,70 @@
+# EC2 第一次部署：直接執行已通過 CI 與本機驗收的 GHCR Image。
+# 不在 EC2 編譯 JAR；MySQL 只在 Docker 內部網路提供服務。
+# Spring Boot 僅綁定 127.0.0.1，先透過 SSH Tunnel 在本機驗收。
+name: weather-order-assistant-ec2
+
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?請設定 MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:?請設定 MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER:?請設定 MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?請設定 MYSQL_PASSWORD}
+      TZ: Asia/Taipei
+    # 約 2 GiB RAM 的 EC2 Demo：適度降低 MySQL 記憶體使用。
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --innodb-buffer-pool-size=96M
+      - --max-connections=30
+      - --performance-schema=OFF
+    mem_limit: 640m
+    volumes:
+      - weather_ec2_mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", 'mysqladmin ping -h 127.0.0.1 -uroot -p"$${MYSQL_ROOT_PASSWORD}" --silent']
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 45s
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  app:
+    image: ${GHCR_IMAGE:?請設定 GHCR_IMAGE}
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_URL: "jdbc:mysql://mysql:3306/${MYSQL_DATABASE:?請設定 MYSQL_DATABASE}?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=Asia/Taipei"
+      DB_USERNAME: ${MYSQL_USER:?請設定 MYSQL_USER}
+      DB_PASSWORD: ${MYSQL_PASSWORD:?請設定 MYSQL_PASSWORD}
+      CWA_API_KEY: ${CWA_API_KEY:-}
+      APP_ADMIN_BOOTSTRAP: ${APP_ADMIN_BOOTSTRAP:-false}
+      APP_ADMIN_USERNAME: ${APP_ADMIN_USERNAME:-}
+      APP_ADMIN_PASSWORD: ${APP_ADMIN_PASSWORD:-}
+      # 目前僅由 SSH Tunnel 使用 HTTP；未設定 HTTPS 前不能公開此登入服務。
+      SERVER_SERVLET_SESSION_COOKIE_SECURE: "false"
+      TZ: Asia/Taipei
+      # 控制 JVM Heap，避免與同台 MySQL 搶記憶體。
+      JAVA_TOOL_OPTIONS: "-Xms128m -Xmx320m -XX:MaxMetaspaceSize=192m -Duser.timezone=Asia/Taipei"
+    mem_limit: 768m
+    ports:
+      - "127.0.0.1:${APP_HOST_PORT:-8080}:8080"
+    volumes:
+      - weather_ec2_product_uploads:/app/uploads/products
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  # 命名 Volume 不會因為 docker compose stop/down（不加 -v）被刪除。
+  weather_ec2_mysql_data:
+  weather_ec2_product_uploads:
