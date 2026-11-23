@@ -95,3 +95,77 @@ jobs:
           path: target/weather-order-assistant-system-0.0.1-SNAPSHOT.jar
           if-no-files-found: error
           retention-days: 3
+
+  # 8. 手動建立並發布 GHCR Image：正常 push / pull_request 時不會執行。
+  #    必須先完成上方測試、JAR 打包與 Docker Image 建置，才能進入發布工作。
+  publish-ghcr:
+    name: Publish image to GHCR (manual only)
+    # 只允許從 main 分支手動執行；避免 Pull Request / Push 自動取得套件寫入權限。
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    needs: test-package-docker
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      # 重新取得 Dockerfile 與 .dockerignore；不重新進行 Maven 打包。
+      - name: Checkout source for image publishing
+        uses: actions/checkout@v6
+
+      # 下載「本次 CI 已完成測試」的 JAR，不使用上一個 Commit 的產物。
+      # 上方 upload-artifact 的 path 是 target/xxx.jar，下載後還原至 target/。
+      - name: Download tested JAR artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: weather-order-assistant-jar
+          path: target
+
+      - name: Verify downloaded JAR
+        run: test -f target/weather-order-assistant-system-0.0.1-SNAPSHOT.jar
+
+      # OCI registry 名稱只能使用小寫；自動依當前 Repo 組合 ghcr.io/owner/repo。
+      - name: Prepare lowercase GHCR image name
+        id: image
+        shell: bash
+        run: |
+          IMAGE_NAME="ghcr.io/${GITHUB_REPOSITORY,,}"
+          echo "name=${IMAGE_NAME}" >> "$GITHUB_OUTPUT"
+          echo "GHCR Image: ${IMAGE_NAME}"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # 使用 GitHub 自動提供的 GITHUB_TOKEN，不必建立個人 PAT，也不用 AWS 金鑰。
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Dockerfile 直接 COPY 本次測試成功的 JAR，完成後發布版本化與 latest Image。
+      # 平台固定為 linux/amd64，對應一般 x86_64 EC2 主機；未來如改 ARM 再調整。
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ steps.image.outputs.name }}:sha-${{ github.sha }}
+            ${{ steps.image.outputs.name }}:latest
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+
+      # 在 GitHub Runner 上從 GHCR 真正下載剛發布的 Image，驗證 Registry 可讀取。
+      # 這不會啟動 EC2、MySQL 或使用 AWS。
+      - name: Verify image can be pulled from GHCR
+        shell: bash
+        run: |
+          IMAGE="${{ steps.image.outputs.name }}:sha-${{ github.sha }}"
+          docker pull "$IMAGE"
+          docker image inspect "$IMAGE" > /dev/null
+          echo "GHCR image published and verified: $IMAGE"
