@@ -1,0 +1,6 @@
+# 僅把本機已編譯的 JAR 送進 Docker build context。
+# 避免 .env、金鑰、Git 歷史、原始碼及 uploads 被放進 image。
+**
+!Dockerfile
+!target/
+!target/weather-order-assistant-system-0.0.1-SNAPSHOT.jar

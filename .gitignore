@@ -1,6 +1,7 @@
 HELP.md
 target/
 .env
+.env.exapmle
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
@@ -32,3 +33,10 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# Docker/部署：避免密碼、憑證及本機上傳資料進版控。
+.env.*
+!.env.example
+!.env.docker.example
+uploads/
+*.log

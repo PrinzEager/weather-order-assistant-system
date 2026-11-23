@@ -1,0 +1,67 @@
+# 本機端 JAR Image + MySQL 8.4。這份 Compose 使用 localhost HTTP 驗證。
+# EC2 正式 HTTPS 部署時需重新檢查 Cookie、port 暴露與 secrets 管理。
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?請在 .env.docker 設定 MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:?請在 .env.docker 設定 MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER:?請在 .env.docker 設定 MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?請在 .env.docker 設定 MYSQL_PASSWORD}
+      TZ: Asia/Taipei
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    # 使用宿主機 3307，避免與現有 3306 MySQL 撞 port；僅供本機連線。
+    ports:
+      - "127.0.0.1:${MYSQL_HOST_PORT:-3307}:3306"
+    volumes:
+      - weather_mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", 'mysqladmin ping -h 127.0.0.1 -uroot -p"$${MYSQL_ROOT_PASSWORD}" --silent']
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 30s
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: weather-order-assistant:local
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_URL: "jdbc:mysql://mysql:3306/${MYSQL_DATABASE:?請設定 MYSQL_DATABASE}?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=Asia/Taipei"
+      DB_USERNAME: ${MYSQL_USER:?請設定 MYSQL_USER}
+      DB_PASSWORD: ${MYSQL_PASSWORD:?請設定 MYSQL_PASSWORD}
+      CWA_API_KEY: ${CWA_API_KEY:-}
+      APP_ADMIN_BOOTSTRAP: ${APP_ADMIN_BOOTSTRAP:-false}
+      APP_ADMIN_USERNAME: ${APP_ADMIN_USERNAME:-}
+      APP_ADMIN_PASSWORD: ${APP_ADMIN_PASSWORD:-}
+      TZ: Asia/Taipei
+      JAVA_TOOL_OPTIONS: "-Duser.timezone=Asia/Taipei"
+      # 覆蓋 application-prod.properties 的 Secure=true：僅供本機 HTTP 測試。
+      # 未來 EC2 改為 HTTPS 時必須移除這一行或改 true。
+      SERVER_SERVLET_SESSION_COOKIE_SECURE: "false"
+    # 使用 8081，避免與 IDE 啟動中的 Spring Boot（8080）衝突。
+    ports:
+      - "127.0.0.1:${APP_HOST_PORT:-8081}:8080"
+    volumes:
+      - weather_product_uploads:/app/uploads/products
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  weather_mysql_data:
+  weather_product_uploads:
